@@ -16,7 +16,8 @@ const SEARCH_OPTIONS = [
 // 사원 목록 페이지
 // Spring Boot API에서 전체 사원 데이터를 한 번 불러온 후
 // 검색은 프론트엔드에서 필터링 처리 (부서번호 / 사원번호 / 사원명)
-const EmpListPage = () => {
+// props: onNavigateToChart - 급여 통계 차트 페이지로 이동 콜백
+const EmpListPage = ({ onNavigateToChart }) => {
   // 서버에서 받은 전체 원본 목록 (필터링의 기준)
   const [allEmps, setAllEmps] = useState([]);
   // 화면에 표시되는 목록 (검색 필터 적용 결과)
@@ -182,9 +183,14 @@ const EmpListPage = () => {
             {isFiltered ? `검색 결과 ${emps.length}명` : `총 ${allEmps.length}명`}
           </p>
         </div>
-        <button className="btn btn-blue btn-lg" onClick={handleCreate}>
-          + 사원 등록
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn btn-gray btn-lg" onClick={onNavigateToChart}>
+            급여 통계 차트
+          </button>
+          <button className="btn btn-blue btn-lg" onClick={handleCreate}>
+            + 사원 등록
+          </button>
+        </div>
       </div>
 
       {/* 검색 바: 조건 드롭다운 + 입력창 + 버튼 한 줄 정렬 */}

@@ -45,3 +45,10 @@ export const fetchEmpsByDeptno = async (deptno) => {
   if (!response.ok) throw new Error(`서버 오류 (${response.status}): 부서 사원 조회에 실패했습니다.`);
   return response.json();
 };
+
+// 부서별 급여 통계 조회 (평균, 최고, 최저, 사원 수)
+export const fetchSalaryStats = async () => {
+  const response = await fetch(`${BASE_URL}/stats/salary`);
+  if (!response.ok) throw new Error(`서버 오류 (${response.status}): 급여 통계를 불러오지 못했습니다.`);
+  return response.json();
+};

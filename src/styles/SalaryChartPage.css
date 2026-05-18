@@ -1,0 +1,79 @@
+/* 급여 통계 차트 페이지 레이아웃 */
+
+.chart-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* 차트 카드 */
+.chart-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.chart-card h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 20px;
+}
+
+/* 부서별 통계 요약 카드 그리드 */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  padding: 18px 20px;
+}
+
+/* 부서 카드 제목 */
+.stat-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #eff6ff;
+}
+
+/* 통계 항목 행 */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 5px 0;
+  color: #374151;
+}
+
+.stat-row span:first-child {
+  color: #6b7280;
+}
+
+/* 최고 급여 강조 */
+.stat-row.max span:last-child {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+/* 최저 급여 강조 */
+.stat-row.min span:last-child {
+  color: #f97316;
+  font-weight: 600;
+}
+
+/* 페이지 부제목 */
+.sub-text {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 0;
+}
