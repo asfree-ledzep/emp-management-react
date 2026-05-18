@@ -1,0 +1,136 @@
+/* 사원 목록 페이지 전체 레이아웃 */
+
+.emp-list-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* 상단 헤더: 제목+카운트(좌) / 등록 버튼(우) 양쪽 정렬 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+/* 페이지 제목 */
+.emp-list-page h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 4px;
+}
+
+/* 사원 수 표시 */
+.emp-list-page .emp-count {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 0;
+}
+
+/* 검색 바: 드롭다운 + 입력창 + 버튼 한 줄 정렬 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+/* 검색 조건 드롭다운 */
+.search-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  color: #111827;
+  background-color: #ffffff;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.search-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* 검색 입력창 */
+.search-input {
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  color: #111827;
+  outline: none;
+  width: 240px;
+  transition: border-color 0.15s;
+}
+
+.search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* 검색 결과 없음 / 빈 목록 안내 */
+.empty-box {
+  text-align: center;
+  padding: 60px 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #e5e7eb;
+}
+
+/* 로딩 표시 */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  font-size: 1rem;
+  color: #6b7280;
+  gap: 10px;
+}
+
+/* 로딩 스피너 */
+.loading::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 에러 메시지 */
+.error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.95rem;
+  margin-top: 40px;
+}
+
+.error-box .error-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.error-box .error-text strong {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+}

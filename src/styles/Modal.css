@@ -1,0 +1,137 @@
+/* 모달 오버레이: 배경 어둡게 처리 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* 모달 본체 */
+.modal-container {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* 모달 헤더: 제목 + 닫기 버튼 */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 0;
+}
+
+/* X 닫기 버튼 */
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.modal-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+/* 모달 본문 */
+.modal-body {
+  padding: 20px 24px;
+}
+
+/* 폼 입력 행 */
+.form-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 13px;
+  gap: 12px;
+}
+
+.form-row label {
+  width: 88px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+.form-row input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-row input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* 수정 모드에서 사번 필드 비활성화 스타일 */
+.form-row input:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* 상세보기: 2열 그리드 레이아웃 */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 상세보기 항목 레이블 */
+.detail-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* 상세보기 항목 값 */
+.detail-value {
+  font-size: 0.95rem;
+  color: #111827;
+  font-weight: 500;
+}
+
+/* 모달 하단 버튼 영역 */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 8px;
+}

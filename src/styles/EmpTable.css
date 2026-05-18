@@ -1,0 +1,70 @@
+/* 사원 목록 테이블 스타일 */
+
+.emp-table-wrapper {
+  overflow-x: auto;
+}
+
+.emp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 헤더 스타일 */
+.emp-table thead tr {
+  background-color: #3b82f6;
+  color: #ffffff;
+  text-align: left;
+}
+
+.emp-table th {
+  padding: 14px 18px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+/* 바디 셀 스타일 */
+.emp-table td {
+  padding: 12px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* 홀수/짝수 행 배경 교차 */
+.emp-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* 행 hover 효과 */
+.emp-table tbody tr:hover {
+  background-color: #eff6ff;
+  transition: background-color 0.15s ease;
+}
+
+/* 마지막 행 하단 테두리 제거 */
+.emp-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* 급여 컬럼 우측 정렬 */
+.emp-table td.salary,
+.emp-table th.salary {
+  text-align: right;
+}
+
+/* 사원번호·부서번호 가운데 정렬 */
+.emp-table td.center,
+.emp-table th.center {
+  text-align: center;
+}
+
+/* 관리 버튼 셀: 버튼 사이 간격 */
+.emp-table .action-cell .btn {
+  margin: 0 3px;
+}

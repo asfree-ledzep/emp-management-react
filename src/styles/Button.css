@@ -1,0 +1,50 @@
+/* 공통 버튼 기본 스타일 */
+.btn {
+  border: none;
+  border-radius: 5px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  opacity: 0.82;
+}
+
+.btn:active {
+  transform: scale(0.96);
+}
+
+/* 파란색 - 등록 */
+.btn-blue {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+/* 초록색 - 수정 */
+.btn-green {
+  background-color: #22c55e;
+  color: #ffffff;
+}
+
+/* 빨간색 - 삭제 */
+.btn-red {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+/* 회색 - 상세보기 / 취소 */
+.btn-gray {
+  background-color: #6b7280;
+  color: #ffffff;
+}
+
+/* 큰 버튼 - 상단 등록 버튼용 */
+.btn-lg {
+  padding: 9px 20px;
+  font-size: 0.9rem;
+  border-radius: 7px;
+}
