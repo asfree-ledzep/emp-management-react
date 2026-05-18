@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { fetchSalaryStats } from '../api/empApi';
+import { fetchEmps } from '../api/empApi';
 import '../styles/SalaryChartPage.css';
 import '../styles/EmpListPage.css';
 import '../styles/Button.css';
@@ -25,8 +25,29 @@ const SalaryChartPage = ({ onNavigateToList }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchSalaryStats()
-      .then(setStats)
+    fetchEmps()
+      .then((emps) => {
+        // 부서별 그룹화 후 평균/최고/최저/인원 계산
+        const map = {};
+        emps.forEach((emp) => {
+          if (emp.deptno == null || emp.sal == null) return;
+          if (!map[emp.deptno]) map[emp.deptno] = { sals: [] };
+          map[emp.deptno].sals.push(emp.sal);
+        });
+        const result = Object.keys(map)
+          .sort((a, b) => Number(a) - Number(b))
+          .map((deptno) => {
+            const sals = map[deptno].sals;
+            return {
+              deptno: Number(deptno),
+              avgSal: sals.reduce((s, v) => s + v, 0) / sals.length,
+              maxSal: Math.max(...sals),
+              minSal: Math.min(...sals),
+              empCount: sals.length,
+            };
+          });
+        setStats(result);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
