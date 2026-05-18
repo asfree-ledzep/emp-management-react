@@ -1,7 +1,6 @@
 // Spring Boot 사원 API 호출 모듈
-// REACT_APP_API_URL 환경변수 우선 사용, 없으면 Beanstalk URL 기본값 사용
-const BASE_URL = (process.env.REACT_APP_API_URL ||
-  'https://emp-management-env.eba-6np5dqgb.ap-northeast-2.elasticbeanstalk.com') + '/api';
+// Vercel rewrites를 통해 /api 경로를 Beanstalk으로 프록시
+const BASE_URL = '/api';
 
 // 사원 전체 목록 조회
 export const fetchEmps = async () => {
