@@ -13,6 +13,8 @@ const SEARCH_OPTIONS = [
   { value: 'ename',  label: '사원명',   type: 'text',   placeholder: '사원명 입력 (예: SMITH)' },
 ];
 
+const PAGE_SIZE = 3;
+
 // 사원 목록 페이지
 // Spring Boot API에서 전체 사원 데이터를 한 번 불러온 후
 // 검색은 프론트엔드에서 필터링 처리 (부서번호 / 사원번호 / 사원명)
@@ -36,12 +38,15 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
   const [searchInput, setSearchInput] = useState('');
   // 필터 적용 여부 (전체보기 버튼 표시 조건)
   const [isFiltered, setIsFiltered] = useState(false);
+  // 현재 페이지 (1부터 시작)
+  const [currentPage, setCurrentPage] = useState(1);
 
   // 전체 사원 목록을 서버에서 새로 불러오고 검색 상태 초기화
   const loadEmps = () => {
     setLoading(true);
     setIsFiltered(false);
     setSearchInput('');
+    setCurrentPage(1);
     fetchEmps()
       .then((data) => {
         setAllEmps(data);
@@ -85,6 +90,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
 
     setEmps(filtered);
     setIsFiltered(true);
+    setCurrentPage(1);
   };
 
   // Enter 키 입력 시 검색 실행
@@ -97,6 +103,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
     setSearchInput('');
     setEmps(allEmps);
     setIsFiltered(false);
+    setCurrentPage(1);
   };
 
   // 등록 버튼 클릭: 빈 폼 모달 열기
@@ -151,6 +158,10 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
 
   // 현재 선택된 검색 조건 옵션 객체
   const currentOption = SEARCH_OPTIONS.find((o) => o.value === searchType);
+
+  // 페이징 계산
+  const totalPages = Math.ceil(emps.length / PAGE_SIZE);
+  const pagedEmps = emps.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // 로딩 중 표시
   if (loading) {
@@ -239,12 +250,41 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
           {isFiltered ? '검색 결과가 없습니다.' : '등록된 사원이 없습니다.'}
         </div>
       ) : (
-        <EmpTable
-          emps={emps}
-          onDetail={handleDetail}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        <>
+          <EmpTable
+            emps={pagedEmps}
+            onDetail={handleDetail}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button
+                className="page-btn"
+                onClick={() => setCurrentPage((p) => p - 1)}
+                disabled={currentPage === 1}
+              >
+                &lt;
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  className={`page-btn${currentPage === page ? ' active' : ''}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                className="page-btn"
+                onClick={() => setCurrentPage((p) => p + 1)}
+                disabled={currentPage === totalPages}
+              >
+                &gt;
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* 등록/수정 폼 모달 */}
