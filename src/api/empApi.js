@@ -18,6 +18,10 @@ export const createEmp = async (emp) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(emp),
   });
+  if (response.status === 409) {
+    const data = await response.json();
+    throw new Error(data.message || '이미 사용 중인 사번입니다. 다른 사번을 입력해 주세요.');
+  }
   if (!response.ok) throw new Error(`서버 오류 (${response.status}): 사원 등록에 실패했습니다.`);
 };
 

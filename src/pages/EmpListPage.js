@@ -150,7 +150,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
       setModalMode(null);
       loadEmps();
     } catch (err) {
-      alert('저장 실패: ' + err.message);
+      alert(err.message);
     }
   };
 
