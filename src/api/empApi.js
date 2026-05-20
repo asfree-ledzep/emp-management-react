@@ -58,6 +58,13 @@ export const uploadPhoto = async (empno, file) => {
   return response.json();
 };
 
+// 사원 목록 엑셀 내보내기 (S3 업로드 후 다운로드 URL 반환)
+export const exportEmpsExcel = async () => {
+  const response = await fetch(`${BASE_URL}/emps/export`);
+  if (!response.ok) throw new Error(`엑셀 내보내기 실패 (${response.status})`);
+  return response.json(); // { url: "https://..." }
+};
+
 // 부서별 급여 통계 조회 (평균, 최고, 최저, 사원 수)
 export const fetchSalaryStats = async () => {
   const response = await fetch(`${BASE_URL}/stats/salary`);
