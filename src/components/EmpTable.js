@@ -14,6 +14,7 @@ const EmpTable = ({ emps, onDetail, onEdit, onDelete }) => {
       <table className="emp-table">
         <thead>
           <tr>
+            <th className="center" style={{ width: '48px' }}></th>
             <th className="center">사원번호</th>
             <th>사원명</th>
             <th>직업</th>
@@ -25,6 +26,12 @@ const EmpTable = ({ emps, onDetail, onEdit, onDelete }) => {
         <tbody>
           {emps.map((emp) => (
             <tr key={emp.empno}>
+              <td className="center">
+                {emp.photoUrl
+                  ? <img src={emp.photoUrl} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+                  : <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#e5e7eb', margin: '0 auto' }} />
+                }
+              </td>
               <td className="center">{emp.empno}</td>
               <td>{emp.ename}</td>
               <td>{emp.job}</td>

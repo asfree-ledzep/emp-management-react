@@ -32,6 +32,15 @@ const EmpDetailModal = ({ emp, onClose }) => {
         </div>
 
         <div className="modal-body">
+          {emp.photoUrl && (
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <img
+                src={emp.photoUrl}
+                alt="프로필"
+                style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb' }}
+              />
+            </div>
+          )}
           <div className="detail-grid">
             <div className="detail-item">
               <span className="detail-label">사번</span>

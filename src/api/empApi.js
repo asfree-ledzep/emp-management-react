@@ -46,6 +46,18 @@ export const fetchEmpsByDeptno = async (deptno) => {
   return response.json();
 };
 
+// 사원 프로필 사진 업로드 (S3)
+export const uploadPhoto = async (empno, file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await fetch(`${BASE_URL}/emps/${empno}/photo`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) throw new Error(`사진 업로드 실패 (${response.status})`);
+  return response.json();
+};
+
 // 부서별 급여 통계 조회 (평균, 최고, 최저, 사원 수)
 export const fetchSalaryStats = async () => {
   const response = await fetch(`${BASE_URL}/stats/salary`);

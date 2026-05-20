@@ -31,6 +31,8 @@ const EmpFormModal = ({ mode, emp, onSave, onClose }) => {
     comm: '',
     deptno: '',
   });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   // 수정 모드일 때 기존 데이터로 폼 초기화
   useEffect(() => {
@@ -45,8 +47,16 @@ const EmpFormModal = ({ mode, emp, onSave, onClose }) => {
         comm:     emp.comm     ?? '',
         deptno:   emp.deptno   ?? '',
       });
+      if (emp.photoUrl) setPhotoPreview(emp.photoUrl);
     }
   }, [isEdit, emp]);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   // 입력 필드 변경 처리
   const handleChange = (e) => {
@@ -54,7 +64,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose }) => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 폼 제출: 숫자 필드 타입 변환 후 부모에 전달
+  // 폼 제출: 숫자 필드 타입 변환 후 부모에 전달 (_photoFile은 별도 업로드용)
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({
@@ -64,6 +74,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose }) => {
       sal:    form.sal    !== '' ? Number(form.sal)    : null,
       comm:   form.comm   !== '' ? Number(form.comm)   : null,
       deptno: form.deptno !== '' ? Number(form.deptno) : null,
+      _photoFile: photoFile,
     });
   };
 
@@ -155,6 +166,20 @@ const EmpFormModal = ({ mode, emp, onSave, onClose }) => {
               onChange={handleChange}
               placeholder="부서번호 입력"
             />
+          </div>
+
+          <div className="form-row">
+            <label>프로필 사진</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {photoPreview && (
+                <img
+                  src={photoPreview}
+                  alt="미리보기"
+                  style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '1px solid #e5e7eb' }}
+                />
+              )}
+              <input type="file" accept="image/*" onChange={handlePhotoChange} />
+            </div>
           </div>
 
           <div className="modal-footer">
