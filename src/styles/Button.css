@@ -48,3 +48,10 @@
   font-size: 0.9rem;
   border-radius: 7px;
 }
+
+/* 작은 버튼 - 테이블 내 버튼용 */
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  margin: 0 2px;
+}
