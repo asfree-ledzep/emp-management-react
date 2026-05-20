@@ -51,11 +51,43 @@ const EmpFormModal = ({ mode, emp, onSave, onClose }) => {
     }
   }, [isEdit, emp]);
 
-  const handlePhotoChange = (e) => {
+  // Canvas로 이미지를 최대 800px, 1MB 이하로 리사이징 후 Blob 반환
+  const resizeImage = (file, maxPx = 800, maxBytes = 1024 * 1024) =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxPx || height > maxPx) {
+          if (width > height) { height = Math.round(height * maxPx / width); width = maxPx; }
+          else                { width  = Math.round(width  * maxPx / height); height = maxPx; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+        // 품질을 낮춰가며 maxBytes 이하가 될 때까지 압축
+        let quality = 0.85;
+        const tryEncode = () => {
+          canvas.toBlob((blob) => {
+            if (blob.size <= maxBytes || quality <= 0.3) {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+            } else {
+              quality -= 0.1;
+              tryEncode();
+            }
+          }, 'image/jpeg', quality);
+        };
+        tryEncode();
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+  const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    const resized = await resizeImage(file);
+    setPhotoFile(resized);
+    setPhotoPreview(URL.createObjectURL(resized));
   };
 
   // 입력 필드 변경 처리
