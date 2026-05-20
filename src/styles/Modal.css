@@ -1,12 +1,16 @@
 /* 모달 오버레이: 배경 어둡게 처리 */
 .modal-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 /* 모달 본체 */
@@ -14,10 +18,27 @@
   background: #ffffff;
   border-radius: 12px;
   width: 480px;
-  max-width: 95vw;
+  max-width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  margin: auto;
+}
+
+/* 저장 중 스피너 */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* 모달 헤더: 제목 + 닫기 버튼 */

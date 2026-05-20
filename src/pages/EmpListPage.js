@@ -31,6 +31,8 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
   const [modalMode, setModalMode] = useState(null);
   // 수정/상세 시 선택된 사원
   const [selectedEmp, setSelectedEmp] = useState(null);
+  // 저장 중 스피너 표시 여부
+  const [saving, setSaving] = useState(false);
 
   // 검색 조건 (드롭다운 선택값)
   const [searchType, setSearchType] = useState('deptno');
@@ -138,6 +140,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
   // 폼 저장: 등록 또는 수정 API 호출 후 사진 업로드, 전체 목록으로 복귀
   const handleSave = async (formData) => {
     const { _photoFile, ...empData } = formData;
+    setSaving(true);
     try {
       if (modalMode === 'create') {
         await createEmp(empData);
@@ -151,6 +154,8 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
       loadEmps();
     } catch (err) {
       alert(err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -314,6 +319,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
           emp={selectedEmp}
           onSave={handleSave}
           onClose={handleClose}
+          saving={saving}
         />
       )}
 

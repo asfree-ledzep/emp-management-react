@@ -18,7 +18,7 @@ const toInputDate = (val) => {
 //   emp     - 수정 시 기존 사원 데이터
 //   onSave  - 저장 콜백 (formData 전달)
 //   onClose - 닫기 콜백
-const EmpFormModal = ({ mode, emp, onSave, onClose }) => {
+const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false }) => {
   const isEdit = mode === 'edit';
 
   const [form, setForm] = useState({
@@ -215,9 +215,13 @@ const EmpFormModal = ({ mode, emp, onSave, onClose }) => {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn btn-gray" onClick={onClose}>취소</button>
-            <button type="submit" className="btn btn-blue">
-              {isEdit ? '수정 저장' : '등록'}
+            <button type="button" className="btn btn-gray" onClick={onClose} disabled={saving}>취소</button>
+            <button type="submit" className="btn btn-blue" disabled={saving}>
+              {saving ? (
+                <><span className="spinner" /> {isEdit ? '저장 중...' : '등록 중...'}</>
+              ) : (
+                isEdit ? '수정 저장' : '등록'
+              )}
             </button>
           </div>
         </form>
