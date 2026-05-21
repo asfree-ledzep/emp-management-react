@@ -5,6 +5,7 @@ import SalaryChartPage from './pages/SalaryChartPage';
 import DeptListPage   from './pages/DeptListPage';
 import MyProfilePage  from './pages/MyProfilePage';
 import LoginPage      from './pages/LoginPage';
+import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
   const [token,    setToken]    = useState(localStorage.getItem('token'));
@@ -23,10 +24,22 @@ function App() {
     setUsername(data.username);
     setRole(data.role);
     setEmpno(data.empno ?? null);
+    // 관리자 로그인 시 푸시 알림 구독 등록
+    if (data.role === 'ADMIN') {
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          registerPush();
+        }
+      });
+    }
   };
 
   // 로그아웃
   const handleLogout = () => {
+    // 관리자인 경우 푸시 구독 해제
+    if (role === 'ADMIN') {
+      unregisterPush();
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('role');
