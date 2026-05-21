@@ -16,12 +16,36 @@ const formatDate = (val) => {
 const formatMoney = (val) =>
   val != null ? val.toLocaleString('ko-KR') + ' 원' : '-';
 
+// 입사일 기준 근속연수 계산
+const calcYearsOfService = (hiredate) => {
+  if (!hiredate) return null;
+  let start;
+  if (Array.isArray(hiredate)) {
+    const [y, m, d] = hiredate;
+    start = new Date(y, m - 1, d);
+  } else {
+    start = new Date(String(hiredate).slice(0, 10));
+  }
+  if (isNaN(start.getTime())) return null;
+  const now = new Date();
+  const totalMonths =
+    (now.getFullYear() - start.getFullYear()) * 12 +
+    (now.getMonth() - start.getMonth());
+  const years  = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  if (years === 0)  return `${months}개월`;
+  if (months === 0) return `${years}년`;
+  return `${years}년 ${months}개월`;
+};
+
 // 사원 상세보기 모달
 // props:
 //   emp     - 표시할 사원 데이터
 //   onClose - 닫기 콜백
-const EmpDetailModal = ({ emp, onClose }) => {
+const EmpDetailModal = ({ emp, onClose, onEdit }) => {
   if (!emp) return null;
+
+  const yearsOfService = calcYearsOfService(emp.hiredate);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -60,7 +84,23 @@ const EmpDetailModal = ({ emp, onClose }) => {
             </div>
             <div className="detail-item">
               <span className="detail-label">입사일</span>
-              <span className="detail-value">{formatDate(emp.hiredate)}</span>
+              <span className="detail-value">
+                {formatDate(emp.hiredate)}
+                {yearsOfService && (
+                  <span style={{
+                    marginLeft: '8px',
+                    background: '#eff6ff',
+                    color: '#3b82f6',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    border: '1px solid #bfdbfe',
+                  }}>
+                    {yearsOfService}
+                  </span>
+                )}
+              </span>
             </div>
             <div className="detail-item">
               <span className="detail-label">급여</span>
