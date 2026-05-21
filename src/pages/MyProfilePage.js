@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import EmpFormModal from '../components/EmpFormModal';
 import { fetchEmpById, updateEmp, uploadPhoto } from '../api/empApi';
 import '../styles/MyProfilePage.css';
@@ -46,15 +46,15 @@ const MyProfilePage = ({ empno }) => {
   const [editing, setEditing] = useState(false);
   const [saving,  setSaving]  = useState(false);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     fetchEmpById(empno)
       .then(setEmp)
       .catch((err) => alert(err.message))
       .finally(() => setLoading(false));
-  };
+  }, [empno]);
 
-  useEffect(() => { load(); }, [empno]);
+  useEffect(() => { load(); }, [load]);
 
   const handleSave = async (formData) => {
     const { _photoFile, ...empData } = formData;
