@@ -1,10 +1,12 @@
 // Spring Boot 사원 API 호출 모듈
 // Vercel rewrites를 통해 /api 경로를 Beanstalk으로 프록시
+import { authFetch } from './apiClient';
+
 const BASE_URL = '/api';
 
 // 사원 전체 목록 조회
 export const fetchEmps = async () => {
-  const response = await fetch(`${BASE_URL}/emps`);
+  const response = await authFetch(`${BASE_URL}/emps`);
   if (!response.ok) {
     throw new Error(`서버 오류 (${response.status}): 사원 목록을 불러오지 못했습니다.`);
   }
@@ -13,7 +15,7 @@ export const fetchEmps = async () => {
 
 // 사원 등록
 export const createEmp = async (emp) => {
-  const response = await fetch(`${BASE_URL}/emps`, {
+  const response = await authFetch(`${BASE_URL}/emps`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(emp),
@@ -27,7 +29,7 @@ export const createEmp = async (emp) => {
 
 // 사원 수정
 export const updateEmp = async (empno, emp) => {
-  const response = await fetch(`${BASE_URL}/emps/${empno}`, {
+  const response = await authFetch(`${BASE_URL}/emps/${empno}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(emp),
@@ -37,7 +39,7 @@ export const updateEmp = async (empno, emp) => {
 
 // 사원 삭제
 export const deleteEmp = async (empno) => {
-  const response = await fetch(`${BASE_URL}/emps/${empno}`, {
+  const response = await authFetch(`${BASE_URL}/emps/${empno}`, {
     method: 'DELETE',
   });
   if (!response.ok) throw new Error(`서버 오류 (${response.status}): 사원 삭제에 실패했습니다.`);
@@ -45,7 +47,7 @@ export const deleteEmp = async (empno) => {
 
 // 부서번호로 사원 목록 조회
 export const fetchEmpsByDeptno = async (deptno) => {
-  const response = await fetch(`${BASE_URL}/emps/dept/${deptno}`);
+  const response = await authFetch(`${BASE_URL}/emps/dept/${deptno}`);
   if (!response.ok) throw new Error(`서버 오류 (${response.status}): 부서 사원 조회에 실패했습니다.`);
   return response.json();
 };
@@ -54,7 +56,7 @@ export const fetchEmpsByDeptno = async (deptno) => {
 export const uploadPhoto = async (empno, file) => {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await fetch(`${BASE_URL}/emps/${empno}/photo`, {
+  const response = await authFetch(`${BASE_URL}/emps/${empno}/photo`, {
     method: 'POST',
     body: formData,
   });
@@ -64,14 +66,14 @@ export const uploadPhoto = async (empno, file) => {
 
 // 사원 목록 엑셀 내보내기 (S3 업로드 후 다운로드 URL 반환)
 export const exportEmpsExcel = async () => {
-  const response = await fetch(`${BASE_URL}/emps/export`);
+  const response = await authFetch(`${BASE_URL}/emps/export`);
   if (!response.ok) throw new Error(`엑셀 내보내기 실패 (${response.status})`);
   return response.json(); // { url: "https://..." }
 };
 
 // 부서별 급여 통계 조회 (평균, 최고, 최저, 사원 수)
 export const fetchSalaryStats = async () => {
-  const response = await fetch(`${BASE_URL}/stats/salary`);
+  const response = await authFetch(`${BASE_URL}/stats/salary`);
   if (!response.ok) throw new Error(`서버 오류 (${response.status}): 급여 통계를 불러오지 못했습니다.`);
   return response.json();
 };

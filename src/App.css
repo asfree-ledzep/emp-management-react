@@ -15,3 +15,34 @@ body {
 .App {
   min-height: 100vh;
 }
+
+/* 상단 유저 바 */
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #1e40af;
+  padding: 8px 24px;
+}
+
+.app-topbar-user {
+  color: #bfdbfe;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.app-topbar-logout {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.app-topbar-logout:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
