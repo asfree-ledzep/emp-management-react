@@ -2,24 +2,40 @@ import React from 'react';
 import '../styles/EmpTable.css';
 import '../styles/Button.css';
 
+// 정렬 방향 아이콘
+const SortIcon = ({ colKey, sortKey, sortDir }) => {
+  if (sortKey !== colKey) return <span className="sort-icon sort-none">↕</span>;
+  return <span className="sort-icon sort-active">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+};
+
+// 정렬 가능한 헤더 셀
+const SortTh = ({ colKey, label, className, sortKey, sortDir, onSort }) => (
+  <th className={`${className || ''} sortable`} onClick={() => onSort(colKey)}>
+    {label} <SortIcon colKey={colKey} sortKey={sortKey} sortDir={sortDir} />
+  </th>
+);
+
 // 사원 목록 테이블 컴포넌트
 // props:
 //   emps     - 사원 배열
 //   onDetail - 상세보기 콜백 (emp 전달)
 //   onEdit   - 수정 콜백 (emp 전달)
 //   onDelete - 삭제 콜백 (empno 전달)
-const EmpTable = ({ emps, onDetail, onEdit, onDelete }) => {
+//   sortKey  - 현재 정렬 컬럼
+//   sortDir  - 정렬 방향 ('asc' | 'desc')
+//   onSort   - 정렬 변경 콜백 (colKey 전달)
+const EmpTable = ({ emps, onDetail, onEdit, onDelete, sortKey, sortDir, onSort }) => {
   return (
     <div className="emp-table-wrapper">
       <table className="emp-table">
         <thead>
           <tr>
             <th className="center" style={{ width: '48px' }}></th>
-            <th className="center">사원번호</th>
-            <th>사원명</th>
-            <th>직업</th>
-            <th className="salary">급여</th>
-            <th className="center">부서번호</th>
+            <SortTh colKey="empno"  label="사원번호" className="center"  sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+            <SortTh colKey="ename"  label="사원명"                        sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+            <SortTh colKey="job"    label="직업"                          sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+            <SortTh colKey="sal"    label="급여"    className="salary"    sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+            <SortTh colKey="deptno" label="부서번호" className="center"   sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
             <th className="center">관리</th>
           </tr>
         </thead>

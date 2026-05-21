@@ -42,6 +42,9 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
   const [isFiltered, setIsFiltered] = useState(false);
   // 현재 페이지 (1부터 시작)
   const [currentPage, setCurrentPage] = useState(1);
+  // 정렬 기준 컬럼 및 방향
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
 
   // 전체 사원 목록을 서버에서 새로 불러오고 검색 상태 초기화
   const loadEmps = () => {
@@ -172,6 +175,17 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
     }
   };
 
+  // 컬럼 헤더 클릭 시 정렬: 같은 컬럼이면 방향 전환, 다른 컬럼이면 오름차순으로 새로 정렬
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+    setCurrentPage(1);
+  };
+
   // 모달 닫기
   const handleClose = () => {
     setModalMode(null);
@@ -181,9 +195,22 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
   // 현재 선택된 검색 조건 옵션 객체
   const currentOption = SEARCH_OPTIONS.find((o) => o.value === searchType);
 
+  // 정렬 적용
+  const sortedEmps = [...emps].sort((a, b) => {
+    if (!sortKey) return 0;
+    const aVal = a[sortKey] ?? '';
+    const bVal = b[sortKey] ?? '';
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    }
+    return sortDir === 'asc'
+      ? String(aVal).localeCompare(String(bVal))
+      : String(bVal).localeCompare(String(aVal));
+  });
+
   // 페이징 계산
-  const totalPages = Math.ceil(emps.length / PAGE_SIZE);
-  const pagedEmps = emps.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages = Math.ceil(sortedEmps.length / PAGE_SIZE);
+  const pagedEmps = sortedEmps.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // 로딩 중 표시
   if (loading) {
@@ -281,6 +308,9 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
             onDetail={handleDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={handleSort}
           />
           {totalPages > 1 && (
             <div className="pagination">
