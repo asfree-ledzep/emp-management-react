@@ -358,6 +358,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept }) => {
         <EmpDetailModal
           emp={selectedEmp}
           onClose={handleClose}
+          isAdmin={true}
         />
       )}
     </div>

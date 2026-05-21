@@ -46,3 +46,13 @@ body {
 .app-topbar-logout:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+.app-topbar-role {
+  margin-left: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 0.72rem;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}

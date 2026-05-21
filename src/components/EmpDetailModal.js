@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import SetPasswordModal from './SetPasswordModal';
 import '../styles/Modal.css';
 import '../styles/Button.css';
 
@@ -42,86 +43,114 @@ const calcYearsOfService = (hiredate) => {
 // props:
 //   emp     - 표시할 사원 데이터
 //   onClose - 닫기 콜백
-const EmpDetailModal = ({ emp, onClose, onEdit }) => {
+//   onEdit  - 수정 버튼 콜백 (있으면 수정 버튼 표시)
+//   isAdmin - 관리자 여부 (비밀번호 설정 버튼 표시)
+const EmpDetailModal = ({ emp, onClose, onEdit, isAdmin = false }) => {
+  const [showSetPw, setShowSetPw] = useState(false);
+
   if (!emp) return null;
 
   const yearsOfService = calcYearsOfService(emp.hiredate);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>사원 상세보기</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="modal-body">
-          {emp.photoUrl && (
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <img
-                src={emp.photoUrl}
-                alt="프로필"
-                style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb' }}
-              />
-            </div>
-          )}
-          <div className="detail-grid">
-            <div className="detail-item">
-              <span className="detail-label">사번</span>
-              <span className="detail-value">{emp.empno}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">사원명</span>
-              <span className="detail-value">{emp.ename ?? '-'}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">직책</span>
-              <span className="detail-value">{emp.job ?? '-'}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">상사 사번</span>
-              <span className="detail-value">{emp.mgr ?? '-'}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">입사일</span>
-              <span className="detail-value">
-                {formatDate(emp.hiredate)}
-                {yearsOfService && (
-                  <span style={{
-                    marginLeft: '8px',
-                    background: '#eff6ff',
-                    color: '#3b82f6',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    border: '1px solid #bfdbfe',
-                  }}>
-                    {yearsOfService}
-                  </span>
-                )}
-              </span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">급여</span>
-              <span className="detail-value">{formatMoney(emp.sal)}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">커미션</span>
-              <span className="detail-value">{formatMoney(emp.comm)}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">부서번호</span>
-              <span className="detail-value">{emp.deptno ?? '-'}</span>
-            </div>
+    <>
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h2>사원 상세보기</h2>
+            <button className="modal-close" onClick={onClose}>✕</button>
           </div>
 
-          <div className="modal-footer">
-            <button className="btn btn-gray" onClick={onClose}>닫기</button>
+          <div className="modal-body">
+            {emp.photoUrl && (
+              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                <img
+                  src={emp.photoUrl}
+                  alt="프로필"
+                  style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb' }}
+                />
+              </div>
+            )}
+            <div className="detail-grid">
+              <div className="detail-item">
+                <span className="detail-label">사번</span>
+                <span className="detail-value">{emp.empno}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">사원명</span>
+                <span className="detail-value">{emp.ename ?? '-'}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">직책</span>
+                <span className="detail-value">{emp.job ?? '-'}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">상사 사번</span>
+                <span className="detail-value">{emp.mgr ?? '-'}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">입사일</span>
+                <span className="detail-value">
+                  {formatDate(emp.hiredate)}
+                  {yearsOfService && (
+                    <span style={{
+                      marginLeft: '8px',
+                      background: '#eff6ff',
+                      color: '#3b82f6',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      border: '1px solid #bfdbfe',
+                    }}>
+                      {yearsOfService}
+                    </span>
+                  )}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">급여</span>
+                <span className="detail-value">{formatMoney(emp.sal)}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">커미션</span>
+                <span className="detail-value">{formatMoney(emp.comm)}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">부서번호</span>
+                <span className="detail-value">{emp.deptno ?? '-'}</span>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              {/* 관리자 전용: 비밀번호 설정 버튼 */}
+              {isAdmin && (
+                <button
+                  className="btn btn-gray"
+                  onClick={() => setShowSetPw(true)}
+                >
+                  🔑 비밀번호 설정
+                </button>
+              )}
+              {onEdit && (
+                <button className="btn btn-blue" onClick={() => { onClose(); onEdit(emp); }}>
+                  수정
+                </button>
+              )}
+              <button className="btn btn-gray" onClick={onClose}>닫기</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* 비밀번호 설정 서브 모달 */}
+      {showSetPw && (
+        <SetPasswordModal
+          emp={emp}
+          onClose={() => setShowSetPw(false)}
+        />
+      )}
+    </>
   );
 };
 

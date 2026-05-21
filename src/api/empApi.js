@@ -4,6 +4,13 @@ import { authFetch } from './apiClient';
 
 const BASE_URL = '/api';
 
+// 사원 단건 조회 (사원 본인 프로필용)
+export const fetchEmpById = async (empno) => {
+  const response = await authFetch(`${BASE_URL}/emps/${empno}`);
+  if (!response.ok) throw new Error(`서버 오류 (${response.status}): 사원 정보를 불러오지 못했습니다.`);
+  return response.json();
+};
+
 // 사원 전체 목록 조회
 export const fetchEmps = async () => {
   const response = await authFetch(`${BASE_URL}/emps`);

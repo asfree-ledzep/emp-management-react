@@ -1,31 +1,40 @@
 import './App.css';
 import { useState } from 'react';
-import EmpListPage from './pages/EmpListPage';
+import EmpListPage    from './pages/EmpListPage';
 import SalaryChartPage from './pages/SalaryChartPage';
-import DeptListPage from './pages/DeptListPage';
-import LoginPage from './pages/LoginPage';
+import DeptListPage   from './pages/DeptListPage';
+import MyProfilePage  from './pages/MyProfilePage';
+import LoginPage      from './pages/LoginPage';
 
 function App() {
-  // localStorage에서 로그인 상태 복원
-  const [token, setToken]       = useState(localStorage.getItem('token'));
+  const [token,    setToken]    = useState(localStorage.getItem('token'));
   const [username, setUsername] = useState(localStorage.getItem('username'));
-  // 현재 페이지 상태: 'list' | 'chart' | 'dept'
-  const [page, setPage] = useState('list');
+  const [role,     setRole]     = useState(localStorage.getItem('role'));
+  const [empno,    setEmpno]    = useState(Number(localStorage.getItem('empno')) || null);
+  const [page,     setPage]     = useState('list');
 
   // 로그인 성공 콜백
   const handleLogin = (data) => {
-    localStorage.setItem('token', data.token);
+    localStorage.setItem('token',    data.token);
     localStorage.setItem('username', data.username);
+    localStorage.setItem('role',     data.role);
+    if (data.empno) localStorage.setItem('empno', String(data.empno));
     setToken(data.token);
     setUsername(data.username);
+    setRole(data.role);
+    setEmpno(data.empno ?? null);
   };
 
   // 로그아웃
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('role');
+    localStorage.removeItem('empno');
     setToken(null);
     setUsername(null);
+    setRole(null);
+    setEmpno(null);
     setPage('list');
   };
 
@@ -36,25 +45,40 @@ function App() {
 
   return (
     <div className="App">
-      {/* 상단 바: 사용자 정보 + 로그아웃 */}
+      {/* 상단 바 */}
       <div className="app-topbar">
-        <span className="app-topbar-user">👤 {username}</span>
+        <span className="app-topbar-user">
+          {role === 'ADMIN' ? '🛡️' : '👤'} {username}
+          <span className="app-topbar-role">
+            {role === 'ADMIN' ? '관리자' : '사원'}
+          </span>
+        </span>
         <button className="app-topbar-logout" onClick={handleLogout}>
           로그아웃
         </button>
       </div>
 
-      {page === 'list' && (
-        <EmpListPage
-          onNavigateToChart={() => setPage('chart')}
-          onNavigateToDept={() => setPage('dept')}
-        />
+      {/* 일반 사원: 본인 프로필만 */}
+      {role === 'USER' && (
+        <MyProfilePage empno={empno} />
       )}
-      {page === 'chart' && (
-        <SalaryChartPage onNavigateToList={() => setPage('list')} />
-      )}
-      {page === 'dept' && (
-        <DeptListPage onNavigateToEmp={() => setPage('list')} />
+
+      {/* 관리자: 기존 전체 화면 */}
+      {role === 'ADMIN' && (
+        <>
+          {page === 'list' && (
+            <EmpListPage
+              onNavigateToChart={() => setPage('chart')}
+              onNavigateToDept={() => setPage('dept')}
+            />
+          )}
+          {page === 'chart' && (
+            <SalaryChartPage onNavigateToList={() => setPage('list')} />
+          )}
+          {page === 'dept' && (
+            <DeptListPage onNavigateToEmp={() => setPage('list')} />
+          )}
+        </>
       )}
     </div>
   );

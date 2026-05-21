@@ -46,11 +46,11 @@ const LoginPage = ({ onLogin }) => {
         {/* 로그인 폼 */}
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="login-field">
-            <label htmlFor="username">아이디</label>
+            <label htmlFor="username">아이디 / 사번</label>
             <input
               id="username"
               type="text"
-              placeholder="아이디를 입력하세요"
+              placeholder="관리자: 아이디 | 사원: 사번(숫자)"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               onKeyDown={handleKeyDown}
