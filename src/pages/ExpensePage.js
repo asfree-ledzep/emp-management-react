@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  PieChart, Pie, Cell, Tooltip as ReTooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell, Tooltip as ReTooltip, ResponsiveContainer,
 } from 'recharts';
 import {
   fetchExpensesByMonth, confirmExpense, deleteExpense,
