@@ -10,6 +10,7 @@ import KakaoCallbackPage from './pages/KakaoCallbackPage';
 import SurveyPage from './pages/SurveyPage';
 import ExpensePage from './pages/ExpensePage';
 import EmployeeExpensePage from './pages/EmployeeExpensePage';
+import DashboardPage from './pages/DashboardPage';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -34,6 +35,8 @@ function App() {
     setUsername(data.username);
     setRole(data.role);
     setEmpno(data.empno ?? null);
+    // 관리자 → 대시보드, 사원 → 목록
+    setPage(data.role === 'ADMIN' ? 'dashboard' : 'list');
     // 관리자 로그인 시 푸시 알림 구독 등록
     if (data.role === 'ADMIN') {
       Notification.requestPermission().then((permission) => {
@@ -95,9 +98,12 @@ function App() {
         </>
       )}
 
-      {/* 관리자: 기존 전체 화면 */}
+      {/* 관리자 */}
       {role === 'ADMIN' && (
         <>
+          {page === 'dashboard' && (
+            <DashboardPage username={username} onNavigate={setPage} />
+          )}
           {page === 'list' && (
             <EmpListPage
               onNavigateToChart={() => setPage('chart')}
@@ -105,22 +111,23 @@ function App() {
               onNavigateToNotice={() => setPage('notice')}
               onNavigateToSurvey={() => setPage('survey')}
               onNavigateToExpense={() => setPage('expense')}
+              onNavigateToDashboard={() => setPage('dashboard')}
             />
           )}
           {page === 'chart' && (
-            <SalaryChartPage onNavigateToList={() => setPage('list')} />
+            <SalaryChartPage onNavigateToList={() => setPage('dashboard')} />
           )}
           {page === 'dept' && (
-            <DeptListPage onNavigateToEmp={() => setPage('list')} />
+            <DeptListPage onNavigateToEmp={() => setPage('dashboard')} />
           )}
           {page === 'notice' && (
-            <NoticePage isAdmin={true} onNavigateToList={() => setPage('list')} />
+            <NoticePage isAdmin={true} onNavigateToList={() => setPage('dashboard')} />
           )}
           {page === 'survey' && (
-            <SurveyPage isAdmin={true} onNavigateToList={() => setPage('list')} />
+            <SurveyPage isAdmin={true} onNavigateToList={() => setPage('dashboard')} />
           )}
           {page === 'expense' && (
-            <ExpensePage onNavigateToList={() => setPage('list')} />
+            <ExpensePage onNavigateToList={() => setPage('dashboard')} />
           )}
         </>
       )}
