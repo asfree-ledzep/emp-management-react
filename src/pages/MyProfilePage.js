@@ -137,35 +137,18 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense }) => {
           </div>
         </div>
 
-        {/* 하단 버튼 */}
+        {/* 하단 버튼 — 3×2 그리드 */}
         <div className="my-profile-footer">
-          <button className="btn btn-blue" onClick={() => setEditing(true)}>
-            ✏️ 내 정보 수정
-          </button>
-          <button className="btn btn-gray" onClick={onNavigateToSurvey}>
-            📋 설문조사
-          </button>
-          <button className="btn btn-blue" onClick={onNavigateToExpense}>
-            💰 지출 관리
-          </button>
-          <button className="btn btn-gray" onClick={() => setShowCert(true)}>
-            📄 재직증명서
-          </button>
+          <button className="btn btn-blue"  onClick={() => setEditing(true)}>✏️ 내 정보 수정</button>
+          <button className="btn btn-gray"  onClick={onNavigateToSurvey}>📋 설문조사</button>
+          <button className="btn btn-blue"  onClick={onNavigateToExpense}>💰 지출 관리</button>
+          <button className="btn btn-gray"  onClick={() => setShowCert(true)}>📄 재직증명서</button>
+          <button className="btn btn-green" onClick={() => setShowSlip(true)}>💵 급여명세서</button>
           <button
-            className="btn"
-            style={{ background: '#059669', color: '#fff', border: 'none', cursor: 'pointer' }}
-            onClick={() => setShowSlip(true)}
+            className="btn btn-kakao"
+            onClick={() => getKakaoAuthUrl().then(data => { window.location.href = data.url; })}
           >
-            💵 급여명세서
-          </button>
-          <button
-            className="btn"
-            style={{ background: '#FEE500', color: '#3C1E1E', fontWeight: 700, border: 'none', cursor: 'pointer' }}
-            onClick={() => {
-              getKakaoAuthUrl().then(data => { window.location.href = data.url; });
-            }}
-          >
-            🔗 카카오톡 연동
+            🔗 카카오 연동
           </button>
         </div>
       </div>

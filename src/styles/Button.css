@@ -42,6 +42,12 @@
   color: #ffffff;
 }
 
+/* 카카오 노란색 */
+.btn-kakao {
+  background-color: #FEE500;
+  color: #3C1E1E;
+}
+
 /* 큰 버튼 - 상단 등록 버튼용 */
 .btn-lg {
   padding: 9px 20px;
