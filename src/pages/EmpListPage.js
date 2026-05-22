@@ -253,15 +253,6 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
           <button className="btn btn-gray btn-lg" onClick={onNavigateToDept}>
             부서 관리
           </button>
-          <button className="btn btn-gray btn-lg" onClick={onNavigateToNotice}>
-            📢 공지사항
-          </button>
-          <button className="btn btn-gray btn-lg" onClick={onNavigateToSurvey}>
-            📋 설문조사
-          </button>
-          <button className="btn btn-gray btn-lg" onClick={onNavigateToExpense}>
-            💰 지출 관리
-          </button>
           <button className="btn btn-green btn-lg" onClick={handleExport}>
             엑셀 내보내기
           </button>
