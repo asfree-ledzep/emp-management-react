@@ -98,7 +98,11 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
       });
       setTab('list');
     } catch (e) {
-      alert('오류: ' + e.message);
+      if (e.message && e.message.includes('이미 제출된')) {
+        alert('⚠️ 중복 영수증\n\n이미 제출된 영수증입니다.\n같은 영수증을 두 번 등록할 수 없습니다.');
+      } else {
+        alert('오류: ' + e.message);
+      }
     } finally {
       setSubmitting(false);
     }

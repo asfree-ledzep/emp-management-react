@@ -12,13 +12,19 @@ export const parseReceipt = (file) => {
     .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 };
 
-// 지출 등록
-export const createExpense = (expense) =>
-  authFetch(BASE, {
+// 지출 등록 (409 = 중복 영수증)
+export const createExpense = async (expense) => {
+  const res = await authFetch(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(expense),
   });
+  if (res.status === 409) {
+    const data = await res.json();
+    throw new Error(data.error || '이미 제출된 영수증입니다.');
+  }
+  return res;
+};
 
 // 내 지출 목록
 export const fetchMyExpenses = () =>
