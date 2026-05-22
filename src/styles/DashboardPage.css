@@ -1,0 +1,48 @@
+/* 대시보드 반응형 스타일 */
+
+/* ── 태블릿 (≤ 768px) ── */
+@media (max-width: 768px) {
+  /* 요약 카드: 2열 그리드 */
+  .db-cards {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    flex-wrap: unset !important;
+  }
+
+  /* 바로가기 버튼: 3열 */
+  .db-menu {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    flex-wrap: unset !important;
+  }
+
+  .db-menu button {
+    min-width: unset !important;
+    flex: unset !important;
+  }
+
+  /* 하단 섹션: 세로 스택 */
+  .db-bottom {
+    flex-direction: column !important;
+  }
+
+  .db-bottom > div {
+    flex: unset !important;
+    min-width: unset !important;
+    width: 100% !important;
+  }
+}
+
+/* ── 모바일 (≤ 480px) ── */
+@media (max-width: 480px) {
+  /* 요약 카드: 2열 유지 (숫자 작게) */
+  .db-cards {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* 바로가기 버튼: 2열 */
+  .db-menu {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}

@@ -56,3 +56,14 @@ body {
   border-radius: 10px;
   font-weight: 600;
 }
+
+/* ── 반응형: 상단바 ── */
+@media (max-width: 768px) {
+  .app-topbar {
+    padding: 8px 14px;
+    gap: 8px;
+  }
+  .app-topbar-user {
+    font-size: 0.8rem;
+  }
+}

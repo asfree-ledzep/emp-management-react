@@ -13,7 +13,7 @@ const SEARCH_OPTIONS = [
   { value: 'ename',  label: '사원명',   type: 'text',   placeholder: '사원명 입력 (예: SMITH)' },
 ];
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE_OPTIONS = [3, 5, 10, 20, 50];
 
 // 사원 목록 페이지
 // Spring Boot API에서 전체 사원 데이터를 한 번 불러온 후
@@ -45,6 +45,8 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
   // 정렬 기준 컬럼 및 방향
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
+  // 페이지당 표시 사원 수
+  const [pageSize, setPageSize] = useState(3);
 
   // 전체 사원 목록을 서버에서 새로 불러오고 검색 상태 초기화
   const loadEmps = () => {
@@ -209,8 +211,8 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
   });
 
   // 페이징 계산
-  const totalPages = Math.ceil(sortedEmps.length / PAGE_SIZE);
-  const pagedEmps = sortedEmps.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages = Math.ceil(sortedEmps.length / pageSize);
+  const pagedEmps = sortedEmps.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // 로딩 중 표시
   if (loading) {
@@ -297,6 +299,20 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
             전체보기
           </button>
         )}
+
+        {/* 페이지당 표시 수 선택 */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <span style={{ fontSize: '0.85rem', color: '#6b7280', whiteSpace: 'nowrap' }}>표시 수</span>
+          <select
+            className="search-select"
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+          >
+            {PAGE_SIZE_OPTIONS.map((n) => (
+              <option key={n} value={n}>{n}명</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* 검색 결과 없음 또는 목록 표시 */}

@@ -3,6 +3,7 @@ import { fetchEmps } from '../api/empApi';
 import { fetchExpensesByMonth } from '../api/expenseApi';
 import { fetchSurveys } from '../api/surveyApi';
 import { fetchNotices } from '../api/noticeApi';
+import '../styles/DashboardPage.css';
 
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '0 원';
 
@@ -115,7 +116,7 @@ const DashboardPage = ({ username, onNavigate }) => {
       </div>
 
       {/* ── 요약 카드 ── */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+      <div className="db-cards" style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
         <div style={card('#eff6ff', '#bfdbfe')}>
           <div style={{ ...cardNum, color: '#1d4ed8' }}>{totalEmp}<span style={{ fontSize: '1rem' }}>명</span></div>
           <div style={cardLabel}>👥 전체 직원</div>
@@ -141,7 +142,7 @@ const DashboardPage = ({ username, onNavigate }) => {
       {/* ── 바로가기 메뉴 ── */}
       <div style={{ marginBottom: 32 }}>
         <h3 style={{ margin: '0 0 14px', fontSize: '1rem', color: '#374151' }}>📌 바로가기</h3>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div className="db-menu" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button style={menuBtn('#4f46e5')} onClick={() => onNavigate('list')}>
             👥<br />직원 관리
           </button>
@@ -163,8 +164,8 @@ const DashboardPage = ({ username, onNavigate }) => {
         </div>
       </div>
 
-      {/* ── 하단: 미확인 지출 + 최근 공지 ── */}
-      <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+      {/* ── 하단: 미확인 지출 + 최근 공지 + 진행중 설문 ── */}
+      <div className="db-bottom" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
 
         {/* 미확인 지출 */}
         <div style={{ flex: 2, minWidth: 320 }}>

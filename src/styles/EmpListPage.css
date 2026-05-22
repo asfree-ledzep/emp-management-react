@@ -175,3 +175,65 @@
   opacity: 0.35;
   cursor: default;
 }
+
+/* ── 반응형: 태블릿 (≤ 768px) ── */
+@media (max-width: 768px) {
+  .emp-list-page {
+    padding: 20px 12px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .page-header .btn {
+    flex: 1 1 auto;
+    min-width: 100px;
+    font-size: 0.8rem;
+    padding: 7px 10px;
+  }
+
+  .search-bar {
+    flex-wrap: wrap;
+  }
+
+  .search-input {
+    width: 100%;
+    flex: 1 1 120px;
+  }
+
+  .search-select {
+    flex: 1 1 auto;
+  }
+}
+
+/* ── 반응형: 모바일 (≤ 480px) ── */
+@media (max-width: 480px) {
+  .emp-list-page h1 {
+    font-size: 1.3rem;
+  }
+
+  .page-header .btn {
+    font-size: 0.75rem;
+    padding: 6px 8px;
+  }
+
+  .pagination {
+    gap: 4px;
+  }
+
+  .page-btn {
+    min-width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+  }
+}

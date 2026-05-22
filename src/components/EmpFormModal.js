@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fetchDepts } from '../api/deptApi';
 import '../styles/Modal.css';
 import '../styles/Button.css';
 
@@ -36,6 +37,11 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
   });
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [depts, setDepts] = useState([]);
+
+  useEffect(() => {
+    fetchDepts().then(setDepts).catch(() => {});
+  }, []);
 
   // 수정 모드일 때 기존 데이터로 폼 초기화
   useEffect(() => {
@@ -198,14 +204,19 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
           </div>
           <div className="form-row">
             <label>부서번호</label>
-            <input
+            <select
               name="deptno"
-              type="number"
               value={form.deptno}
               onChange={handleChange}
               disabled={readOnly('deptno')}
-              placeholder="부서번호 입력"
-            />
+            >
+              <option value="">부서 선택</option>
+              {depts.map((d) => (
+                <option key={d.deptno} value={d.deptno}>
+                  {d.deptno} - {d.dname}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-row">
