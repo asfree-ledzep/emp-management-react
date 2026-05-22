@@ -6,7 +6,7 @@ import {
 import { fetchEmps } from '../api/empApi';
 import { fetchExpensesByMonth, fetchMonthlyStats } from '../api/expenseApi';
 import { fetchSurveys } from '../api/surveyApi';
-import { fetchNotices } from '../api/noticeApi';
+import { fetchNotices, fetchKakaoConnectedCount } from '../api/noticeApi';
 import '../styles/DashboardPage.css';
 
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '0 원';
@@ -55,6 +55,7 @@ const DashboardPage = ({ username, onNavigate }) => {
   const [surveys,     setSurveys]     = useState([]);
   const [notices,     setNotices]     = useState([]);
   const [trendData,   setTrendData]   = useState([]);
+  const [kakaoCount,  setKakaoCount]  = useState(0);
   const [loading,     setLoading]     = useState(true);
 
   useEffect(() => {
@@ -76,12 +77,14 @@ const DashboardPage = ({ username, onNavigate }) => {
             .catch(() => ({ label: `${month}월`, total: 0 }))
         )
       ),
-    ]).then(([e, ex, s, n, trend]) => {
+      fetchKakaoConnectedCount().catch(() => ({ count: 0 })),
+    ]).then(([e, ex, s, n, trend, kakao]) => {
       setEmps(e);
       setExpenses(ex);
       setSurveys(s);
       setNotices(n);
       setTrendData(trend);
+      setKakaoCount(kakao.count ?? 0);
       setLoading(false);
     });
   }, []);
@@ -166,6 +169,12 @@ const DashboardPage = ({ username, onNavigate }) => {
             {activeSurveys}<span style={{ fontSize: '1rem' }}>개</span>
           </div>
           <div style={cardLabel}>📋 진행중 설문</div>
+        </div>
+        <div style={card(kakaoCount > 0 ? '#fff7ed' : '#f9fafb', kakaoCount > 0 ? '#fed7aa' : '#e5e7eb')}>
+          <div style={{ ...cardNum, color: kakaoCount > 0 ? '#c2410c' : '#374151' }}>
+            {kakaoCount}<span style={{ fontSize: '1rem' }}>명</span>
+          </div>
+          <div style={cardLabel}>💬 카카오 연동</div>
         </div>
       </div>
 

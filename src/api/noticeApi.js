@@ -18,6 +18,10 @@ export const createNotice = (notice) =>
 export const deleteNotice = (id) =>
   authFetch(`${BASE}/notices/${id}`, { method: 'DELETE' });
 
+// 카카오 연동 사원 수 조회
+export const fetchKakaoConnectedCount = () =>
+  authFetch(`${BASE}/kakao/connected-count`).then(r => r.json());
+
 // 카카오 로그인 URL 조회
 export const getKakaoAuthUrl = () =>
   authFetch(`${BASE}/kakao/auth-url`).then(r => r.json());
