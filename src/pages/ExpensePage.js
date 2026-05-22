@@ -84,7 +84,6 @@ const ExpensePage = ({ onNavigateToList }) => {
   };
 
   // 통계 생성 핸들러 제거됨 — 조회가 EXPENSE 테이블 실시간 집계로 변경됨
-  };
 
   // ─── 스타일 ───
   const tabBtn = (active) => ({
