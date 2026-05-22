@@ -11,10 +11,10 @@ import SurveyPage from './pages/SurveyPage';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
-  const [token,    setToken]    = useState(localStorage.getItem('token'));
-  const [username, setUsername] = useState(localStorage.getItem('username'));
-  const [role,     setRole]     = useState(localStorage.getItem('role'));
-  const [empno,    setEmpno]    = useState(Number(localStorage.getItem('empno')) || null);
+  const [token,    setToken]    = useState(sessionStorage.getItem('token'));
+  const [username, setUsername] = useState(sessionStorage.getItem('username'));
+  const [role,     setRole]     = useState(sessionStorage.getItem('role'));
+  const [empno,    setEmpno]    = useState(Number(sessionStorage.getItem('empno')) || null);
   // URL 쿼리 파라미터로 초기 페이지 결정 (?page=notice, ?page=survey)
   const [page, setPage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -24,10 +24,10 @@ function App() {
 
   // 로그인 성공 콜백
   const handleLogin = (data) => {
-    localStorage.setItem('token',    data.token);
-    localStorage.setItem('username', data.username);
-    localStorage.setItem('role',     data.role);
-    if (data.empno) localStorage.setItem('empno', String(data.empno));
+    sessionStorage.setItem('token',    data.token);
+    sessionStorage.setItem('username', data.username);
+    sessionStorage.setItem('role',     data.role);
+    if (data.empno) sessionStorage.setItem('empno', String(data.empno));
     setToken(data.token);
     setUsername(data.username);
     setRole(data.role);
@@ -48,10 +48,10 @@ function App() {
     if (role === 'ADMIN') {
       unregisterPush();
     }
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('role');
-    localStorage.removeItem('empno');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('username');
+    sessionStorage.removeItem('role');
+    sessionStorage.removeItem('empno');
     setToken(null);
     setUsername(null);
     setRole(null);

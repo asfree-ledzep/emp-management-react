@@ -40,8 +40,15 @@ export const checkResponded = (surveyId) =>
 
 // 설문 결과 (관리자)
 export const fetchResults = (surveyId) =>
-  authFetch(`${BASE}/${surveyId}/results`).then(r => r.json());
+  authFetch(`${BASE}/${surveyId}/results`).then(r => {
+    if (r.status === 403) throw new Error('403');
+    if (!r.ok) throw new Error(`HTTP_${r.status}`);
+    return r.json();
+  });
 
 // 주관식 응답 목록 (관리자)
 export const fetchTextAnswers = (surveyId, questionId) =>
-  authFetch(`${BASE}/${surveyId}/questions/${questionId}/text-answers`).then(r => r.json());
+  authFetch(`${BASE}/${surveyId}/questions/${questionId}/text-answers`).then(r => {
+    if (!r.ok) return [];
+    return r.json();
+  });
