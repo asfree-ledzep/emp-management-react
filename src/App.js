@@ -12,6 +12,8 @@ import ExpensePage from './pages/ExpensePage';
 import EmployeeExpensePage from './pages/EmployeeExpensePage';
 import DashboardPage from './pages/DashboardPage';
 import OrgChartPage from './pages/OrgChartPage';
+import FaqManagePage from './pages/FaqManagePage';
+import ChatbotButton from './components/ChatbotModal';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -96,6 +98,7 @@ function App() {
           {page === 'list'    && <MyProfilePage empno={empno} onNavigateToSurvey={() => setPage('survey')} onNavigateToExpense={() => setPage('expense')} />}
           {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => setPage('list')} />}
           {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => setPage('list')} />}
+          <ChatbotButton />
         </>
       )}
 
@@ -133,6 +136,10 @@ function App() {
           {page === 'orgchart' && (
             <OrgChartPage onNavigateToList={() => setPage('dashboard')} />
           )}
+          {page === 'faq' && (
+            <FaqManagePage onNavigateToList={() => setPage('dashboard')} />
+          )}
+          <ChatbotButton />
         </>
       )}
     </div>

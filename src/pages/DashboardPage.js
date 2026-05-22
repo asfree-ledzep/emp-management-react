@@ -189,6 +189,7 @@ const DashboardPage = ({ username, onNavigate }) => {
           <button style={menuBtn('#7c3aed')} onClick={() => onNavigate('survey')}>📋<br />설문 관리</button>
           <button style={menuBtn('#6b7280')} onClick={() => onNavigate('notice')}>📢<br />공지사항</button>
           <button style={menuBtn('#0f766e')} onClick={() => onNavigate('orgchart')}>🏢<br />조직도</button>
+          <button style={menuBtn('#7c3aed')} onClick={() => onNavigate('faq')}>💬<br />FAQ 관리</button>
         </div>
       </div>
 
