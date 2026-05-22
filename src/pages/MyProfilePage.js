@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import EmpFormModal from '../components/EmpFormModal';
+import CertificateModal from '../components/CertificateModal';
+import SalarySlipModal from '../components/SalarySlipModal';
 import { fetchEmpById, updateEmp, uploadPhoto } from '../api/empApi';
 import { getKakaoAuthUrl } from '../api/noticeApi';
 import '../styles/MyProfilePage.css';
@@ -42,10 +44,12 @@ const calcYearsOfService = (hiredate) => {
 // props:
 //   empno - 로그인된 사원 번호
 const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense }) => {
-  const [emp,     setEmp]     = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [saving,  setSaving]  = useState(false);
+  const [emp,      setEmp]      = useState(null);
+  const [loading,  setLoading]  = useState(true);
+  const [editing,  setEditing]  = useState(false);
+  const [saving,   setSaving]   = useState(false);
+  const [showCert, setShowCert] = useState(false);  // 재직증명서
+  const [showSlip, setShowSlip] = useState(false);  // 급여명세서
 
   const load = useCallback(() => {
     setLoading(true);
@@ -144,6 +148,16 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense }) => {
           <button className="btn btn-blue" onClick={onNavigateToExpense}>
             💰 지출 관리
           </button>
+          <button className="btn btn-gray" onClick={() => setShowCert(true)}>
+            📄 재직증명서
+          </button>
+          <button
+            className="btn"
+            style={{ background: '#059669', color: '#fff', border: 'none', cursor: 'pointer' }}
+            onClick={() => setShowSlip(true)}
+          >
+            💵 급여명세서
+          </button>
           <button
             className="btn"
             style={{ background: '#FEE500', color: '#3C1E1E', fontWeight: 700, border: 'none', cursor: 'pointer' }}
@@ -166,6 +180,16 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense }) => {
           saving={saving}
           isAdmin={false}
         />
+      )}
+
+      {/* 재직증명서 모달 */}
+      {showCert && (
+        <CertificateModal emp={emp} onClose={() => setShowCert(false)} />
+      )}
+
+      {/* 급여명세서 모달 */}
+      {showSlip && (
+        <SalarySlipModal emp={emp} onClose={() => setShowSlip(false)} />
       )}
     </div>
   );
