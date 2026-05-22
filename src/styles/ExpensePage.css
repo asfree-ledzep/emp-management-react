@@ -1,0 +1,41 @@
+/* ── 지출 상세: 도넛 차트 + 테이블 레이아웃 ── */
+.expense-content-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.expense-donut-card {
+  width: 300px;
+  min-width: 280px;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 20px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.expense-table-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 태블릿 (≤900px): 차트가 위, 테이블이 아래 */
+@media (max-width: 900px) {
+  .expense-content-layout {
+    flex-direction: column;
+  }
+
+  .expense-donut-card {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+/* 모바일 (≤480px): 폰트 & 패딩 축소 */
+@media (max-width: 480px) {
+  .expense-donut-card {
+    padding: 14px 12px;
+  }
+}

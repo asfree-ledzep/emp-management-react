@@ -1,11 +1,32 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
+  PieChart, Pie, Cell, Tooltip as ReTooltip, Legend, ResponsiveContainer,
+} from 'recharts';
+import {
   fetchExpensesByMonth, confirmExpense, deleteExpense,
   fetchMonthlyStats, fetchYearlyStats,
   downloadDetailExcel, downloadMonthlyExcel, downloadYearlyExcel,
 } from '../api/expenseApi';
+import '../styles/ExpensePage.css';
 
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '-';
+
+// 카테고리 도넛 차트 색상
+const PIE_COLORS = ['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16'];
+
+const PieCustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const { name, value, percent } = payload[0].payload;
+    return (
+      <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:6, padding:'8px 12px', fontSize:'0.82rem', boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
+        <p style={{ margin:'0 0 2px', fontWeight:700 }}>{name}</p>
+        <p style={{ margin:'0 0 2px', color:'#4f46e5' }}>{Number(value).toLocaleString('ko-KR')} 원</p>
+        <p style={{ margin:0, color:'#6b7280' }}>{(percent * 100).toFixed(1)}%</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 const now = new Date();
 const THIS_YEAR  = now.getFullYear();
@@ -103,6 +124,19 @@ const ExpensePage = ({ onNavigateToList }) => {
   // ─── 합계 ───
   const totalAmount = expenses.reduce((s, e) => s + (e.amount || 0), 0);
 
+  // ─── 카테고리별 집계 (도넛 차트용) ───
+  const categoryData = (() => {
+    const map = {};
+    expenses.forEach(e => {
+      const cat = e.category || '기타';
+      map[cat] = (map[cat] || 0) + (e.amount || 0);
+    });
+    const total = Object.values(map).reduce((a, b) => a + b, 0);
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value]) => ({ name, value, percent: total > 0 ? value / total : 0 }));
+  })();
+
   return (
     <div style={{ padding: '24px', maxWidth: 1100, margin: '0 auto' }}>
       {/* 헤더 */}
@@ -140,58 +174,109 @@ const ExpensePage = ({ onNavigateToList }) => {
             )}
           </div>
 
-          {/* 테이블 */}
+          {/* 본문 */}
           {loading ? (
             <p style={{ color:'#6b7280', textAlign:'center' }}>불러오는 중...</p>
           ) : expenses.length === 0 ? (
             <p style={{ color:'#9ca3af', textAlign:'center' }}>지출 내역이 없습니다.</p>
           ) : (
-            <div style={{ overflowX:'auto' }}>
-              <table style={{ width:'100%', borderCollapse:'collapse' }}>
-                <thead>
-                  <tr>
-                    {['사원명','날짜','금액','카테고리','설명','영수증','상태','관리'].map(h =>
-                      <th key={h} style={thStyle}>{h}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.map(e => (
-                    <tr key={e.expenseId} style={{ background: e.status==='CONFIRMED' ? '#f0fdf4' : '#fff' }}>
-                      <td style={tdStyle}>{e.ename || '-'}</td>
-                      <td style={tdStyle}>{e.expenseDate || '-'}</td>
-                      <td style={{ ...tdStyle, fontWeight:600, color:'#1f2937' }}>{fmt(e.amount)}</td>
-                      <td style={tdStyle}>{e.category || '-'}</td>
-                      <td style={{ ...tdStyle, maxWidth:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                        {e.description || '-'}
-                      </td>
-                      <td style={tdStyle}>
-                        {e.receiptUrl ? (
-                          <img src={e.receiptUrl} alt="영수증"
-                            onClick={() => setReceiptModal(e.receiptUrl)}
-                            style={{ width:44, height:44, objectFit:'cover', borderRadius:4, cursor:'pointer', border:'1px solid #e5e7eb' }} />
-                        ) : '-'}
-                      </td>
-                      <td style={tdStyle}>
-                        <span style={{
-                          fontSize:'0.75rem', padding:'3px 8px', borderRadius:10,
-                          background: e.status==='CONFIRMED' ? '#d1fae5' : '#fef3c7',
-                          color:      e.status==='CONFIRMED' ? '#065f46' : '#92400e'
-                        }}>
-                          {e.status==='CONFIRMED' ? '✅ 확인완료' : '⏳ 미확인'}
+            <div className="expense-content-layout">
+              {/* 카테고리 도넛 차트 */}
+              <div className="expense-donut-card">
+                <h4 style={{ margin:'0 0 12px', fontSize:'0.92rem', color:'#374151', fontWeight:700 }}>
+                  📊 카테고리별 지출
+                </h4>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={90}
+                      dataKey="value"
+                      paddingAngle={2}
+                    >
+                      {categoryData.map((_, idx) => (
+                        <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <ReTooltip content={<PieCustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* 범례 */}
+                <div style={{ marginTop:8 }}>
+                  {categoryData.map((item, idx) => (
+                    <div key={item.name} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'4px 0', borderBottom:'1px solid #f3f4f6', fontSize:'0.8rem' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <span style={{ width:10, height:10, borderRadius:'50%', background: PIE_COLORS[idx % PIE_COLORS.length], display:'inline-block', flexShrink:0 }} />
+                        <span style={{ color:'#374151' }}>{item.name}</span>
+                      </div>
+                      <div style={{ textAlign:'right' }}>
+                        <span style={{ color:'#6b7280' }}>{(item.percent * 100).toFixed(1)}%</span>
+                        <span style={{ color:'#1f2937', fontWeight:600, marginLeft:8 }}>
+                          {Number(item.value).toLocaleString('ko-KR')}원
                         </span>
-                      </td>
-                      <td style={{ ...tdStyle, whiteSpace:'nowrap' }}>
-                        {e.status !== 'CONFIRMED' && (
-                          <button onClick={() => handleConfirm(e.expenseId)}
-                            style={{ ...btnGreen, marginRight:4, padding:'4px 10px', fontSize:'0.78rem' }}>확인</button>
-                        )}
-                        <button onClick={() => handleDelete(e.expenseId)}
-                          style={{ background:'#ef4444', color:'#fff', border:'none', borderRadius:4, padding:'4px 10px', cursor:'pointer', fontSize:'0.78rem' }}>삭제</button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+                <div style={{ marginTop:10, paddingTop:8, borderTop:'2px solid #e5e7eb', display:'flex', justifyContent:'space-between', fontSize:'0.82rem', fontWeight:700 }}>
+                  <span style={{ color:'#374151' }}>합계</span>
+                  <span style={{ color:'#4f46e5' }}>{totalAmount.toLocaleString('ko-KR')}원</span>
+                </div>
+              </div>
+
+              {/* 테이블 */}
+              <div className="expense-table-wrap">
+                <div style={{ overflowX:'auto' }}>
+                  <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                    <thead>
+                      <tr>
+                        {['사원명','날짜','금액','카테고리','설명','영수증','상태','관리'].map(h =>
+                          <th key={h} style={thStyle}>{h}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {expenses.map(e => (
+                        <tr key={e.expenseId} style={{ background: e.status==='CONFIRMED' ? '#f0fdf4' : '#fff' }}>
+                          <td style={tdStyle}>{e.ename || '-'}</td>
+                          <td style={tdStyle}>{e.expenseDate || '-'}</td>
+                          <td style={{ ...tdStyle, fontWeight:600, color:'#1f2937' }}>{fmt(e.amount)}</td>
+                          <td style={tdStyle}>{e.category || '-'}</td>
+                          <td style={{ ...tdStyle, maxWidth:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                            {e.description || '-'}
+                          </td>
+                          <td style={tdStyle}>
+                            {e.receiptUrl ? (
+                              <img src={e.receiptUrl} alt="영수증"
+                                onClick={() => setReceiptModal(e.receiptUrl)}
+                                style={{ width:44, height:44, objectFit:'cover', borderRadius:4, cursor:'pointer', border:'1px solid #e5e7eb' }} />
+                            ) : '-'}
+                          </td>
+                          <td style={tdStyle}>
+                            <span style={{
+                              fontSize:'0.75rem', padding:'3px 8px', borderRadius:10,
+                              background: e.status==='CONFIRMED' ? '#d1fae5' : '#fef3c7',
+                              color:      e.status==='CONFIRMED' ? '#065f46' : '#92400e'
+                            }}>
+                              {e.status==='CONFIRMED' ? '✅ 확인완료' : '⏳ 미확인'}
+                            </span>
+                          </td>
+                          <td style={{ ...tdStyle, whiteSpace:'nowrap' }}>
+                            {e.status !== 'CONFIRMED' && (
+                              <button onClick={() => handleConfirm(e.expenseId)}
+                                style={{ ...btnGreen, marginRight:4, padding:'4px 10px', fontSize:'0.78rem' }}>확인</button>
+                            )}
+                            <button onClick={() => handleDelete(e.expenseId)}
+                              style={{ background:'#ef4444', color:'#fff', border:'none', borderRadius:4, padding:'4px 10px', cursor:'pointer', fontSize:'0.78rem' }}>삭제</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </div>
