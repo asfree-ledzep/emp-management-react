@@ -4,8 +4,33 @@
 
 export const getToken = () => sessionStorage.getItem('token');
 
+// JWT payload에서 만료 시간 추출 (클라이언트 사전 검사용)
+const isTokenExpired = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true; // 파싱 실패 → 만료로 간주
+  }
+};
+
+const clearSession = () => {
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('username');
+  sessionStorage.removeItem('role');
+  sessionStorage.removeItem('empno');
+};
+
 export const authFetch = async (url, options = {}) => {
   const token = getToken();
+
+  // 요청 전에 토큰 만료 여부 사전 확인
+  if (token && isTokenExpired(token)) {
+    clearSession();
+    window.location.reload();
+    return new Response(null, { status: 401 });
+  }
+
   const headers = { ...(options.headers || {}) };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -13,12 +38,9 @@ export const authFetch = async (url, options = {}) => {
 
   const response = await fetch(url, { ...options, headers });
 
-  // 토큰 만료 / 미인증 → 자동 로그아웃
+  // 토큰 만료 / 미인증 → 자동 로그아웃 (401)
   if (response.status === 401) {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('username');
-    sessionStorage.removeItem('role');
-    sessionStorage.removeItem('empno');
+    clearSession();
     window.location.reload();
   }
 
