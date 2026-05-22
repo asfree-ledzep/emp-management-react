@@ -7,6 +7,7 @@ import MyProfilePage  from './pages/MyProfilePage';
 import NoticePage     from './pages/NoticePage';
 import LoginPage      from './pages/LoginPage';
 import KakaoCallbackPage from './pages/KakaoCallbackPage';
+import SurveyPage from './pages/SurveyPage';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -78,9 +79,12 @@ function App() {
         </button>
       </div>
 
-      {/* 일반 사원: 본인 프로필만 */}
+      {/* 일반 사원 */}
       {role === 'USER' && (
-        <MyProfilePage empno={empno} />
+        <>
+          {page === 'list' && <MyProfilePage empno={empno} onNavigateToSurvey={() => setPage('survey')} />}
+          {page === 'survey' && <SurveyPage isAdmin={false} onNavigateToList={() => setPage('list')} />}
+        </>
       )}
 
       {/* 관리자: 기존 전체 화면 */}
@@ -91,6 +95,7 @@ function App() {
               onNavigateToChart={() => setPage('chart')}
               onNavigateToDept={() => setPage('dept')}
               onNavigateToNotice={() => setPage('notice')}
+              onNavigateToSurvey={() => setPage('survey')}
             />
           )}
           {page === 'chart' && (
@@ -101,6 +106,9 @@ function App() {
           )}
           {page === 'notice' && (
             <NoticePage isAdmin={true} onNavigateToList={() => setPage('list')} />
+          )}
+          {page === 'survey' && (
+            <SurveyPage isAdmin={true} onNavigateToList={() => setPage('list')} />
           )}
         </>
       )}

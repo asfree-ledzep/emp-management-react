@@ -19,7 +19,7 @@ const PAGE_SIZE = 3;
 // Spring Boot API에서 전체 사원 데이터를 한 번 불러온 후
 // 검색은 프론트엔드에서 필터링 처리 (부서번호 / 사원번호 / 사원명)
 // props: onNavigateToChart - 급여 통계 차트 페이지로 이동 콜백
-const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice }) => {
+const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, onNavigateToSurvey }) => {
   // 서버에서 받은 전체 원본 목록 (필터링의 기준)
   const [allEmps, setAllEmps] = useState([]);
   // 화면에 표시되는 목록 (검색 필터 적용 결과)
@@ -252,6 +252,9 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice }
           </button>
           <button className="btn btn-gray btn-lg" onClick={onNavigateToNotice}>
             📢 공지사항
+          </button>
+          <button className="btn btn-gray btn-lg" onClick={onNavigateToSurvey}>
+            📋 설문조사
           </button>
           <button className="btn btn-green btn-lg" onClick={handleExport}>
             엑셀 내보내기

@@ -18,8 +18,11 @@ const toInputDate = (val) => {
 //   emp     - 수정 시 기존 사원 데이터
 //   onSave  - 저장 콜백 (formData 전달)
 //   onClose - 닫기 콜백
-const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false }) => {
+//   isAdmin - false이면 사원명·직책·사진만 수정 가능 (기본값 true)
+const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = true }) => {
   const isEdit = mode === 'edit';
+  // 사원 모드: 해당 필드 읽기 전용
+  const readOnly = (field) => !isAdmin && !['ename', 'job'].includes(field);
 
   const [form, setForm] = useState({
     empno: '',
@@ -126,7 +129,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false }) => {
               type="number"
               value={form.empno}
               onChange={handleChange}
-              disabled={isEdit}
+              disabled={isEdit || readOnly('empno')}
               required
               placeholder="사번 입력"
             />
@@ -157,6 +160,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false }) => {
               type="number"
               value={form.mgr}
               onChange={handleChange}
+              disabled={readOnly('mgr')}
               placeholder="상사 사번 입력"
             />
           </div>
@@ -167,6 +171,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false }) => {
               type="date"
               value={form.hiredate}
               onChange={handleChange}
+              disabled={readOnly('hiredate')}
             />
           </div>
           <div className="form-row">
@@ -176,6 +181,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false }) => {
               type="number"
               value={form.sal}
               onChange={handleChange}
+              disabled={readOnly('sal')}
               placeholder="급여 입력"
             />
           </div>
@@ -186,6 +192,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false }) => {
               type="number"
               value={form.comm}
               onChange={handleChange}
+              disabled={readOnly('comm')}
               placeholder="커미션 입력"
             />
           </div>
@@ -196,6 +203,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false }) => {
               type="number"
               value={form.deptno}
               onChange={handleChange}
+              disabled={readOnly('deptno')}
               placeholder="부서번호 입력"
             />
           </div>
