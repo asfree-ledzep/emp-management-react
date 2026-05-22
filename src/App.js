@@ -4,7 +4,9 @@ import EmpListPage    from './pages/EmpListPage';
 import SalaryChartPage from './pages/SalaryChartPage';
 import DeptListPage   from './pages/DeptListPage';
 import MyProfilePage  from './pages/MyProfilePage';
+import NoticePage     from './pages/NoticePage';
 import LoginPage      from './pages/LoginPage';
+import KakaoCallbackPage from './pages/KakaoCallbackPage';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -51,6 +53,11 @@ function App() {
     setPage('list');
   };
 
+  // 카카오 콜백 페이지
+  if (window.location.pathname === '/kakao/callback') {
+    return <KakaoCallbackPage />;
+  }
+
   // 토큰 없으면 로그인 페이지
   if (!token) {
     return <LoginPage onLogin={handleLogin} />;
@@ -83,6 +90,7 @@ function App() {
             <EmpListPage
               onNavigateToChart={() => setPage('chart')}
               onNavigateToDept={() => setPage('dept')}
+              onNavigateToNotice={() => setPage('notice')}
             />
           )}
           {page === 'chart' && (
@@ -90,6 +98,9 @@ function App() {
           )}
           {page === 'dept' && (
             <DeptListPage onNavigateToEmp={() => setPage('list')} />
+          )}
+          {page === 'notice' && (
+            <NoticePage isAdmin={true} onNavigateToList={() => setPage('list')} />
           )}
         </>
       )}

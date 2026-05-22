@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import EmpFormModal from '../components/EmpFormModal';
 import { fetchEmpById, updateEmp, uploadPhoto } from '../api/empApi';
+import { getKakaoAuthUrl } from '../api/noticeApi';
 import '../styles/MyProfilePage.css';
 import '../styles/Button.css';
 
@@ -137,6 +138,15 @@ const MyProfilePage = ({ empno }) => {
           <button className="btn btn-blue" onClick={() => setEditing(true)}>
             ✏️ 내 정보 수정
           </button>
+          <button
+            className="btn"
+            style={{ background: '#FEE500', color: '#3C1E1E', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+            onClick={() => {
+              getKakaoAuthUrl().then(data => { window.location.href = data.url; });
+            }}
+          >
+            🔗 카카오톡 연동
+          </button>
         </div>
       </div>
 
@@ -148,6 +158,7 @@ const MyProfilePage = ({ empno }) => {
           onSave={handleSave}
           onClose={() => setEditing(false)}
           saving={saving}
+          isAdmin={false}
         />
       )}
     </div>
