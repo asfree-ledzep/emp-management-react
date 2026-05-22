@@ -46,6 +46,11 @@ const DashboardPage = ({ username, onNavigate }) => {
     .filter(e => e.status !== 'CONFIRMED')
     .slice(0, 5);
 
+  // 진행중 설문 최근 5건
+  const activeSurveyList = surveys
+    .filter(s => s.status !== 'CLOSED')
+    .slice(0, 5);
+
   // ── 스타일 ──
   const card = (bg, border) => ({
     background: bg,
@@ -223,6 +228,39 @@ const DashboardPage = ({ username, onNavigate }) => {
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 3 }}>
                     {n.createdAt ? new Date(n.createdAt).toLocaleDateString('ko-KR') : ''}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* 진행중 설문 */}
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>📋 진행중 설문</h3>
+            <button
+              onClick={() => onNavigate('survey')}
+              style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
+              전체보기 →
+            </button>
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+            {activeSurveyList.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>진행중인 설문이 없습니다</div>
+            ) : (
+              activeSurveyList.map((s, i) => (
+                <div key={s.surveyId ?? i} style={{
+                  padding: '12px 16px',
+                  borderBottom: i < activeSurveyList.length - 1 ? '1px solid #f3f4f6' : 'none',
+                }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1f2937',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {s.title}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 3, display: 'flex', gap: 8 }}>
+                    <span>응답 {s.responseCount ?? 0}명</span>
+                    {s.endDate && <span>· 마감 {s.endDate}</span>}
                   </div>
                 </div>
               ))
