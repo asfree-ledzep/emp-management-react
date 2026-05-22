@@ -87,7 +87,11 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
         description: form.description,
         ocrRaw:      form.ocrRaw,
       });
-      if (!res.ok) { alert('등록 실패'); return; }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        alert('등록 실패: ' + (errData.error || res.status));
+        return;
+      }
       alert('지출이 등록되었습니다.');
       setFile(null);
       setPreview(null);
@@ -157,9 +161,11 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
           {/* 파일 선택 */}
           <div style={{ border: '2px dashed #d1d5db', borderRadius: 10, padding: 24, textAlign: 'center', background: '#fafafa' }}>
             <div style={{ fontSize: '2rem', marginBottom: 8 }}>🧾</div>
-            <div style={{ color: '#6b7280', marginBottom: 12, fontSize: '0.9rem' }}>영수증 사진을 선택하세요</div>
+            <div style={{ color: '#6b7280', marginBottom: 12, fontSize: '0.9rem' }}>
+              영수증 사진을 선택하거나 촬영하세요
+            </div>
             <input
-              type="file" accept="image/*"
+              type="file" accept="image/*" capture="environment"
               onChange={handleFileChange}
               style={{ fontSize: '0.9rem' }}
             />
