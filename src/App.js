@@ -15,7 +15,12 @@ function App() {
   const [username, setUsername] = useState(localStorage.getItem('username'));
   const [role,     setRole]     = useState(localStorage.getItem('role'));
   const [empno,    setEmpno]    = useState(Number(localStorage.getItem('empno')) || null);
-  const [page,     setPage]     = useState('list');
+  // URL 쿼리 파라미터로 초기 페이지 결정 (?page=notice, ?page=survey)
+  const [page, setPage] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get('page');
+    return (p === 'notice' || p === 'survey') ? p : 'list';
+  });
 
   // 로그인 성공 콜백
   const handleLogin = (data) => {
