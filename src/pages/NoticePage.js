@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { fetchNotices, deleteNotice } from '../api/noticeApi';
 import NoticeFormModal from '../components/NoticeFormModal';
 
-function NoticePage({ isAdmin }) {
+function NoticePage({ isAdmin, onNavigateToList }) {
   const [notices, setNotices]       = useState([]);
   const [showForm, setShowForm]     = useState(false);
   const [selected, setSelected]     = useState(null);
@@ -35,17 +35,30 @@ function NoticePage({ isAdmin }) {
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 style={{ margin: 0, fontSize: '1.5rem' }}>📢 공지사항</h2>
-        {isAdmin && (
-          <button
-            onClick={() => setShowForm(true)}
-            style={{
-              padding: '8px 18px', background: '#4f46e5', color: '#fff',
-              border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600
-            }}
-          >
-            + 공지 작성
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {onNavigateToList && (
+            <button
+              onClick={onNavigateToList}
+              style={{
+                padding: '8px 18px', background: '#6b7280', color: '#fff',
+                border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600
+              }}
+            >
+              🏠 대시보드
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setShowForm(true)}
+              style={{
+                padding: '8px 18px', background: '#4f46e5', color: '#fff',
+                border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600
+              }}
+            >
+              + 공지 작성
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 목록 */}
