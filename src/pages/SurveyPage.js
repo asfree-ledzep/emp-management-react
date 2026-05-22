@@ -24,14 +24,32 @@ const SurveyPage = ({ isAdmin, onNavigateToList }) => {
 
   const handleClose = async (surveyId) => {
     if (!window.confirm('설문을 마감하시겠습니까?')) return;
-    await closeSurvey(surveyId);
-    load();
+    try {
+      const res = await closeSurvey(surveyId);
+      if (!res.ok) {
+        const body = await res.text();
+        alert(`마감 실패 (${res.status}): ${body || '권한이 없거나 오류가 발생했습니다.'}`);
+        return;
+      }
+      load();
+    } catch (err) {
+      alert('마감 중 오류가 발생했습니다: ' + err.message);
+    }
   };
 
   const handleDelete = async (surveyId) => {
     if (!window.confirm('설문을 삭제하시겠습니까?')) return;
-    await deleteSurvey(surveyId);
-    load();
+    try {
+      const res = await deleteSurvey(surveyId);
+      if (!res.ok) {
+        const body = await res.text();
+        alert(`삭제 실패 (${res.status}): ${body || '권한이 없거나 오류가 발생했습니다.'}`);
+        return;
+      }
+      load();
+    } catch (err) {
+      alert('삭제 중 오류가 발생했습니다: ' + err.message);
+    }
   };
 
   return (

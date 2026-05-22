@@ -5,24 +5,57 @@ const SurveyResultModal = ({ surveyId, onClose }) => {
   const [survey,  setSurvey]  = useState(null);
   const [results, setResults] = useState([]);
   const [textAnswersMap, setTextAnswersMap] = useState({});
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     Promise.all([fetchSurvey(surveyId), fetchResults(surveyId)])
       .then(([s, r]) => {
+        if (!s || s.error) { setError('설문 정보를 불러올 수 없습니다.'); return; }
+        if (!Array.isArray(r)) { setError('결과를 불러올 수 없습니다. 권한을 확인해주세요.'); return; }
         setSurvey(s);
         setResults(r);
 
         // 주관식 문항 응답 로드
-        const textQuestions = s.questions.filter(q => q.questionType === 'TEXT');
+        const textQuestions = (s.questions || []).filter(q => q.questionType === 'TEXT');
+        if (textQuestions.length === 0) return;
         Promise.all(textQuestions.map(q =>
           fetchTextAnswers(surveyId, q.questionId).then(answers => ({ [q.questionId]: answers }))
         )).then(maps => {
           setTextAnswersMap(Object.assign({}, ...maps));
-        });
+        }).catch(() => {});
+      })
+      .catch(err => {
+        setError('결과를 불러오는 중 오류가 발생했습니다: ' + err.message);
       });
   }, [surveyId]);
 
-  if (!survey) return null;
+  if (error) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+        display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+      }}>
+        <div style={{ background: '#fff', borderRadius: 12, padding: 32, maxWidth: 400 }}>
+          <p style={{ color: '#dc2626', marginBottom: 16 }}>⚠️ {error}</p>
+          <button onClick={onClose}
+            style={{ padding: '8px 20px', background: '#6b7280', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+            닫기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!survey) return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+    }}>
+      <div style={{ background: '#fff', borderRadius: 12, padding: 32 }}>
+        <p style={{ color: '#6b7280' }}>불러오는 중...</p>
+      </div>
+    </div>
+  );
 
   // 문항별 결과 그룹핑
   const questionMap = {};
