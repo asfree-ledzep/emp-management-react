@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from 'react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
+} from 'recharts';
 import { fetchEmps } from '../api/empApi';
-import { fetchExpensesByMonth } from '../api/expenseApi';
+import { fetchExpensesByMonth, fetchMonthlyStats } from '../api/expenseApi';
 import { fetchSurveys } from '../api/surveyApi';
 import { fetchNotices } from '../api/noticeApi';
 import '../styles/DashboardPage.css';
 
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '0 원';
+const fmtAxis = (v) => {
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(0) + 'M';
+  if (v >= 1_000)     return (v / 1_000).toFixed(0) + 'K';
+  return v;
+};
 
 const now   = new Date();
 const YEAR  = now.getFullYear();
@@ -14,86 +23,107 @@ const MONTH = now.getMonth() + 1;
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const todayStr = `${YEAR}년 ${MONTH}월 ${now.getDate()}일 (${WEEKDAYS[now.getDay()]})`;
 
+// 최근 N개월 { year, month } 배열 반환
+const getLastMonths = (n) => {
+  const result = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(YEAR, MONTH - 1 - i, 1);
+    result.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
+  }
+  return result;
+};
+
+// Tooltip 커스텀
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        background: '#1e293b', color: '#f1f5f9', padding: '10px 14px',
+        borderRadius: 8, fontSize: '0.82rem', lineHeight: 1.6,
+      }}>
+        <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>
+        <div>💰 {Number(payload[0].value).toLocaleString('ko-KR')} 원</div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const DashboardPage = ({ username, onNavigate }) => {
   const [emps,        setEmps]        = useState([]);
   const [expenses,    setExpenses]    = useState([]);
   const [surveys,     setSurveys]     = useState([]);
   const [notices,     setNotices]     = useState([]);
+  const [trendData,   setTrendData]   = useState([]);
   const [loading,     setLoading]     = useState(true);
 
   useEffect(() => {
+    const last6 = getLastMonths(6);
+
     Promise.all([
       fetchEmps().catch(() => []),
       fetchExpensesByMonth(YEAR, MONTH).catch(() => []),
       fetchSurveys().catch(() => []),
       fetchNotices().catch(() => []),
-    ]).then(([e, ex, s, n]) => {
+      // 최근 6개월 월별 통계 병렬 요청
+      Promise.all(
+        last6.map(({ year, month }) =>
+          fetchMonthlyStats(year, month)
+            .then((rows) => ({
+              label: `${month}월`,
+              total: rows.reduce((sum, r) => sum + (r.totalAmount || 0), 0),
+            }))
+            .catch(() => ({ label: `${month}월`, total: 0 }))
+        )
+      ),
+    ]).then(([e, ex, s, n, trend]) => {
       setEmps(e);
       setExpenses(ex);
       setSurveys(s);
       setNotices(n);
+      setTrendData(trend);
       setLoading(false);
     });
   }, []);
 
   // 요약 계산
-  const totalEmp        = emps.length;
-  const totalExpense    = expenses.reduce((s, e) => s + (e.amount || 0), 0);
-  const pendingExpense  = expenses.filter(e => e.status !== 'CONFIRMED').length;
-  const activeSurveys   = surveys.filter(s => s.status !== 'CLOSED').length;
+  const totalEmp       = emps.length;
+  const totalExpense   = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const pendingExpense = expenses.filter(e => e.status !== 'CONFIRMED').length;
+  const activeSurveys  = surveys.filter(s => s.status !== 'CLOSED').length;
 
   // 미확인 지출 최근 5건
-  const pendingList = expenses
-    .filter(e => e.status !== 'CONFIRMED')
-    .slice(0, 5);
+  const pendingList = expenses.filter(e => e.status !== 'CONFIRMED').slice(0, 5);
 
   // 진행중 설문 최근 5건
-  const activeSurveyList = surveys
-    .filter(s => s.status !== 'CLOSED')
-    .slice(0, 5);
+  const activeSurveyList = surveys.filter(s => s.status !== 'CLOSED').slice(0, 5);
+
+  // 차트 데이터가 모두 0인지 확인
+  const hasChartData = trendData.some(d => d.total > 0);
 
   // ── 스타일 ──
   const card = (bg, border) => ({
-    background: bg,
-    border: `1px solid ${border}`,
-    borderRadius: 12,
-    padding: '20px 24px',
-    flex: 1,
-    minWidth: 160,
+    background: bg, border: `1px solid ${border}`,
+    borderRadius: 12, padding: '20px 24px', flex: 1, minWidth: 160,
   });
-  const cardNum  = { fontSize: '2rem', fontWeight: 700, marginBottom: 4 };
+  const cardNum   = { fontSize: '2rem', fontWeight: 700, marginBottom: 4 };
   const cardLabel = { fontSize: '0.82rem', color: '#6b7280' };
 
   const menuBtn = (color) => ({
-    background: color,
-    color: '#fff',
-    border: 'none',
-    borderRadius: 12,
-    padding: '18px 16px',
-    cursor: 'pointer',
-    fontSize: '0.9rem',
-    fontWeight: 600,
-    textAlign: 'center',
-    flex: 1,
-    minWidth: 120,
+    background: color, color: '#fff', border: 'none', borderRadius: 12,
+    padding: '18px 16px', cursor: 'pointer', fontSize: '0.9rem',
+    fontWeight: 600, textAlign: 'center', flex: 1, minWidth: 120,
     transition: 'opacity 0.15s',
   });
 
   const thStyle = {
-    padding: '9px 12px',
-    background: '#f3f4f6',
-    fontSize: '0.8rem',
-    color: '#374151',
-    fontWeight: 600,
-    textAlign: 'left',
+    padding: '9px 12px', background: '#f3f4f6', fontSize: '0.8rem',
+    color: '#374151', fontWeight: 600, textAlign: 'left',
     borderBottom: '1px solid #e5e7eb',
   };
   const tdStyle = {
-    padding: '9px 12px',
-    fontSize: '0.83rem',
-    color: '#374151',
-    borderBottom: '1px solid #f3f4f6',
-    verticalAlign: 'middle',
+    padding: '9px 12px', fontSize: '0.83rem', color: '#374151',
+    borderBottom: '1px solid #f3f4f6', verticalAlign: 'middle',
   };
 
   if (loading) {
@@ -143,25 +173,69 @@ const DashboardPage = ({ username, onNavigate }) => {
       <div style={{ marginBottom: 32 }}>
         <h3 style={{ margin: '0 0 14px', fontSize: '1rem', color: '#374151' }}>📌 바로가기</h3>
         <div className="db-menu" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <button style={menuBtn('#4f46e5')} onClick={() => onNavigate('list')}>
-            👥<br />직원 관리
-          </button>
-          <button style={menuBtn('#0891b2')} onClick={() => onNavigate('dept')}>
-            🏢<br />부서 관리
-          </button>
-          <button style={menuBtn('#059669')} onClick={() => onNavigate('expense')}>
-            💰<br />지출 관리
-          </button>
-          <button style={menuBtn('#d97706')} onClick={() => onNavigate('chart')}>
-            📊<br />급여 통계
-          </button>
-          <button style={menuBtn('#7c3aed')} onClick={() => onNavigate('survey')}>
-            📋<br />설문 관리
-          </button>
-          <button style={menuBtn('#6b7280')} onClick={() => onNavigate('notice')}>
-            📢<br />공지사항
+          <button style={menuBtn('#4f46e5')} onClick={() => onNavigate('list')}>👥<br />직원 관리</button>
+          <button style={menuBtn('#0891b2')} onClick={() => onNavigate('dept')}>🏢<br />부서 관리</button>
+          <button style={menuBtn('#059669')} onClick={() => onNavigate('expense')}>💰<br />지출 관리</button>
+          <button style={menuBtn('#d97706')} onClick={() => onNavigate('chart')}>📊<br />급여 통계</button>
+          <button style={menuBtn('#7c3aed')} onClick={() => onNavigate('survey')}>📋<br />설문 관리</button>
+          <button style={menuBtn('#6b7280')} onClick={() => onNavigate('notice')}>📢<br />공지사항</button>
+        </div>
+      </div>
+
+      {/* ── 월별 지출 추이 차트 ── */}
+      <div style={{
+        background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12,
+        padding: '20px 24px', marginBottom: 28,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>📈 월별 지출 추이 (최근 6개월)</h3>
+          <button
+            onClick={() => onNavigate('expense')}
+            style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
+            지출 관리 →
           </button>
         </div>
+
+        {!hasChartData ? (
+          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px 0', fontSize: '0.9rem' }}>
+            📭 최근 6개월 지출 데이터가 없습니다
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={trendData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tickFormatter={fmtAxis}
+                tick={{ fontSize: 11, fill: '#9ca3af' }}
+                axisLine={false}
+                tickLine={false}
+                width={48}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="total"
+                stroke="#6366f1"
+                strokeWidth={2.5}
+                fill="url(#expenseGradient)"
+                dot={{ r: 4, fill: '#6366f1', strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: '#4f46e5', strokeWidth: 0 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* ── 하단: 미확인 지출 + 최근 공지 + 진행중 설문 ── */}
@@ -171,25 +245,23 @@ const DashboardPage = ({ username, onNavigate }) => {
         <div style={{ flex: 2, minWidth: 320 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>⏳ 미확인 지출</h3>
-            <button
-              onClick={() => onNavigate('expense')}
+            <button onClick={() => onNavigate('expense')}
               style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
               전체보기 →
             </button>
           </div>
           {pendingList.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af',
-              border: '1px solid #e5e7eb', borderRadius: 10, background: '#f9fafb', minHeight: 120,
-              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{
+              padding: '24px', textAlign: 'center', color: '#9ca3af',
+              border: '1px solid #e5e7eb', borderRadius: 10, background: '#f9fafb',
+              minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
               ✅ 미확인 지출이 없습니다
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden' }}>
               <thead>
-                <tr>
-                  {['사원명', '날짜', '금액', '카테고리'].map(h =>
-                    <th key={h} style={thStyle}>{h}</th>)}
-                </tr>
+                <tr>{['사원명', '날짜', '금액', '카테고리'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {pendingList.map(e => (
@@ -209,8 +281,7 @@ const DashboardPage = ({ username, onNavigate }) => {
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>📢 최근 공지</h3>
-            <button
-              onClick={() => onNavigate('notice')}
+            <button onClick={() => onNavigate('notice')}
               style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
               전체보기 →
             </button>
@@ -241,8 +312,7 @@ const DashboardPage = ({ username, onNavigate }) => {
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>📋 진행중 설문</h3>
-            <button
-              onClick={() => onNavigate('survey')}
+            <button onClick={() => onNavigate('survey')}
               style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
               전체보기 →
             </button>
