@@ -108,7 +108,7 @@ const ExpensePage = ({ onNavigateToList }) => {
       {/* 헤더 */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
         <h2 style={{ margin:0 }}>💰 지출 관리</h2>
-        <button onClick={onNavigateToList} style={btnGray}>← 목록으로</button>
+        <button onClick={onNavigateToList} style={btnGray}>🏠 대시보드</button>
       </div>
 
       {/* 탭 */}

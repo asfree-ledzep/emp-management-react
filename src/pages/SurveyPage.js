@@ -61,7 +61,7 @@ const SurveyPage = ({ isAdmin, onNavigateToList }) => {
           <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '0.9rem' }}>총 {surveys.length}개</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-gray btn-lg" onClick={onNavigateToList}>← 목록으로</button>
+          <button className="btn btn-gray btn-lg" onClick={onNavigateToList}>🏠 대시보드</button>
           {isAdmin && (
             <button className="btn btn-blue btn-lg" onClick={() => setShowForm(true)}>+ 설문 작성</button>
           )}

@@ -73,7 +73,7 @@ const DeptListPage = ({ onNavigateToEmp }) => {
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button className="btn btn-gray btn-lg" onClick={onNavigateToEmp}>
-            사원 목록
+            🏠 대시보드
           </button>
           <button className="btn btn-blue btn-lg" onClick={handleCreate}>
             + 부서 등록

@@ -87,7 +87,7 @@ const SalaryChartPage = ({ onNavigateToList }) => {
           <p className="sub-text">부서별 급여 현황 · 총 {stats.length}개 부서</p>
         </div>
         <button className="btn btn-gray btn-lg" onClick={onNavigateToList}>
-          ← 목록으로
+          🏠 대시보드
         </button>
       </div>
 
