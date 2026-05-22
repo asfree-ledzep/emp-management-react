@@ -12,6 +12,11 @@ const now = new Date();
 const THIS_YEAR  = now.getFullYear();
 const THIS_MONTH = now.getMonth() + 1;
 
+// 2000년 ~ 올해+1 (지출내역·월별통계용)
+const YEAR_OPTIONS = Array.from({ length: THIS_YEAR - 2000 + 2 }, (_, i) => 2000 + i);
+// 2000년 ~ 올해 (연별통계용)
+const YEAR_OPTIONS_Y = Array.from({ length: THIS_YEAR - 2000 + 1 }, (_, i) => 2000 + i);
+
 const ExpensePage = ({ onNavigateToList }) => {
   const [tab, setTab] = useState('detail'); // 'detail' | 'monthly' | 'yearly'
 
@@ -130,7 +135,7 @@ const ExpensePage = ({ onNavigateToList }) => {
           {/* 검색 바 */}
           <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:16, flexWrap:'wrap' }}>
             <select value={year}  onChange={e => setYear(Number(e.target.value))}  style={selectStyle}>
-              {[THIS_YEAR-2, THIS_YEAR-1, THIS_YEAR, THIS_YEAR+1].map(y => <option key={y} value={y}>{y}년</option>)}
+              {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}년</option>)}
             </select>
             <select value={month} onChange={e => setMonth(Number(e.target.value))} style={selectStyle}>
               {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={m}>{m}월</option>)}
@@ -208,7 +213,7 @@ const ExpensePage = ({ onNavigateToList }) => {
         <div>
           <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:16, flexWrap:'wrap' }}>
             <select value={mYear}  onChange={e => setMYear(Number(e.target.value))}  style={selectStyle}>
-              {[THIS_YEAR-2, THIS_YEAR-1, THIS_YEAR, THIS_YEAR+1].map(y => <option key={y} value={y}>{y}년</option>)}
+              {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}년</option>)}
             </select>
             <select value={mMonth} onChange={e => setMMonth(Number(e.target.value))} style={selectStyle}>
               {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={m}>{m}월</option>)}
@@ -258,7 +263,7 @@ const ExpensePage = ({ onNavigateToList }) => {
         <div>
           <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:16, flexWrap:'wrap' }}>
             <select value={yYear} onChange={e => setYYear(Number(e.target.value))} style={selectStyle}>
-              {[THIS_YEAR-3, THIS_YEAR-2, THIS_YEAR-1, THIS_YEAR].map(y => <option key={y} value={y}>{y}년</option>)}
+              {YEAR_OPTIONS_Y.map(y => <option key={y} value={y}>{y}년</option>)}
             </select>
             <button onClick={loadYearly} style={btnPrimary}>조회</button>
             <button onClick={handleGenerateYearly} style={{ ...btnPrimary, background:'#7c3aed' }}>📊 통계 생성</button>
