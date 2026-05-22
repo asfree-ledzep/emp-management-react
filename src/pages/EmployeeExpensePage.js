@@ -13,6 +13,7 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
   const [preview, setPreview]       = useState(null);
   const [parsing, setParsing]       = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [ocrDone, setOcrDone]       = useState(false);   // OCR 완료 여부
   const [form, setForm] = useState({
     receiptUrl:  '',
     amount:      '',
@@ -44,6 +45,7 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
     if (!f) return;
     setFile(f);
     setPreview(URL.createObjectURL(f));
+    setOcrDone(false);
     setForm(prev => ({ ...prev, receiptUrl: '', amount: '', ocrRaw: '' }));
   };
 
@@ -59,7 +61,11 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
         expenseDate: result.expenseDate || prev.expenseDate,
         ocrRaw:      result.ocrRaw      || '',
       }));
-      alert('OCR 분석 완료! 금액과 날짜를 확인·수정 후 제출하세요.');
+      setOcrDone(true);
+      const parsed = result.amount != null;
+      if (!parsed) {
+        alert('OCR 분석 완료!\n\n⚠️ 금액을 자동으로 찾지 못했습니다.\n아래 OCR 원문을 확인하고 금액을 직접 입력해주세요.');
+      }
     } catch (e) {
       alert('OCR 분석 실패: ' + e.message);
     } finally {
@@ -68,8 +74,8 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
   };
 
   const handleSubmit = async () => {
-    if (!form.receiptUrl) { alert('먼저 OCR 분석을 실행해주세요.'); return; }
-    if (!form.amount || isNaN(Number(form.amount))) { alert('금액을 올바르게 입력해주세요.'); return; }
+    if (!ocrDone) { alert('먼저 OCR 분석을 실행해주세요.'); return; }
+    if (!form.amount || isNaN(Number(form.amount))) { alert('금액을 입력해주세요.'); return; }
     if (!form.expenseDate) { alert('날짜를 입력해주세요.'); return; }
     setSubmitting(true);
     try {
@@ -176,26 +182,48 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
 
           <hr style={{ border: 'none', borderTop: '1px solid #f3f4f6' }} />
 
+          {/* OCR 원문 — 분석 후 항상 표시 */}
+          {ocrDone && (
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 12 }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+                📄 OCR 추출 원문 (참고용)
+              </div>
+              <pre style={{
+                whiteSpace: 'pre-wrap', margin: 0, fontSize: '0.78rem',
+                color: '#374151', maxHeight: 150, overflowY: 'auto', lineHeight: 1.6,
+              }}>
+                {form.ocrRaw || '(텍스트 없음 — 이미지 품질을 확인하세요)'}
+              </pre>
+            </div>
+          )}
+
           {/* 금액 */}
           <div>
-            <label style={label}>금액 (원) *</label>
+            <label style={label}>
+              금액 (원) *
+              {ocrDone && form.amount && <span style={{ marginLeft: 6, fontSize:'0.75rem', color:'#059669', fontWeight:400 }}>✅ 자동 입력됨</span>}
+              {ocrDone && !form.amount && <span style={{ marginLeft: 6, fontSize:'0.75rem', color:'#ef4444', fontWeight:400 }}>⚠️ 직접 입력 필요</span>}
+            </label>
             <input
               type="number"
               value={form.amount}
               onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
               placeholder="예: 15000"
-              style={inputStyle}
+              style={{ ...inputStyle, borderColor: ocrDone && form.amount ? '#059669' : ocrDone && !form.amount ? '#ef4444' : '#d1d5db' }}
             />
           </div>
 
           {/* 날짜 */}
           <div>
-            <label style={label}>지출 날짜 *</label>
+            <label style={label}>
+              지출 날짜 *
+              {ocrDone && <span style={{ marginLeft: 6, fontSize:'0.75rem', color:'#059669', fontWeight:400 }}>✅ 자동 입력됨</span>}
+            </label>
             <input
               type="date"
               value={form.expenseDate}
               onChange={e => setForm(p => ({ ...p, expenseDate: e.target.value }))}
-              style={inputStyle}
+              style={{ ...inputStyle, borderColor: ocrDone ? '#059669' : '#d1d5db' }}
             />
           </div>
 
