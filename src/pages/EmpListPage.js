@@ -250,11 +250,11 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
           <button className="btn btn-gray btn-lg" onClick={onNavigateToChart}>
             급여 통계 차트
           </button>
-          <button className="btn btn-gray btn-lg" onClick={onNavigateToDept}>
-            부서 관리
-          </button>
           <button className="btn btn-green btn-lg" onClick={handleExport}>
             엑셀 내보내기
+          </button>
+          <button className="btn btn-gray btn-lg" onClick={onNavigateToDept}>
+            부서 관리
           </button>
           <button className="btn btn-blue btn-lg" onClick={handleCreate}>
             + 사원 등록
