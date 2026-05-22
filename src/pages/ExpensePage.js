@@ -1,0 +1,315 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  fetchExpensesByMonth, confirmExpense, deleteExpense,
+  fetchMonthlyStats, fetchYearlyStats,
+  generateMonthlyStats, generateYearlyStats,
+  downloadDetailExcel, downloadMonthlyExcel, downloadYearlyExcel,
+} from '../api/expenseApi';
+
+const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '-';
+
+const now = new Date();
+const THIS_YEAR  = now.getFullYear();
+const THIS_MONTH = now.getMonth() + 1;
+
+const ExpensePage = ({ onNavigateToList }) => {
+  const [tab, setTab] = useState('detail'); // 'detail' | 'monthly' | 'yearly'
+
+  // ── 지출내역 탭 ──
+  const [year,  setYear]  = useState(THIS_YEAR);
+  const [month, setMonth] = useState(THIS_MONTH);
+  const [expenses, setExpenses]   = useState([]);
+  const [loading,  setLoading]    = useState(false);
+  const [receiptModal, setReceiptModal] = useState(null); // 영수증 이미지 URL
+
+  // ── 월별통계 탭 ──
+  const [mYear,  setMYear]  = useState(THIS_YEAR);
+  const [mMonth, setMMonth] = useState(THIS_MONTH);
+  const [monthlyStats,  setMonthlyStats]  = useState([]);
+  const [mLoading, setMLoading] = useState(false);
+
+  // ── 연별통계 탭 ──
+  const [yYear, setYYear] = useState(THIS_YEAR);
+  const [yearlyStats,  setYearlyStats]  = useState([]);
+  const [yLoading, setYLoading] = useState(false);
+
+  // ─── 지출내역 로드 ───
+  const loadExpenses = useCallback(() => {
+    setLoading(true);
+    fetchExpensesByMonth(year, month)
+      .then(setExpenses)
+      .catch(() => setExpenses([]))
+      .finally(() => setLoading(false));
+  }, [year, month]);
+
+  useEffect(() => { if (tab === 'detail') loadExpenses(); }, [tab, loadExpenses]);
+
+  // ─── 월별통계 로드 ───
+  const loadMonthly = useCallback(() => {
+    setMLoading(true);
+    fetchMonthlyStats(mYear, mMonth)
+      .then(setMonthlyStats)
+      .catch(() => setMonthlyStats([]))
+      .finally(() => setMLoading(false));
+  }, [mYear, mMonth]);
+
+  useEffect(() => { if (tab === 'monthly') loadMonthly(); }, [tab, loadMonthly]);
+
+  // ─── 연별통계 로드 ───
+  const loadYearly = useCallback(() => {
+    setYLoading(true);
+    fetchYearlyStats(yYear)
+      .then(setYearlyStats)
+      .catch(() => setYearlyStats([]))
+      .finally(() => setYLoading(false));
+  }, [yYear]);
+
+  useEffect(() => { if (tab === 'yearly') loadYearly(); }, [tab, loadYearly]);
+
+  // ─── 핸들러 ───
+  const handleConfirm = async (id) => {
+    if (!window.confirm('확인 처리하시겠습니까?')) return;
+    const res = await confirmExpense(id);
+    if (res.ok) loadExpenses(); else alert('처리 실패');
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('삭제하시겠습니까?')) return;
+    const res = await deleteExpense(id);
+    if (res.ok) loadExpenses(); else alert('삭제 실패');
+  };
+
+  const handleGenerateMonthly = async () => {
+    if (!window.confirm(`${mYear}년 ${mMonth}월 통계를 생성하시겠습니까?`)) return;
+    const res = await generateMonthlyStats(mYear, mMonth);
+    if (res.ok) { loadMonthly(); alert('생성 완료'); } else alert('생성 실패');
+  };
+
+  const handleGenerateYearly = async () => {
+    if (!window.confirm(`${yYear}년 통계를 생성하시겠습니까?`)) return;
+    const res = await generateYearlyStats(yYear);
+    if (res.ok) { loadYearly(); alert('생성 완료'); } else alert('생성 실패');
+  };
+
+  // ─── 스타일 ───
+  const tabBtn = (active) => ({
+    padding: '9px 22px', border: 'none',
+    borderBottom: active ? '2px solid #4f46e5' : '2px solid transparent',
+    background: 'none', cursor: 'pointer',
+    fontWeight: active ? 700 : 400,
+    color: active ? '#4f46e5' : '#6b7280', fontSize: '0.95rem',
+  });
+  const selectStyle = { padding:'6px 10px', border:'1px solid #d1d5db', borderRadius:6, fontSize:'0.9rem' };
+  const btnPrimary  = { padding:'7px 16px', background:'#4f46e5', color:'#fff', border:'none', borderRadius:6, cursor:'pointer', fontSize:'0.85rem' };
+  const btnGreen    = { padding:'7px 16px', background:'#059669', color:'#fff', border:'none', borderRadius:6, cursor:'pointer', fontSize:'0.85rem' };
+  const btnGray     = { padding:'7px 16px', background:'#6b7280', color:'#fff', border:'none', borderRadius:6, cursor:'pointer', fontSize:'0.85rem' };
+  const thStyle     = { padding:'10px 12px', background:'#f3f4f6', fontSize:'0.82rem', color:'#374151', fontWeight:600, textAlign:'left', borderBottom:'1px solid #e5e7eb' };
+  const tdStyle     = { padding:'9px 12px', fontSize:'0.85rem', color:'#374151', borderBottom:'1px solid #f3f4f6', verticalAlign:'middle' };
+
+  // ─── 합계 ───
+  const totalAmount = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+
+  return (
+    <div style={{ padding: '24px', maxWidth: 1100, margin: '0 auto' }}>
+      {/* 헤더 */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+        <h2 style={{ margin:0 }}>💰 지출 관리</h2>
+        <button onClick={onNavigateToList} style={btnGray}>← 목록으로</button>
+      </div>
+
+      {/* 탭 */}
+      <div style={{ borderBottom:'1px solid #e5e7eb', marginBottom:24, display:'flex' }}>
+        <button style={tabBtn(tab==='detail')}  onClick={() => setTab('detail')}>📄 지출 내역</button>
+        <button style={tabBtn(tab==='monthly')} onClick={() => setTab('monthly')}>📅 월별 통계</button>
+        <button style={tabBtn(tab==='yearly')}  onClick={() => setTab('yearly')}>📆 연별 통계</button>
+      </div>
+
+      {/* ════ 지출 내역 탭 ════ */}
+      {tab === 'detail' && (
+        <div>
+          {/* 검색 바 */}
+          <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:16, flexWrap:'wrap' }}>
+            <select value={year}  onChange={e => setYear(Number(e.target.value))}  style={selectStyle}>
+              {[THIS_YEAR-2, THIS_YEAR-1, THIS_YEAR, THIS_YEAR+1].map(y => <option key={y} value={y}>{y}년</option>)}
+            </select>
+            <select value={month} onChange={e => setMonth(Number(e.target.value))} style={selectStyle}>
+              {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={m}>{m}월</option>)}
+            </select>
+            <button onClick={loadExpenses} style={btnPrimary}>조회</button>
+            <button onClick={() => downloadDetailExcel(year, month).catch(()=>alert('다운로드 실패'))} style={btnGreen}>
+              📥 엑셀 다운로드
+            </button>
+            {expenses.length > 0 && (
+              <span style={{ marginLeft:'auto', fontWeight:700, color:'#4f46e5' }}>
+                총 {expenses.length}건 / {fmt(totalAmount)}
+              </span>
+            )}
+          </div>
+
+          {/* 테이블 */}
+          {loading ? (
+            <p style={{ color:'#6b7280', textAlign:'center' }}>불러오는 중...</p>
+          ) : expenses.length === 0 ? (
+            <p style={{ color:'#9ca3af', textAlign:'center' }}>지출 내역이 없습니다.</p>
+          ) : (
+            <div style={{ overflowX:'auto' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                <thead>
+                  <tr>
+                    {['사원명','날짜','금액','카테고리','설명','영수증','상태','관리'].map(h =>
+                      <th key={h} style={thStyle}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {expenses.map(e => (
+                    <tr key={e.expenseId} style={{ background: e.status==='CONFIRMED' ? '#f0fdf4' : '#fff' }}>
+                      <td style={tdStyle}>{e.ename || '-'}</td>
+                      <td style={tdStyle}>{e.expenseDate || '-'}</td>
+                      <td style={{ ...tdStyle, fontWeight:600, color:'#1f2937' }}>{fmt(e.amount)}</td>
+                      <td style={tdStyle}>{e.category || '-'}</td>
+                      <td style={{ ...tdStyle, maxWidth:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {e.description || '-'}
+                      </td>
+                      <td style={tdStyle}>
+                        {e.receiptUrl ? (
+                          <img src={e.receiptUrl} alt="영수증"
+                            onClick={() => setReceiptModal(e.receiptUrl)}
+                            style={{ width:44, height:44, objectFit:'cover', borderRadius:4, cursor:'pointer', border:'1px solid #e5e7eb' }} />
+                        ) : '-'}
+                      </td>
+                      <td style={tdStyle}>
+                        <span style={{
+                          fontSize:'0.75rem', padding:'3px 8px', borderRadius:10,
+                          background: e.status==='CONFIRMED' ? '#d1fae5' : '#fef3c7',
+                          color:      e.status==='CONFIRMED' ? '#065f46' : '#92400e'
+                        }}>
+                          {e.status==='CONFIRMED' ? '✅ 확인완료' : '⏳ 미확인'}
+                        </span>
+                      </td>
+                      <td style={{ ...tdStyle, whiteSpace:'nowrap' }}>
+                        {e.status !== 'CONFIRMED' && (
+                          <button onClick={() => handleConfirm(e.expenseId)}
+                            style={{ ...btnGreen, marginRight:4, padding:'4px 10px', fontSize:'0.78rem' }}>확인</button>
+                        )}
+                        <button onClick={() => handleDelete(e.expenseId)}
+                          style={{ background:'#ef4444', color:'#fff', border:'none', borderRadius:4, padding:'4px 10px', cursor:'pointer', fontSize:'0.78rem' }}>삭제</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ════ 월별 통계 탭 ════ */}
+      {tab === 'monthly' && (
+        <div>
+          <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:16, flexWrap:'wrap' }}>
+            <select value={mYear}  onChange={e => setMYear(Number(e.target.value))}  style={selectStyle}>
+              {[THIS_YEAR-2, THIS_YEAR-1, THIS_YEAR, THIS_YEAR+1].map(y => <option key={y} value={y}>{y}년</option>)}
+            </select>
+            <select value={mMonth} onChange={e => setMMonth(Number(e.target.value))} style={selectStyle}>
+              {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={m}>{m}월</option>)}
+            </select>
+            <button onClick={loadMonthly} style={btnPrimary}>조회</button>
+            <button onClick={handleGenerateMonthly} style={{ ...btnPrimary, background:'#7c3aed' }}>📊 통계 생성</button>
+            <button onClick={() => downloadMonthlyExcel(mYear, mMonth).catch(()=>alert('다운로드 실패'))} style={btnGreen}>
+              📥 엑셀 다운로드
+            </button>
+          </div>
+
+          {mLoading ? (
+            <p style={{ color:'#6b7280', textAlign:'center' }}>불러오는 중...</p>
+          ) : monthlyStats.length === 0 ? (
+            <p style={{ color:'#9ca3af', textAlign:'center' }}>통계 데이터가 없습니다. "통계 생성" 버튼을 눌러주세요.</p>
+          ) : (
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
+                <tr>
+                  {['사번','사원명','총 지출금액','건수'].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyStats.map(s => (
+                  <tr key={s.statId}>
+                    <td style={tdStyle}>{s.empno}</td>
+                    <td style={tdStyle}>{s.ename || '-'}</td>
+                    <td style={{ ...tdStyle, fontWeight:600, color:'#4f46e5' }}>{fmt(s.totalAmount)}</td>
+                    <td style={tdStyle}>{s.expenseCount}건</td>
+                  </tr>
+                ))}
+                <tr style={{ background:'#f9fafb', fontWeight:700 }}>
+                  <td style={tdStyle} colSpan={2}>합계</td>
+                  <td style={{ ...tdStyle, color:'#dc2626' }}>
+                    {fmt(monthlyStats.reduce((s,r) => s+(r.totalAmount||0), 0))}
+                  </td>
+                  <td style={tdStyle}>{monthlyStats.reduce((s,r) => s+(r.expenseCount||0), 0)}건</td>
+                </tr>
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* ════ 연별 통계 탭 ════ */}
+      {tab === 'yearly' && (
+        <div>
+          <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:16, flexWrap:'wrap' }}>
+            <select value={yYear} onChange={e => setYYear(Number(e.target.value))} style={selectStyle}>
+              {[THIS_YEAR-3, THIS_YEAR-2, THIS_YEAR-1, THIS_YEAR].map(y => <option key={y} value={y}>{y}년</option>)}
+            </select>
+            <button onClick={loadYearly} style={btnPrimary}>조회</button>
+            <button onClick={handleGenerateYearly} style={{ ...btnPrimary, background:'#7c3aed' }}>📊 통계 생성</button>
+            <button onClick={() => downloadYearlyExcel(yYear).catch(()=>alert('다운로드 실패'))} style={btnGreen}>
+              📥 엑셀 다운로드
+            </button>
+          </div>
+
+          {yLoading ? (
+            <p style={{ color:'#6b7280', textAlign:'center' }}>불러오는 중...</p>
+          ) : yearlyStats.length === 0 ? (
+            <p style={{ color:'#9ca3af', textAlign:'center' }}>통계 데이터가 없습니다. "통계 생성" 버튼을 눌러주세요.</p>
+          ) : (
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
+                <tr>
+                  {['사번','사원명','연간 총 지출금액','건수'].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {yearlyStats.map(s => (
+                  <tr key={s.statId}>
+                    <td style={tdStyle}>{s.empno}</td>
+                    <td style={tdStyle}>{s.ename || '-'}</td>
+                    <td style={{ ...tdStyle, fontWeight:600, color:'#4f46e5' }}>{fmt(s.totalAmount)}</td>
+                    <td style={tdStyle}>{s.expenseCount}건</td>
+                  </tr>
+                ))}
+                <tr style={{ background:'#f9fafb', fontWeight:700 }}>
+                  <td style={tdStyle} colSpan={2}>합계</td>
+                  <td style={{ ...tdStyle, color:'#dc2626' }}>
+                    {fmt(yearlyStats.reduce((s,r) => s+(r.totalAmount||0), 0))}
+                  </td>
+                  <td style={tdStyle}>{yearlyStats.reduce((s,r) => s+(r.expenseCount||0), 0)}건</td>
+                </tr>
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* 영수증 이미지 모달 */}
+      {receiptModal && (
+        <div onClick={() => setReceiptModal(null)}
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:2000, cursor:'pointer' }}>
+          <img src={receiptModal} alt="영수증"
+            style={{ maxWidth:'90vw', maxHeight:'90vh', objectFit:'contain', borderRadius:8 }} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ExpensePage;

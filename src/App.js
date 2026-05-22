@@ -8,6 +8,7 @@ import NoticePage     from './pages/NoticePage';
 import LoginPage      from './pages/LoginPage';
 import KakaoCallbackPage from './pages/KakaoCallbackPage';
 import SurveyPage from './pages/SurveyPage';
+import ExpensePage from './pages/ExpensePage';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -87,8 +88,9 @@ function App() {
       {/* 일반 사원 */}
       {role === 'USER' && (
         <>
-          {page === 'list' && <MyProfilePage empno={empno} onNavigateToSurvey={() => setPage('survey')} />}
-          {page === 'survey' && <SurveyPage isAdmin={false} onNavigateToList={() => setPage('list')} />}
+          {page === 'list'    && <MyProfilePage empno={empno} onNavigateToSurvey={() => setPage('survey')} onNavigateToExpense={() => setPage('expense')} />}
+          {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => setPage('list')} />}
+          {page === 'expense' && <ExpensePage onNavigateToList={() => setPage('list')} />}
         </>
       )}
 
@@ -101,6 +103,7 @@ function App() {
               onNavigateToDept={() => setPage('dept')}
               onNavigateToNotice={() => setPage('notice')}
               onNavigateToSurvey={() => setPage('survey')}
+              onNavigateToExpense={() => setPage('expense')}
             />
           )}
           {page === 'chart' && (
@@ -114,6 +117,9 @@ function App() {
           )}
           {page === 'survey' && (
             <SurveyPage isAdmin={true} onNavigateToList={() => setPage('list')} />
+          )}
+          {page === 'expense' && (
+            <ExpensePage onNavigateToList={() => setPage('list')} />
           )}
         </>
       )}

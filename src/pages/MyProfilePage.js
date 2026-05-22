@@ -41,7 +41,7 @@ const calcYearsOfService = (hiredate) => {
 // 사원 본인 프로필 페이지
 // props:
 //   empno - 로그인된 사원 번호
-const MyProfilePage = ({ empno, onNavigateToSurvey }) => {
+const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense }) => {
   const [emp,     setEmp]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -140,6 +140,9 @@ const MyProfilePage = ({ empno, onNavigateToSurvey }) => {
           </button>
           <button className="btn btn-gray" onClick={onNavigateToSurvey}>
             📋 설문조사
+          </button>
+          <button className="btn btn-blue" onClick={onNavigateToExpense}>
+            💰 지출 관리
           </button>
           <button
             className="btn"

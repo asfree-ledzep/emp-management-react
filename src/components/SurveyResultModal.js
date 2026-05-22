@@ -25,7 +25,11 @@ const SurveyResultModal = ({ surveyId, onClose }) => {
         }).catch(() => {});
       })
       .catch(err => {
-        setError('결과를 불러오는 중 오류가 발생했습니다: ' + err.message);
+        if (err.message === '403') {
+          setError('권한이 없습니다. 관리자 계정으로 다시 로그인해주세요.');
+        } else {
+          setError('결과를 불러오는 중 오류가 발생했습니다: ' + err.message);
+        }
       });
   }, [surveyId]);
 
