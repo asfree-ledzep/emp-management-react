@@ -178,7 +178,8 @@ const DashboardPage = ({ username, onNavigate }) => {
           </div>
           {pendingList.length === 0 ? (
             <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af',
-              border: '1px solid #e5e7eb', borderRadius: 10, background: '#f9fafb' }}>
+              border: '1px solid #e5e7eb', borderRadius: 10, background: '#f9fafb', minHeight: 120,
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               ✅ 미확인 지출이 없습니다
             </div>
           ) : (
@@ -213,7 +214,7 @@ const DashboardPage = ({ username, onNavigate }) => {
               전체보기 →
             </button>
           </div>
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', background: '#fff', minHeight: 120 }}>
             {notices.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>공지사항이 없습니다</div>
             ) : (
@@ -245,7 +246,7 @@ const DashboardPage = ({ username, onNavigate }) => {
               전체보기 →
             </button>
           </div>
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', background: '#fff', minHeight: 120 }}>
             {activeSurveyList.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>진행중인 설문이 없습니다</div>
             ) : (
