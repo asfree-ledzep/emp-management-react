@@ -11,6 +11,7 @@ import SurveyPage from './pages/SurveyPage';
 import ExpensePage from './pages/ExpensePage';
 import EmployeeExpensePage from './pages/EmployeeExpensePage';
 import DashboardPage from './pages/DashboardPage';
+import OrgChartPage from './pages/OrgChartPage';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -128,6 +129,9 @@ function App() {
           )}
           {page === 'expense' && (
             <ExpensePage onNavigateToList={() => setPage('dashboard')} />
+          )}
+          {page === 'orgchart' && (
+            <OrgChartPage onNavigateToList={() => setPage('dashboard')} />
           )}
         </>
       )}

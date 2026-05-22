@@ -1,0 +1,164 @@
+/* ── 조직도 사원 카드 ── */
+.oc-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 12px 10px;
+  width: 148px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  transition: box-shadow 0.15s, transform 0.12s;
+  user-select: none;
+}
+
+.oc-card.oc-clickable {
+  cursor: pointer;
+}
+
+.oc-card.oc-clickable:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+  transform: translateY(-2px);
+}
+
+.oc-card.oc-highlighted {
+  box-shadow: 0 0 0 3px #fbbf24, 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.oc-card.oc-dimmed {
+  opacity: 0.25;
+}
+
+.oc-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+  border: 2px solid #e5e7eb;
+}
+
+.oc-avatar-placeholder {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: #fff;
+  font-weight: 700;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.oc-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.oc-job {
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-bottom: 7px;
+}
+
+.oc-dept-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.oc-toggle {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  margin-top: 3px;
+}
+
+/* ── 트리 연결선 ── */
+
+/* 각 노드 루트 */
+.oc-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 부모 → 아래로 내려가는 수직선 */
+.oc-down-line {
+  width: 2px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* 자식들의 가로 행 */
+.oc-children-row {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* 각 자식 래퍼 */
+.oc-child-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding-top: 24px;
+}
+
+/* 자식에서 위로 올라가는 수직선 */
+.oc-child-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 24px;
+  background: #94a3b8;
+}
+
+/* 수평 연결선: 첫째 자식 (오른쪽 방향) */
+.oc-child-wrap:first-child:not(:only-child)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  right: -8px;
+  height: 2px;
+  background: #94a3b8;
+}
+
+/* 수평 연결선: 마지막 자식 (왼쪽 방향) */
+.oc-child-wrap:last-child:not(:only-child)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -8px;
+  right: 50%;
+  height: 2px;
+  background: #94a3b8;
+}
+
+/* 수평 연결선: 중간 자식 (양방향) */
+.oc-child-wrap:not(:first-child):not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -8px;
+  right: -8px;
+  height: 2px;
+  background: #94a3b8;
+}
