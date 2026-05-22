@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   fetchExpensesByMonth, confirmExpense, deleteExpense,
   fetchMonthlyStats, fetchYearlyStats,
-  generateMonthlyStats, generateYearlyStats,
   downloadDetailExcel, downloadMonthlyExcel, downloadYearlyExcel,
 } from '../api/expenseApi';
 
@@ -84,16 +83,7 @@ const ExpensePage = ({ onNavigateToList }) => {
     if (res.ok) loadExpenses(); else alert('삭제 실패');
   };
 
-  const handleGenerateMonthly = async () => {
-    if (!window.confirm(`${mYear}년 ${mMonth}월 통계를 생성하시겠습니까?`)) return;
-    const res = await generateMonthlyStats(mYear, mMonth);
-    if (res.ok) { loadMonthly(); alert('생성 완료'); } else alert('생성 실패');
-  };
-
-  const handleGenerateYearly = async () => {
-    if (!window.confirm(`${yYear}년 통계를 생성하시겠습니까?`)) return;
-    const res = await generateYearlyStats(yYear);
-    if (res.ok) { loadYearly(); alert('생성 완료'); } else alert('생성 실패');
+  // 통계 생성 핸들러 제거됨 — 조회가 EXPENSE 테이블 실시간 집계로 변경됨
   };
 
   // ─── 스타일 ───
@@ -219,7 +209,6 @@ const ExpensePage = ({ onNavigateToList }) => {
               {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={m}>{m}월</option>)}
             </select>
             <button onClick={loadMonthly} style={btnPrimary}>조회</button>
-            <button onClick={handleGenerateMonthly} style={{ ...btnPrimary, background:'#7c3aed' }}>📊 통계 생성</button>
             <button onClick={() => downloadMonthlyExcel(mYear, mMonth).catch(()=>alert('다운로드 실패'))} style={btnGreen}>
               📥 엑셀 다운로드
             </button>
@@ -228,7 +217,7 @@ const ExpensePage = ({ onNavigateToList }) => {
           {mLoading ? (
             <p style={{ color:'#6b7280', textAlign:'center' }}>불러오는 중...</p>
           ) : monthlyStats.length === 0 ? (
-            <p style={{ color:'#9ca3af', textAlign:'center' }}>통계 데이터가 없습니다. "통계 생성" 버튼을 눌러주세요.</p>
+            <p style={{ color:'#9ca3af', textAlign:'center' }}>해당 기간에 지출 데이터가 없습니다.</p>
           ) : (
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead>
@@ -266,7 +255,6 @@ const ExpensePage = ({ onNavigateToList }) => {
               {YEAR_OPTIONS_Y.map(y => <option key={y} value={y}>{y}년</option>)}
             </select>
             <button onClick={loadYearly} style={btnPrimary}>조회</button>
-            <button onClick={handleGenerateYearly} style={{ ...btnPrimary, background:'#7c3aed' }}>📊 통계 생성</button>
             <button onClick={() => downloadYearlyExcel(yYear).catch(()=>alert('다운로드 실패'))} style={btnGreen}>
               📥 엑셀 다운로드
             </button>
@@ -275,7 +263,7 @@ const ExpensePage = ({ onNavigateToList }) => {
           {yLoading ? (
             <p style={{ color:'#6b7280', textAlign:'center' }}>불러오는 중...</p>
           ) : yearlyStats.length === 0 ? (
-            <p style={{ color:'#9ca3af', textAlign:'center' }}>통계 데이터가 없습니다. "통계 생성" 버튼을 눌러주세요.</p>
+            <p style={{ color:'#9ca3af', textAlign:'center' }}>해당 연도에 지출 데이터가 없습니다.</p>
           ) : (
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead>
