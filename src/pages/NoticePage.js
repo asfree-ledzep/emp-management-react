@@ -5,6 +5,7 @@ import NoticeFormModal from '../components/NoticeFormModal';
 function NoticePage({ isAdmin, onNavigateToList }) {
   const [notices, setNotices]       = useState([]);
   const [showForm, setShowForm]     = useState(false);
+  const [editNotice, setEditNotice] = useState(null);   // 수정 대상
   const [selected, setSelected]     = useState(null);
   const [loading, setLoading]       = useState(false);
 
@@ -86,15 +87,26 @@ function NoticePage({ isAdmin, onNavigateToList }) {
                 </div>
               </div>
               {isAdmin && (
-                <button
-                  onClick={(e) => handleDelete(e, n.noticeId)}
-                  style={{
-                    padding: '4px 12px', background: '#ef4444', color: '#fff',
-                    border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem'
-                  }}
-                >
-                  삭제
-                </button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditNotice(n); }}
+                    style={{
+                      padding: '4px 12px', background: '#4f46e5', color: '#fff',
+                      border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem'
+                    }}
+                  >
+                    수정
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(e, n.noticeId)}
+                    style={{
+                      padding: '4px 12px', background: '#ef4444', color: '#fff',
+                      border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem'
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
               )}
             </div>
           ))}
@@ -139,11 +151,20 @@ function NoticePage({ isAdmin, onNavigateToList }) {
         </div>
       )}
 
-      {/* 작성 모달 */}
+      {/* 등록 모달 */}
       {showForm && (
         <NoticeFormModal
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); load(); }}
+        />
+      )}
+
+      {/* 수정 모달 */}
+      {editNotice && (
+        <NoticeFormModal
+          notice={editNotice}
+          onClose={() => setEditNotice(null)}
+          onSaved={() => { setEditNotice(null); load(); }}
         />
       )}
     </div>

@@ -14,6 +14,14 @@ export const createNotice = (notice) =>
     body: JSON.stringify(notice),
   });
 
+// 공지사항 수정
+export const updateNotice = (id, notice) =>
+  authFetch(`${BASE}/notices/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(notice),
+  });
+
 // 공지사항 삭제
 export const deleteNotice = (id) =>
   authFetch(`${BASE}/notices/${id}`, { method: 'DELETE' });
