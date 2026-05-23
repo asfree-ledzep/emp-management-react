@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { searchFaq } from '../api/faqApi';
 
-const QUICK = ['연차 일수', '급여일', '식비 한도', '출장비', '경조사 지원'];
+const QUICK = ['연차 일수', '급여일', '식비 한도', '출장비', '경조사 지원', '이번 달 휴무일'];
 
 const BOT_INTRO = {
   role: 'bot',
