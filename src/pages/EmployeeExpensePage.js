@@ -3,33 +3,87 @@ import { parseReceipt, createExpense, fetchMyExpenses } from '../api/expenseApi'
 
 const CATEGORIES = ['식비', '교통비', '숙박비', '업무용품', '접대비', '기타'];
 
-// 스마트폰 고해상도 사진 → 1200px / JPEG 80% 압축 (502 방지)
-const compressImage = (file) =>
+// JPEG EXIF에서 Orientation 태그 읽기 (스마트폰 사진 회전 보정용)
+const readExifOrientation = (file) =>
   new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const view = new DataView(e.target.result);
+        if (view.getUint16(0, false) !== 0xFFD8) { resolve(1); return; }
+        let offset = 2;
+        while (offset + 2 <= view.byteLength) {
+          const marker = view.getUint16(offset, false);
+          offset += 2;
+          if (marker === 0xFFE1) {
+            if (view.getUint32(offset + 2, false) !== 0x45786966) { resolve(1); return; }
+            const base = offset + 8;
+            const little = view.getUint16(base, false) === 0x4949;
+            const ifd0 = base + view.getUint32(base + 4, little);
+            const count = view.getUint16(ifd0, little);
+            for (let i = 0; i < count; i++) {
+              const tag = view.getUint16(ifd0 + 2 + i * 12, little);
+              if (tag === 0x0112) { resolve(view.getUint16(ifd0 + 2 + i * 12 + 8, little)); return; }
+            }
+            resolve(1); return;
+          } else if (marker === 0xFFD9 || marker === 0xFFDA || (marker & 0xFF00) !== 0xFF00) {
+            resolve(1); return;
+          } else {
+            offset += view.getUint16(offset, false);
+          }
+        }
+        resolve(1);
+      } catch { resolve(1); }
+    };
+    reader.onerror = () => resolve(1);
+    reader.readAsArrayBuffer(file.slice(0, 65536));
+  });
+
+// EXIF 방향 보정 + 리사이즈 (OCR 정확도를 위해 1800px / 품질 0.92)
+const compressImage = async (file) => {
+  const orientation = await readExifOrientation(file);
+  return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const MAX = 1200;
-      let { width, height } = img;
-      if (width > MAX || height > MAX) {
-        const r = Math.min(MAX / width, MAX / height);
-        width  = Math.round(width  * r);
-        height = Math.round(height * r);
-      }
+      const MAX = 1800;
+      const srcW = img.naturalWidth;
+      const srcH = img.naturalHeight;
+      const swapped = orientation >= 5 && orientation <= 8;
+      const scale = Math.min(1, MAX / Math.max(srcW, srcH));
+      const sw = Math.round(srcW * scale);
+      const sh = Math.round(srcH * scale);
+      const dW = swapped ? sh : sw;
+      const dH = swapped ? sw : sh;
+
       const canvas = document.createElement('canvas');
-      canvas.width  = width;
-      canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.width  = dW;
+      canvas.height = dH;
+      const ctx = canvas.getContext('2d');
+
+      // EXIF 방향에 따른 캔버스 변환 적용
+      switch (orientation) {
+        case 2: ctx.translate(dW, 0);  ctx.scale(-1, 1);       break;
+        case 3: ctx.translate(dW, dH); ctx.rotate(Math.PI);    break;
+        case 4: ctx.translate(0, dH);  ctx.scale(1, -1);       break;
+        case 5: ctx.rotate(Math.PI/2); ctx.scale(1, -1);       break;
+        case 6: ctx.translate(dW, 0);  ctx.rotate(Math.PI/2);  break;
+        case 7: ctx.translate(dW, dH); ctx.rotate(Math.PI/2);  ctx.scale(1, -1); break;
+        case 8: ctx.translate(0, dH);  ctx.rotate(-Math.PI/2); break;
+        default: break;
+      }
+      ctx.drawImage(img, 0, 0, sw, sh);
+
       canvas.toBlob(
         (blob) => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })),
-        'image/jpeg',
-        0.8
+        'image/jpeg', 0.92
       );
     };
     img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
     img.src = url;
   });
+};
 
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '-';
 
@@ -77,21 +131,18 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
     setOcrDone(false);
     setForm(prev => ({ ...prev, receiptUrl: '', amount: '', ocrRaw: '' }));
 
-    if (f.size > 1024 * 1024) {
-      setCompressing(true);
-      try {
-        const compressed = await compressImage(f);
-        setFile(compressed);
-        setFileSize(compressed.size);
-      } catch {
-        setFile(f);
-        setFileSize(f.size);
-      } finally {
-        setCompressing(false);
-      }
-    } else {
+    // 항상 EXIF 방향 보정 실행 (파일 크기 무관 — 스마트폰 사진 회전 문제 방지)
+    setCompressing(true);
+    try {
+      const compressed = await compressImage(f);
+      setFile(compressed);
+      setFileSize(compressed.size);
+      setPreview(URL.createObjectURL(compressed)); // 보정된 이미지로 미리보기 갱신
+    } catch {
       setFile(f);
       setFileSize(f.size);
+    } finally {
+      setCompressing(false);
     }
   };
 
