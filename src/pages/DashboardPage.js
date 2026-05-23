@@ -53,7 +53,7 @@ const DonutTooltip = ({ active, payload }) => {
   return null;
 };
 
-const DashboardPage = ({ username, onNavigate }) => {
+const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const [emps,        setEmps]        = useState([]);
   const [expenses,    setExpenses]    = useState([]);
   const [surveys,     setSurveys]     = useState([]);
@@ -120,48 +120,71 @@ const DashboardPage = ({ username, onNavigate }) => {
     }))
     .filter(d => d.value > 0);
 
-  // ── 스타일 ──
-  const card = (bg, border) => ({
-    background: bg, border: `1px solid ${border}`,
+  // ── 다크 모드 색상 팔레트 ──
+  const dk = darkMode;
+  const C = {
+    bg:        dk ? '#0f172a' : 'transparent',
+    card:      dk ? '#1e293b' : '#ffffff',
+    border:    dk ? '#334155' : '#e5e7eb',
+    borderSub: dk ? '#1e293b' : '#f3f4f6',
+    text:      dk ? '#e2e8f0' : '#374151',
+    textMuted: dk ? '#94a3b8' : '#6b7280',
+    textDark:  dk ? '#f1f5f9' : '#1f2937',
+    thBg:      dk ? '#0f172a' : '#f3f4f6',
+    thText:    dk ? '#94a3b8' : '#374151',
+    emptyBg:   dk ? '#1e293b' : '#f9fafb',
+    emptyText: dk ? '#64748b' : '#9ca3af',
+  };
+
+  // ── 스타일 헬퍼 ──
+  const card = (lightBg, lightBorder) => ({
+    background: dk ? C.card : lightBg,
+    border: `1px solid ${dk ? C.border : lightBorder}`,
     borderRadius: 12, padding: '20px 24px', flex: 1, minWidth: 160,
   });
   const cardNum   = { fontSize: '2rem', fontWeight: 700, marginBottom: 4 };
-  const cardLabel = { fontSize: '0.82rem', color: '#6b7280' };
+  const cardLabel = { fontSize: '0.82rem', color: C.textMuted };
 
   const menuBtn = (color) => ({
     background: color, color: '#fff', border: 'none', borderRadius: 12,
     padding: '18px 16px', cursor: 'pointer', fontSize: '0.9rem',
     fontWeight: 600, textAlign: 'center', flex: 1, minWidth: 120,
-    transition: 'opacity 0.15s',
+    transition: 'opacity 0.15s', opacity: dk ? 0.9 : 1,
   });
 
+  const chartBox = {
+    flex: 1, minWidth: 280,
+    background: C.card, border: `1px solid ${C.border}`,
+    borderRadius: 12, padding: '20px 24px',
+  };
+
   const thStyle = {
-    padding: '9px 12px', background: '#f3f4f6', fontSize: '0.8rem',
-    color: '#374151', fontWeight: 600, textAlign: 'left',
-    borderBottom: '1px solid #e5e7eb',
+    padding: '9px 12px', background: C.thBg, fontSize: '0.8rem',
+    color: C.thText, fontWeight: 600, textAlign: 'left',
+    borderBottom: `1px solid ${C.border}`,
   };
   const tdStyle = {
-    padding: '9px 12px', fontSize: '0.83rem', color: '#374151',
-    borderBottom: '1px solid #f3f4f6', verticalAlign: 'middle',
+    padding: '9px 12px', fontSize: '0.83rem', color: C.text,
+    borderBottom: `1px solid ${C.borderSub}`, verticalAlign: 'middle',
   };
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: '#6b7280' }}>
+      <div style={{ padding: 40, textAlign: 'center', color: C.textMuted }}>
         대시보드 불러오는 중...
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto', background: C.bg, minHeight: '100vh' }}>
 
       {/* ── 헤더 ── */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ margin: 0, fontSize: '1.5rem' }}>
+        <h2 style={{ margin: 0, fontSize: '1.5rem', color: C.textDark }}>
           👋 안녕하세요, <span style={{ color: '#4f46e5' }}>{username}</span> 관리자님
         </h2>
-        <p style={{ margin: '6px 0 0', color: '#6b7280', fontSize: '0.9rem' }}>{todayStr}</p>
+        <p style={{ margin: '6px 0 0', color: C.textMuted, fontSize: '0.9rem' }}>{todayStr}</p>
       </div>
 
       {/* ── 요약 카드 ── */}
@@ -196,7 +219,7 @@ const DashboardPage = ({ username, onNavigate }) => {
 
       {/* ── 바로가기 메뉴 ── */}
       <div style={{ marginBottom: 32 }}>
-        <h3 style={{ margin: '0 0 14px', fontSize: '1rem', color: '#374151' }}>📌 바로가기</h3>
+        <h3 style={{ margin: '0 0 14px', fontSize: '1rem', color: C.text }}>📌 바로가기</h3>
         <div className="db-menu" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button style={menuBtn('#4f46e5')} onClick={() => onNavigate('list')}>👥<br />직원 관리</button>
           <button style={menuBtn('#0891b2')} onClick={() => onNavigate('dept')}>🏢<br />부서 관리</button>
@@ -214,16 +237,16 @@ const DashboardPage = ({ username, onNavigate }) => {
       <div style={{ display: 'flex', gap: 20, marginBottom: 28, flexWrap: 'wrap' }}>
 
         {/* 왼쪽: 월별 도넛 */}
-        <div style={{ flex: 1, minWidth: 280, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 24px' }}>
+        <div style={{ ...chartBox }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>🗓 월별 지출 (최근 6개월)</h3>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: C.text }}>🗓 월별 지출 (최근 6개월)</h3>
             <button onClick={() => onNavigate('expense')}
               style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
               지출 관리 →
             </button>
           </div>
           {monthDonutData.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#9ca3af', padding: '60px 0', fontSize: '0.9rem' }}>
+            <div style={{ textAlign: 'center', color: C.emptyText, padding: '60px 0', fontSize: '0.9rem' }}>
               📭 데이터가 없습니다
             </div>
           ) : (
@@ -242,15 +265,15 @@ const DashboardPage = ({ username, onNavigate }) => {
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none',
                 }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1f2937' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: C.textDark }}>
                     {fmtShort(totalMonth6)}
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#6b7280', marginTop: 2 }}>6개월 합계</div>
+                  <div style={{ fontSize: '0.68rem', color: C.textMuted, marginTop: 2 }}>6개월 합계</div>
                 </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 14px', marginTop: 10, justifyContent: 'center' }}>
                 {monthDonutData.map((d, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: '#374151' }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: C.text }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
                     <span>{d.name} {fmtShort(d.value)}</span>
                   </div>
@@ -261,16 +284,16 @@ const DashboardPage = ({ username, onNavigate }) => {
         </div>
 
         {/* 오른쪽: 카테고리별 도넛 */}
-        <div style={{ flex: 1, minWidth: 280, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 24px' }}>
+        <div style={{ ...chartBox }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>🏷 카테고리별 지출 (이번 달)</h3>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: C.text }}>🏷 카테고리별 지출 (이번 달)</h3>
             <button onClick={() => onNavigate('expense')}
               style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
               지출 관리 →
             </button>
           </div>
           {categoryData.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#9ca3af', padding: '60px 0', fontSize: '0.9rem' }}>
+            <div style={{ textAlign: 'center', color: C.emptyText, padding: '60px 0', fontSize: '0.9rem' }}>
               📭 이번 달 지출이 없습니다
             </div>
           ) : (
@@ -289,15 +312,15 @@ const DashboardPage = ({ username, onNavigate }) => {
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none',
                 }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1f2937' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: C.textDark }}>
                     {fmtShort(totalExpense)}
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#6b7280', marginTop: 2 }}>이번 달 합계</div>
+                  <div style={{ fontSize: '0.68rem', color: C.textMuted, marginTop: 2 }}>이번 달 합계</div>
                 </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 14px', marginTop: 10, justifyContent: 'center' }}>
                 {categoryData.map((d, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: '#374151' }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: C.text }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
                     <span>{d.name} {fmtShort(d.value)}</span>
                   </div>
@@ -315,7 +338,7 @@ const DashboardPage = ({ username, onNavigate }) => {
         {/* 미확인 지출 */}
         <div style={{ flex: 2, minWidth: 320 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>⏳ 미확인 지출</h3>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: C.text }}>⏳ 미확인 지출</h3>
             <button onClick={() => onNavigate('expense')}
               style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
               전체보기 →
@@ -323,23 +346,23 @@ const DashboardPage = ({ username, onNavigate }) => {
           </div>
           {pendingList.length === 0 ? (
             <div style={{
-              padding: '24px', textAlign: 'center', color: '#9ca3af',
-              border: '1px solid #e5e7eb', borderRadius: 10, background: '#f9fafb',
+              padding: '24px', textAlign: 'center', color: C.emptyText,
+              border: `1px solid ${C.border}`, borderRadius: 10, background: C.emptyBg,
               minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               ✅ 미확인 지출이 없습니다
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
               <thead>
                 <tr>{['사원명', '날짜', '금액', '카테고리'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {pendingList.map(e => (
-                  <tr key={e.expenseId} style={{ background: '#fff' }}>
+                  <tr key={e.expenseId} style={{ background: C.card }}>
                     <td style={tdStyle}>{e.ename || '-'}</td>
                     <td style={tdStyle}>{e.expenseDate || '-'}</td>
-                    <td style={{ ...tdStyle, fontWeight: 600, color: '#1f2937' }}>{fmt(e.amount)}</td>
+                    <td style={{ ...tdStyle, fontWeight: 600, color: C.textDark }}>{fmt(e.amount)}</td>
                     <td style={tdStyle}>{e.category || '-'}</td>
                   </tr>
                 ))}
@@ -351,26 +374,26 @@ const DashboardPage = ({ username, onNavigate }) => {
         {/* 최근 공지사항 */}
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>📢 최근 공지</h3>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: C.text }}>📢 최근 공지</h3>
             <button onClick={() => onNavigate('notice')}
               style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
               전체보기 →
             </button>
           </div>
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', background: '#fff', minHeight: 120 }}>
+          <div style={{ border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden', background: C.card, minHeight: 120 }}>
             {notices.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>공지사항이 없습니다</div>
+              <div style={{ padding: '24px', textAlign: 'center', color: C.emptyText }}>공지사항이 없습니다</div>
             ) : (
               notices.slice(0, 5).map((n, i) => (
                 <div key={n.id ?? i} style={{
                   padding: '12px 16px',
-                  borderBottom: i < Math.min(notices.length, 5) - 1 ? '1px solid #f3f4f6' : 'none',
+                  borderBottom: i < Math.min(notices.length, 5) - 1 ? `1px solid ${C.borderSub}` : 'none',
                 }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1f2937',
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: C.textDark,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {n.title}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 3 }}>
+                  <div style={{ fontSize: '0.75rem', color: C.emptyText, marginTop: 3 }}>
                     {n.createdAt ? new Date(n.createdAt).toLocaleDateString('ko-KR') : ''}
                   </div>
                 </div>
@@ -382,26 +405,26 @@ const DashboardPage = ({ username, onNavigate }) => {
         {/* 진행중 설문 */}
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>📋 진행중 설문</h3>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: C.text }}>📋 진행중 설문</h3>
             <button onClick={() => onNavigate('survey')}
               style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
               전체보기 →
             </button>
           </div>
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', background: '#fff', minHeight: 120 }}>
+          <div style={{ border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden', background: C.card, minHeight: 120 }}>
             {activeSurveyList.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>진행중인 설문이 없습니다</div>
+              <div style={{ padding: '24px', textAlign: 'center', color: C.emptyText }}>진행중인 설문이 없습니다</div>
             ) : (
               activeSurveyList.map((s, i) => (
                 <div key={s.surveyId ?? i} style={{
                   padding: '12px 16px',
-                  borderBottom: i < activeSurveyList.length - 1 ? '1px solid #f3f4f6' : 'none',
+                  borderBottom: i < activeSurveyList.length - 1 ? `1px solid ${C.borderSub}` : 'none',
                 }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1f2937',
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: C.textDark,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {s.title}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 3, display: 'flex', gap: 8 }}>
+                  <div style={{ fontSize: '0.75rem', color: C.emptyText, marginTop: 3, display: 'flex', gap: 8 }}>
                     <span>응답 {s.responseCount ?? 0}명</span>
                     {s.endDate && <span>· 마감 {s.endDate}</span>}
                   </div>

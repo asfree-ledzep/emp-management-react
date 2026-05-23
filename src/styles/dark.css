@@ -1,0 +1,354 @@
+/* ═══════════════════════════════════════════════════════
+   다크 모드 전역 오버라이드
+   [data-theme="dark"]  → html 요소에 적용
+   ═══════════════════════════════════════════════════════ */
+
+/* ── 기본 변수 ── */
+:root {
+  --bg-page:    #f3f4f6;
+  --bg-card:    #ffffff;
+  --bg-surface: #f9fafb;
+  --text:       #111827;
+  --text-muted: #6b7280;
+  --text-head:  #1e3a5f;
+  --border:     #e5e7eb;
+  --border-sub: #d1d5db;
+  --primary:    #3b82f6;
+  --primary-dk: #2563eb;
+  --input-bg:   #ffffff;
+}
+
+[data-theme="dark"] {
+  --bg-page:    #0f172a;
+  --bg-card:    #1e293b;
+  --bg-surface: #263548;
+  --text:       #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-head:  #93c5fd;
+  --border:     #334155;
+  --border-sub: #2a3a50;
+  --primary:    #60a5fa;
+  --primary-dk: #3b82f6;
+  --input-bg:   #0f172a;
+}
+
+/* ── body / 페이지 배경 ── */
+[data-theme="dark"] body {
+  background-color: var(--bg-page);
+  color: var(--text);
+}
+
+/* ── 상단 바 ── */
+[data-theme="dark"] .app-topbar {
+  background: #0d1b2e;
+}
+
+/* ── 사원 목록 페이지 ── */
+[data-theme="dark"] .emp-list-page h1 {
+  color: var(--text-head);
+}
+[data-theme="dark"] .emp-list-page .emp-count {
+  color: var(--text-muted);
+}
+
+/* 검색 바 */
+[data-theme="dark"] .search-select,
+[data-theme="dark"] .search-input {
+  background-color: var(--bg-surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+[data-theme="dark"] .search-select:focus,
+[data-theme="dark"] .search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+
+/* 빈 박스 / 에러 박스 */
+[data-theme="dark"] .empty-box {
+  background-color: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+[data-theme="dark"] .error-box {
+  background-color: #2d1515;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+/* 로딩 스피너 */
+[data-theme="dark"] .loading {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .loading::before {
+  border-color: var(--border);
+  border-top-color: var(--primary);
+}
+
+/* ── 페이지네이션 ── */
+[data-theme="dark"] .page-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+[data-theme="dark"] .page-btn:hover:not(:disabled) {
+  background: var(--bg-surface);
+}
+[data-theme="dark"] .page-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+[data-theme="dark"] .page-btn:disabled {
+  color: #4b5563;
+  border-color: var(--border-sub);
+}
+[data-theme="dark"] .page-info {
+  color: var(--text-muted);
+}
+
+/* ── 공통 버튼 ── */
+/* 유색 버튼은 색상 유지, 회색 계열만 다크 처리 */
+[data-theme="dark"] .btn-gray {
+  background-color: #374151;
+}
+
+/* ── 모달 ── */
+[data-theme="dark"] .modal-container {
+  background: var(--bg-card);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55);
+}
+[data-theme="dark"] .modal-header {
+  border-bottom-color: var(--border);
+}
+[data-theme="dark"] .modal-header h2 {
+  color: var(--text-head);
+}
+[data-theme="dark"] .modal-close {
+  color: var(--text-muted);
+  background: var(--bg-surface);
+}
+[data-theme="dark"] .modal-close:hover {
+  color: var(--text);
+  background: var(--border);
+}
+
+/* 모달 폼 영역 */
+[data-theme="dark"] .modal-body,
+[data-theme="dark"] .emp-detail-body {
+  color: var(--text);
+}
+
+/* 상세보기 모달 필드 */
+[data-theme="dark"] .detail-label {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .detail-value {
+  color: var(--text);
+}
+[data-theme="dark"] .detail-section-title {
+  color: var(--text-head);
+  border-bottom-color: var(--border);
+}
+
+/* ── 폼 입력 요소 (모달 내부 포함) ── */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: var(--input-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15) !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #4b5563 !important;
+}
+[data-theme="dark"] label {
+  color: var(--text-muted);
+}
+
+/* 폼 그룹 구분선 */
+[data-theme="dark"] .form-divider {
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+[data-theme="dark"] .form-section-title {
+  color: var(--text-head);
+}
+
+/* ── 사원 테이블 ── */
+[data-theme="dark"] .emp-table {
+  background-color: var(--bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] .emp-table thead tr {
+  background-color: #1d3461;
+}
+[data-theme="dark"] .emp-table th {
+  color: #bfdbfe;
+}
+[data-theme="dark"] .emp-table th.sortable:hover {
+  background-color: #254785;
+}
+[data-theme="dark"] .emp-table td {
+  border-bottom-color: var(--border-sub);
+  color: var(--text);
+}
+[data-theme="dark"] .emp-table tbody tr:nth-child(even) {
+  background-color: var(--bg-surface);
+}
+[data-theme="dark"] .emp-table tbody tr:hover {
+  background-color: #1e3a5a;
+}
+
+/* ── 로그인 페이지 ── */
+[data-theme="dark"] .login-card {
+  background: #1a2744;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+[data-theme="dark"] .login-logo h1 {
+  color: var(--text);
+}
+[data-theme="dark"] .login-logo p {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .login-field label {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .login-field input {
+  background: var(--input-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+[data-theme="dark"] .login-error {
+  background: #2d1515;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+/* ── 내 프로필 페이지 ── */
+[data-theme="dark"] .my-profile-header h1 {
+  color: var(--text);
+}
+[data-theme="dark"] .my-profile-card {
+  background: var(--bg-card);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+[data-theme="dark"] .my-profile-section {
+  border-top-color: var(--border);
+}
+[data-theme="dark"] .my-profile-field-label {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .my-profile-field-value {
+  color: var(--text);
+}
+[data-theme="dark"] .profile-section h3 {
+  color: var(--text-head);
+  border-bottom-color: var(--border);
+}
+
+/* ── 급여 차트 ── */
+[data-theme="dark"] .salary-chart-page h1 {
+  color: var(--text-head);
+}
+[data-theme="dark"] .salary-chart-page {
+  color: var(--text);
+}
+
+/* ── 조직도 ── */
+[data-theme="dark"] .org-chart-page h1,
+[data-theme="dark"] .org-chart-page h2 {
+  color: var(--text-head);
+}
+[data-theme="dark"] .org-node {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text);
+}
+[data-theme="dark"] .org-node:hover {
+  background: var(--bg-surface);
+}
+
+/* ── 경비 페이지 ── */
+[data-theme="dark"] .expense-page h1,
+[data-theme="dark"] .expense-page h2 {
+  color: var(--text-head);
+}
+[data-theme="dark"] .expense-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+[data-theme="dark"] .expense-card-label {
+  color: var(--text-muted);
+}
+
+/* ── 섹션 헤더 공통 ── */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3 {
+  color: var(--text);
+}
+[data-theme="dark"] p {
+  color: var(--text);
+}
+
+/* 카드 컨테이너 공통 */
+[data-theme="dark"] .card,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .section-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+/* 구분선 */
+[data-theme="dark"] hr {
+  border-color: var(--border);
+}
+
+/* 배지 */
+[data-theme="dark"] .badge-pending {
+  background: #422006;
+  color: #fed7aa;
+}
+[data-theme="dark"] .badge-confirmed {
+  background: #052e16;
+  color: #bbf7d0;
+}
+[data-theme="dark"] .badge-rejected {
+  background: #450a0a;
+  color: #fecaca;
+}
+
+/* ── 챗봇 버튼 (FAB) ── */
+[data-theme="dark"] .chatbot-fab {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* ── 선택 항목 하이라이트 ── */
+[data-theme="dark"] ::selection {
+  background: rgba(96, 165, 250, 0.3);
+  color: #e2e8f0;
+}
+
+/* ── 스크롤바 (Webkit) ── */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-page);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #4b6282;
+}

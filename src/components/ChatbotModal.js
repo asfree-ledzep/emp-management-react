@@ -39,7 +39,27 @@ const BOT_INTRO = {
   text: '안녕하세요! 👋 HR 챗봇입니다.\n궁금한 점을 질문하거나 아래 버튼을 눌러보세요.',
 };
 
-function ChatbotModal({ onClose }) {
+function ChatbotModal({ onClose, darkMode = false }) {
+  const dk = darkMode;
+  const C = {
+    panel:      dk ? '#1e293b' : '#ffffff',
+    msgArea:    dk ? '#0f172a' : '#ffffff',
+    botBubble:  dk ? '#263548' : '#f3f4f6',
+    botText:    dk ? '#e2e8f0' : '#111827',
+    notFoundBg: dk ? '#422006' : '#fef3c7',
+    notFoundTx: dk ? '#fed7aa' : '#92400e',
+    inputArea:  dk ? '#1e293b' : '#fafafa',
+    inputBorder:dk ? '#334155' : '#e5e7eb',
+    inputBg:    dk ? '#0f172a' : '#ffffff',
+    inputBord2: dk ? '#4b5563' : '#d1d5db',
+    inputText:  dk ? '#e2e8f0' : '#111827',
+    quickBg:    dk ? '#312e81' : '#ede9fe',
+    quickText:  dk ? '#c4b5fd' : '#5b21b6',
+    quickBord:  dk ? '#4c1d95' : '#c4b5fd',
+    catText:    dk ? '#a78bfa' : '#6d28d9',
+    loadBubble: dk ? '#263548' : '#f3f4f6',
+    loadText:   dk ? '#94a3b8' : '#6b7280',
+  };
   const [messages, setMessages] = useState([BOT_INTRO]);
   const [input,    setInput]    = useState('');
   const [loading,  setLoading]  = useState(false);
@@ -106,8 +126,8 @@ function ChatbotModal({ onClose }) {
       <div style={{
         position: 'fixed', bottom: 88, right: 24, zIndex: 2000,
         width: 340, height: 480,
-        background: '#fff', borderRadius: 16,
-        boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
+        background: C.panel, borderRadius: 16,
+        boxShadow: dk ? '0 8px 40px rgba(0,0,0,0.55)' : '0 8px 40px rgba(0,0,0,0.18)',
         display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
         animation: 'slideUp 0.2s ease',
@@ -129,7 +149,7 @@ function ChatbotModal({ onClose }) {
         </div>
 
         {/* 메시지 영역 */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 10, background: C.msgArea }}>
           {messages.map((msg, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
               {msg.role === 'bot' && (
@@ -142,8 +162,8 @@ function ChatbotModal({ onClose }) {
               )}
               <div style={{
                 maxWidth: '78%',
-                background: msg.role === 'user' ? '#4f46e5' : (msg.notFound ? '#fef3c7' : '#f3f4f6'),
-                color: msg.role === 'user' ? '#fff' : (msg.notFound ? '#92400e' : '#111827'),
+                background: msg.role === 'user' ? '#4f46e5' : (msg.notFound ? C.notFoundBg : C.botBubble),
+                color: msg.role === 'user' ? '#fff' : (msg.notFound ? C.notFoundTx : C.botText),
                 padding: '9px 12px',
                 borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                 fontSize: '0.82rem',
@@ -152,7 +172,7 @@ function ChatbotModal({ onClose }) {
               }}>
                 {msg.category && (
                   <div style={{
-                    fontSize: '0.68rem', fontWeight: 700, color: '#6d28d9',
+                    fontSize: '0.68rem', fontWeight: 700, color: C.catText,
                     marginBottom: 4, letterSpacing: 0.3,
                   }}>
                     📂 {msg.category}
@@ -172,8 +192,8 @@ function ChatbotModal({ onClose }) {
                   onClick={() => send(q)}
                   style={{
                     padding: '5px 10px', fontSize: '0.75rem',
-                    background: '#ede9fe', color: '#5b21b6',
-                    border: '1px solid #c4b5fd', borderRadius: 20,
+                    background: C.quickBg, color: C.quickText,
+                    border: `1px solid ${C.quickBord}`, borderRadius: 20,
                     cursor: 'pointer', fontWeight: 600,
                   }}
                 >{q}</button>
@@ -189,8 +209,8 @@ function ChatbotModal({ onClose }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem',
               }}>🤖</div>
               <div style={{
-                background: '#f3f4f6', borderRadius: '14px 14px 14px 4px',
-                padding: '9px 14px', fontSize: '0.82rem', color: '#6b7280',
+                background: C.loadBubble, borderRadius: '14px 14px 14px 4px',
+                padding: '9px 14px', fontSize: '0.82rem', color: C.loadText,
               }}>
                 <span style={{ display: 'inline-block', animation: 'blink 1s infinite' }}>●</span>&nbsp;
                 <span style={{ display: 'inline-block', animation: 'blink 1s 0.2s infinite' }}>●</span>&nbsp;
@@ -204,9 +224,9 @@ function ChatbotModal({ onClose }) {
         {/* 입력창 */}
         <div style={{
           padding: '10px 12px',
-          borderTop: '1px solid #e5e7eb',
+          borderTop: `1px solid ${C.inputBorder}`,
           display: 'flex', gap: 8, alignItems: 'center',
-          background: '#fafafa',
+          background: C.inputArea,
         }}>
           <input
             value={input}
@@ -215,9 +235,9 @@ function ChatbotModal({ onClose }) {
             placeholder="질문을 입력하세요..."
             style={{
               flex: 1, padding: '8px 12px',
-              border: '1px solid #d1d5db', borderRadius: 20,
+              border: `1px solid ${C.inputBord2}`, borderRadius: 20,
               fontSize: '0.82rem', outline: 'none',
-              background: '#fff',
+              background: C.inputBg, color: C.inputText,
             }}
           />
           <button
@@ -250,12 +270,12 @@ function ChatbotModal({ onClose }) {
 }
 
 /* ── 플로팅 버튼 + 챗봇 통합 컴포넌트 ── */
-function ChatbotButton() {
+function ChatbotButton({ darkMode = false }) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      {open && <ChatbotModal onClose={() => setOpen(false)} />}
+      {open && <ChatbotModal onClose={() => setOpen(false)} darkMode={darkMode} />}
 
       {/* 플로팅 버튼 */}
       <button

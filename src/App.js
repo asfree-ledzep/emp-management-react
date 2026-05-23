@@ -1,5 +1,6 @@
 import './App.css';
-import { useState } from 'react';
+import './styles/dark.css';
+import { useState, useEffect } from 'react';
 import EmpListPage    from './pages/EmpListPage';
 import SalaryChartPage from './pages/SalaryChartPage';
 import DeptListPage   from './pages/DeptListPage';
@@ -22,12 +23,28 @@ function App() {
   const [username, setUsername] = useState(sessionStorage.getItem('username'));
   const [role,     setRole]     = useState(sessionStorage.getItem('role'));
   const [empno,    setEmpno]    = useState(Number(sessionStorage.getItem('empno')) || null);
+
   // URL 쿼리 파라미터로 초기 페이지 결정 (?page=notice, ?page=survey)
   const [page, setPage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const p = params.get('page');
     return (p === 'notice' || p === 'survey') ? p : 'list';
   });
+
+  // 다크 모드 상태 (localStorage 영구 저장)
+  const [darkMode, setDarkMode] = useState(
+    () => localStorage.getItem('darkMode') === 'true'
+  );
+
+  // data-theme 속성을 html 루트에 적용
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      'data-theme', darkMode ? 'dark' : 'light'
+    );
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
+
+  const toggleDark = () => setDarkMode(d => !d);
 
   // 로그인 성공 콜백
   const handleLogin = (data) => {
@@ -53,7 +70,6 @@ function App() {
 
   // 로그아웃
   const handleLogout = () => {
-    // 관리자인 경우 푸시 구독 해제
     if (role === 'ADMIN') {
       unregisterPush();
     }
@@ -77,8 +93,13 @@ function App() {
   if (!token) {
     return (
       <>
+        {/* 로그인 화면 다크 모드 토글 */}
+        <button className="dark-toggle-login" onClick={toggleDark}
+          title={darkMode ? '라이트 모드' : '다크 모드'}>
+          {darkMode ? '☀️' : '🌙'}
+        </button>
         <LoginPage onLogin={handleLogin} />
-        <ChatbotButton />
+        <ChatbotButton darkMode={darkMode} />
       </>
     );
   }
@@ -93,6 +114,13 @@ function App() {
             {role === 'ADMIN' ? '관리자' : '사원'}
           </span>
         </span>
+
+        {/* 다크 모드 토글 */}
+        <button className="app-topbar-dark" onClick={toggleDark}
+          title={darkMode ? '라이트 모드로 전환' : '다크 모드로 전환'}>
+          {darkMode ? '☀️' : '🌙'}
+        </button>
+
         <button className="app-topbar-logout" onClick={handleLogout}>
           로그아웃
         </button>
@@ -104,7 +132,7 @@ function App() {
           {page === 'list'    && <MyProfilePage empno={empno} onNavigateToSurvey={() => setPage('survey')} onNavigateToExpense={() => setPage('expense')} />}
           {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => setPage('list')} />}
           {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => setPage('list')} />}
-          <ChatbotButton />
+          <ChatbotButton darkMode={darkMode} />
         </>
       )}
 
@@ -112,7 +140,7 @@ function App() {
       {role === 'ADMIN' && (
         <>
           {page === 'dashboard' && (
-            <DashboardPage username={username} onNavigate={setPage} />
+            <DashboardPage username={username} onNavigate={setPage} darkMode={darkMode} />
           )}
           {page === 'list' && (
             <EmpListPage
@@ -148,7 +176,7 @@ function App() {
           {page === 'holiday' && (
             <HolidayManagePage onNavigateToList={() => setPage('dashboard')} />
           )}
-          <ChatbotButton />
+          <ChatbotButton darkMode={darkMode} />
         </>
       )}
     </div>
