@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { fetchEmps } from '../api/empApi';
 import { fetchExpensesByMonth, fetchMonthlyStats } from '../api/expenseApi';
@@ -10,11 +9,16 @@ import { fetchNotices, fetchKakaoConnectedCount } from '../api/noticeApi';
 import '../styles/DashboardPage.css';
 
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '0 원';
-const fmtAxis = (v) => {
-  if (v >= 1_000_000) return (v / 1_000_000).toFixed(0) + 'M';
-  if (v >= 1_000)     return (v / 1_000).toFixed(0) + 'K';
-  return v;
+const fmtShort = (v) => {
+  if (!v) return '0원';
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M원';
+  if (v >= 1_000)     return (v / 1_000).toFixed(0) + 'K원';
+  return Number(v).toLocaleString('ko-KR') + '원';
 };
+
+const MONTH_COLORS = ['#a5b4fc', '#818cf8', '#6366f1', '#4f46e5', '#4338ca', '#312e81'];
+const CAT_COLORS   = ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#ef4444', '#6b7280'];
+const CATEGORIES   = ['식비', '교통비', '숙박비', '업무용품', '접대비', '기타'];
 
 const now   = new Date();
 const YEAR  = now.getFullYear();
@@ -33,15 +37,15 @@ const getLastMonths = (n) => {
   return result;
 };
 
-// Tooltip 커스텀
-const CustomTooltip = ({ active, payload, label }) => {
+// 도넛 차트 Tooltip
+const DonutTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{
-        background: '#1e293b', color: '#f1f5f9', padding: '10px 14px',
+        background: '#1e293b', color: '#f1f5f9', padding: '8px 12px',
         borderRadius: 8, fontSize: '0.82rem', lineHeight: 1.6,
       }}>
-        <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>
+        <div style={{ fontWeight: 700 }}>{payload[0].name}</div>
         <div>💰 {Number(payload[0].value).toLocaleString('ko-KR')} 원</div>
       </div>
     );
@@ -101,8 +105,20 @@ const DashboardPage = ({ username, onNavigate }) => {
   // 진행중 설문 최근 5건
   const activeSurveyList = surveys.filter(s => s.status !== 'CLOSED').slice(0, 5);
 
-  // 차트 데이터가 모두 0인지 확인
-  const hasChartData = trendData.some(d => d.total > 0);
+  // 월별 도넛 데이터 (0인 달 제외)
+  const monthDonutData = trendData
+    .map((d, i) => ({ name: d.label, value: d.total, color: MONTH_COLORS[i] }))
+    .filter(d => d.value > 0);
+  const totalMonth6 = trendData.reduce((s, d) => s + d.total, 0);
+
+  // 카테고리별 도넛 데이터 (이번 달)
+  const categoryData = CATEGORIES
+    .map((cat, i) => ({
+      name: cat,
+      value: expenses.filter(e => e.category === cat).reduce((s, e) => s + (e.amount || 0), 0),
+      color: CAT_COLORS[i],
+    }))
+    .filter(d => d.value > 0);
 
   // ── 스타일 ──
   const card = (bg, border) => ({
@@ -194,60 +210,103 @@ const DashboardPage = ({ username, onNavigate }) => {
         </div>
       </div>
 
-      {/* ── 월별 지출 추이 차트 ── */}
-      <div style={{
-        background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12,
-        padding: '20px 24px', marginBottom: 28,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>📈 월별 지출 추이 (최근 6개월)</h3>
-          <button
-            onClick={() => onNavigate('expense')}
-            style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
-            지출 관리 →
-          </button>
+      {/* ── 도넛 차트 2개 ── */}
+      <div style={{ display: 'flex', gap: 20, marginBottom: 28, flexWrap: 'wrap' }}>
+
+        {/* 왼쪽: 월별 도넛 */}
+        <div style={{ flex: 1, minWidth: 280, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>🗓 월별 지출 (최근 6개월)</h3>
+            <button onClick={() => onNavigate('expense')}
+              style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
+              지출 관리 →
+            </button>
+          </div>
+          {monthDonutData.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#9ca3af', padding: '60px 0', fontSize: '0.9rem' }}>
+              📭 데이터가 없습니다
+            </div>
+          ) : (
+            <>
+              <div style={{ position: 'relative', height: 200 }}>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={monthDonutData} cx="50%" cy="50%"
+                      innerRadius={58} outerRadius={88} paddingAngle={3} dataKey="value">
+                      {monthDonutData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    </Pie>
+                    <Tooltip content={<DonutTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none',
+                }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1f2937' }}>
+                    {fmtShort(totalMonth6)}
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: '#6b7280', marginTop: 2 }}>6개월 합계</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 14px', marginTop: 10, justifyContent: 'center' }}>
+                {monthDonutData.map((d, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: '#374151' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                    <span>{d.name} {fmtShort(d.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
-        {!hasChartData ? (
-          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px 0', fontSize: '0.9rem' }}>
-            📭 최근 6개월 지출 데이터가 없습니다
+        {/* 오른쪽: 카테고리별 도넛 */}
+        <div style={{ flex: 1, minWidth: 280, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>🏷 카테고리별 지출 (이번 달)</h3>
+            <button onClick={() => onNavigate('expense')}
+              style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
+              지출 관리 →
+            </button>
           </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={trendData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 12, fill: '#6b7280' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tickFormatter={fmtAxis}
-                tick={{ fontSize: 11, fill: '#9ca3af' }}
-                axisLine={false}
-                tickLine={false}
-                width={48}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
-                dataKey="total"
-                stroke="#6366f1"
-                strokeWidth={2.5}
-                fill="url(#expenseGradient)"
-                dot={{ r: 4, fill: '#6366f1', strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: '#4f46e5', strokeWidth: 0 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
+          {categoryData.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#9ca3af', padding: '60px 0', fontSize: '0.9rem' }}>
+              📭 이번 달 지출이 없습니다
+            </div>
+          ) : (
+            <>
+              <div style={{ position: 'relative', height: 200 }}>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={categoryData} cx="50%" cy="50%"
+                      innerRadius={58} outerRadius={88} paddingAngle={3} dataKey="value">
+                      {categoryData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    </Pie>
+                    <Tooltip content={<DonutTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none',
+                }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1f2937' }}>
+                    {fmtShort(totalExpense)}
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: '#6b7280', marginTop: 2 }}>이번 달 합계</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 14px', marginTop: 10, justifyContent: 'center' }}>
+                {categoryData.map((d, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: '#374151' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                    <span>{d.name} {fmtShort(d.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
       </div>
 
       {/* ── 하단: 미확인 지출 + 최근 공지 + 진행중 설문 ── */}
