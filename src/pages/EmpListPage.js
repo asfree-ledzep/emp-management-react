@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import EmpTable from '../components/EmpTable';
 import EmpFormModal from '../components/EmpFormModal';
 import EmpDetailModal from '../components/EmpDetailModal';
-import { fetchEmps, createEmp, updateEmp, deleteEmp, uploadPhoto, exportEmpsExcel } from '../api/empApi';
+import { fetchEmps, createEmp, updateEmp, deleteEmp, uploadPhoto, exportEmpsExcel, importEmpsExcel } from '../api/empApi';
 import '../styles/EmpListPage.css';
 import '../styles/Button.css';
 
@@ -33,6 +33,10 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
   const [selectedEmp, setSelectedEmp] = useState(null);
   // 저장 중 스피너 표시 여부
   const [saving, setSaving] = useState(false);
+
+  // 엑셀 업로드 상태
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null); // null | { total, success, failed, errors[] }
 
   // 검색 조건 (드롭다운 선택값)
   const [searchType, setSearchType] = useState('deptno');
@@ -177,6 +181,27 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
     }
   };
 
+  // 엑셀 업로드 → 일괄 등록
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';          // 같은 파일 재선택 허용
+    if (!file) return;
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      alert('.xlsx 또는 .xls 파일만 업로드할 수 있습니다.');
+      return;
+    }
+    setImporting(true);
+    try {
+      const result = await importEmpsExcel(file);
+      setImportResult(result);
+      if (result.success > 0) loadEmps();
+    } catch (err) {
+      alert('업로드 실패: ' + err.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   // 컬럼 헤더 클릭 시 정렬: 같은 컬럼이면 방향 전환, 다른 컬럼이면 오름차순으로 새로 정렬
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -245,7 +270,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
             {isFiltered ? `검색 결과 ${emps.length}명` : `총 ${allEmps.length}명`}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn btn-gray btn-lg" onClick={onNavigateToDashboard}>
             🏠 대시보드
           </button>
@@ -253,8 +278,20 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
             급여 통계 차트
           </button>
           <button className="btn btn-green btn-lg" onClick={handleExport}>
-            엑셀 내보내기
+            📤 엑셀 내보내기
           </button>
+          {/* 엑셀 업로드 — hidden file input + 버튼 */}
+          <label style={{
+            padding: '8px 16px', background: importing ? '#a7f3d0' : '#059669',
+            color: '#fff', borderRadius: 6, cursor: importing ? 'not-allowed' : 'pointer',
+            fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap',
+          }}>
+            {importing ? '⏳ 등록 중...' : '📥 엑셀 업로드'}
+            <input
+              type="file" accept=".xlsx,.xls" hidden
+              onChange={handleImport} disabled={importing}
+            />
+          </label>
           <button className="btn btn-gray btn-lg" onClick={onNavigateToDept}>
             부서 관리
           </button>
@@ -359,6 +396,56 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
             </div>
           )}
         </>
+      )}
+
+      {/* 엑셀 업로드 결과 모달 */}
+      {importResult && (
+        <div onClick={() => setImportResult(null)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: '#fff', borderRadius: 12, padding: 28,
+            width: 'min(480px, 95vw)', maxHeight: '80vh', overflowY: 'auto',
+          }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '1.05rem' }}>📥 엑셀 업로드 결과</h3>
+
+            {/* 요약 */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+              <div style={{ flex: 1, background: '#eff6ff', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1d4ed8' }}>{importResult.total}</div>
+                <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>전체</div>
+              </div>
+              <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#15803d' }}>{importResult.success}</div>
+                <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>등록 성공</div>
+              </div>
+              <div style={{ flex: 1, background: importResult.failed > 0 ? '#fef2f2' : '#f9fafb', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: importResult.failed > 0 ? '#dc2626' : '#9ca3af' }}>{importResult.failed}</div>
+                <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>실패</div>
+              </div>
+            </div>
+
+            {/* 실패 목록 */}
+            {importResult.errors && importResult.errors.length > 0 && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#b91c1c', marginBottom: 6 }}>⚠️ 실패 항목</div>
+                {importResult.errors.map((e, i) => (
+                  <div key={i} style={{ fontSize: '0.8rem', color: '#7f1d1d', padding: '3px 0', borderBottom: i < importResult.errors.length - 1 ? '1px solid #fee2e2' : 'none' }}>
+                    {e}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ marginTop: 16, textAlign: 'right' }}>
+              <button onClick={() => setImportResult(null)} style={{
+                padding: '9px 24px', background: '#4f46e5', color: '#fff',
+                border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600,
+              }}>확인</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 등록/수정 폼 모달 */}

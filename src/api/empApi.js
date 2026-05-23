@@ -78,6 +78,18 @@ export const exportEmpsExcel = async () => {
   return response.json(); // { url: "https://..." }
 };
 
+// 사원 목록 엑셀 업로드 → 일괄 등록
+export const importEmpsExcel = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await authFetch(`${BASE_URL}/emps/import`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) throw new Error(`업로드 실패 (${response.status})`);
+  return response.json(); // { total, success, failed, errors[] }
+};
+
 // 부서별 급여 통계 조회 (평균, 최고, 최저, 사원 수)
 export const fetchSalaryStats = async () => {
   const response = await authFetch(`${BASE_URL}/stats/salary`);
