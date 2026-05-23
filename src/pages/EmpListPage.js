@@ -282,11 +282,11 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
           </button>
           {/* 엑셀 업로드 — hidden file input + 버튼 */}
           <label style={{
-            padding: '8px 16px', background: importing ? '#a7f3d0' : '#059669',
+            padding: '8px 16px', background: '#059669',
             color: '#fff', borderRadius: 6, cursor: importing ? 'not-allowed' : 'pointer',
             fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap',
           }}>
-            {importing ? '⏳ 등록 중...' : '📥 엑셀 업로드'}
+            📥 엑셀 업로드
             <input
               type="file" accept=".xlsx,.xls" hidden
               onChange={handleImport} disabled={importing}
@@ -398,52 +398,33 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
         </>
       )}
 
-      {/* 엑셀 업로드 결과 모달 */}
+      {/* 업로드 스피너 오버레이 */}
+      {importing && (
+        <div className="import-overlay">
+          <div className="import-spinner" />
+          <p className="import-overlay-text">사원 등록 중...</p>
+        </div>
+      )}
+
+      {/* 업로드 결과 모달 */}
       {importResult && (
-        <div onClick={() => setImportResult(null)} style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000,
-        }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: '#fff', borderRadius: 12, padding: 28,
-            width: 'min(480px, 95vw)', maxHeight: '80vh', overflowY: 'auto',
-          }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '1.05rem' }}>📥 엑셀 업로드 결과</h3>
-
-            {/* 요약 */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-              <div style={{ flex: 1, background: '#eff6ff', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1d4ed8' }}>{importResult.total}</div>
-                <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>전체</div>
-              </div>
-              <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#15803d' }}>{importResult.success}</div>
-                <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>등록 성공</div>
-              </div>
-              <div style={{ flex: 1, background: importResult.failed > 0 ? '#fef2f2' : '#f9fafb', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: importResult.failed > 0 ? '#dc2626' : '#9ca3af' }}>{importResult.failed}</div>
-                <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>실패</div>
-              </div>
+        <div className="import-result-backdrop">
+          <div className="import-result-modal">
+            <div className="import-result-icon">
+              {importResult.success > 0 ? '✅' : '⚠️'}
             </div>
-
-            {/* 실패 목록 */}
-            {importResult.errors && importResult.errors.length > 0 && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 12 }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#b91c1c', marginBottom: 6 }}>⚠️ 실패 항목</div>
-                {importResult.errors.map((e, i) => (
-                  <div key={i} style={{ fontSize: '0.8rem', color: '#7f1d1d', padding: '3px 0', borderBottom: i < importResult.errors.length - 1 ? '1px solid #fee2e2' : 'none' }}>
-                    {e}
-                  </div>
-                ))}
-              </div>
+            <h3 className="import-result-title">
+              사원 {importResult.success}명이 등록되었습니다.
+            </h3>
+            {importResult.failed > 0 && (
+              <p className="import-result-fail">{importResult.failed}건 실패</p>
             )}
-
-            <div style={{ marginTop: 16, textAlign: 'right' }}>
-              <button onClick={() => { setImportResult(null); loadEmps(); }} style={{
-                padding: '9px 24px', background: '#4f46e5', color: '#fff',
-                border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600,
-              }}>확인</button>
-            </div>
+            <button
+              className="import-result-btn"
+              onClick={() => { setImportResult(null); loadEmps(); }}
+            >
+              확인
+            </button>
           </div>
         </div>
       )}
