@@ -129,9 +129,10 @@ function App() {
       {/* 일반 사원 */}
       {role === 'USER' && (
         <>
-          {page === 'list'    && <MyProfilePage empno={empno} onNavigateToSurvey={() => setPage('survey')} onNavigateToExpense={() => setPage('expense')} />}
+          {page === 'list'    && <MyProfilePage empno={empno} onNavigateToSurvey={() => setPage('survey')} onNavigateToExpense={() => setPage('expense')} onNavigateToNotice={() => setPage('notice')} />}
           {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => setPage('list')} />}
           {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => setPage('list')} />}
+          {page === 'notice'  && <NoticePage isAdmin={false} empno={empno} onNavigateToList={() => setPage('list')} />}
           <ChatbotButton darkMode={darkMode} />
         </>
       )}
@@ -159,7 +160,7 @@ function App() {
             <DeptListPage onNavigateToEmp={() => setPage('dashboard')} />
           )}
           {page === 'notice' && (
-            <NoticePage isAdmin={true} onNavigateToList={() => setPage('dashboard')} />
+            <NoticePage isAdmin={true} empno={null} onNavigateToList={() => setPage('dashboard')} />
           )}
           {page === 'survey' && (
             <SurveyPage isAdmin={true} onNavigateToList={() => setPage('dashboard')} />

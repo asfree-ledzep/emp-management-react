@@ -26,6 +26,18 @@ export const updateNotice = (id, notice) =>
 export const deleteNotice = (id) =>
   authFetch(`${BASE}/notices/${id}`, { method: 'DELETE' });
 
+// 공지 읽음 처리 (사원 호출)
+export const markNoticeRead = (id) =>
+  authFetch(`${BASE}/notices/${id}/read`, { method: 'POST' });
+
+// 공지별 읽음 현황 (관리자 전용)
+export const fetchNoticeReadSummary = (id) =>
+  authFetch(`${BASE}/notices/${id}/reads`).then(r => r.json());
+
+// 사원 미읽음 공지 수
+export const fetchUnreadNoticeCount = () =>
+  authFetch(`${BASE}/notices/unread-count`).then(r => r.json());
+
 // 카카오 연동 사원 수 조회
 export const fetchKakaoConnectedCount = () =>
   authFetch(`${BASE}/kakao/connected-count`).then(r => r.json());
