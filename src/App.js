@@ -73,9 +73,14 @@ function App() {
     return <KakaoCallbackPage />;
   }
 
-  // 토큰 없으면 로그인 페이지
+  // 토큰 없으면 로그인 페이지 (챗봇은 로그인 없이도 사용 가능)
   if (!token) {
-    return <LoginPage onLogin={handleLogin} />;
+    return (
+      <>
+        <LoginPage onLogin={handleLogin} />
+        <ChatbotButton />
+      </>
+    );
   }
 
   return (
