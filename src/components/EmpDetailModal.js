@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SetPasswordModal from './SetPasswordModal';
 import { fetchEmpAddr } from '../api/empApi';
 import '../styles/Modal.css';
 import '../styles/Button.css';
+
+const KAKAO_APP_KEY = '663072c00684e797249abd24309c65e2';
 
 // 날짜 배열 [year, month, day] 또는 문자열을 YYYY-MM-DD 형식으로 변환
 const formatDate = (val) => {
@@ -40,15 +42,28 @@ const calcYearsOfService = (hiredate) => {
   return `${years}년 ${months}개월`;
 };
 
+// 카카오 지도 SDK 로드 (services 라이브러리 포함)
+const loadKakaoSdk = (callback) => {
+  if (window.kakao?.maps?.services) {
+    callback();
+    return;
+  }
+  if (window.kakao?.maps) {
+    // SDK는 있지만 services 미로드 → load() 콜백으로 처리
+    window.kakao.maps.load(callback);
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services&autoload=false`;
+  script.onload = () => window.kakao.maps.load(callback);
+  document.head.appendChild(script);
+};
+
 // 사원 상세보기 모달
-// props:
-//   emp     - 표시할 사원 데이터
-//   onClose - 닫기 콜백
-//   onEdit  - 수정 버튼 콜백 (있으면 수정 버튼 표시)
-//   isAdmin - 관리자 여부 (비밀번호 설정 버튼 표시)
 const EmpDetailModal = ({ emp, onClose, onEdit, isAdmin = false }) => {
   const [showSetPw, setShowSetPw] = useState(false);
   const [addr, setAddr] = useState(null);
+  const mapRef = useRef(null);
 
   useEffect(() => {
     if (!emp) return;
@@ -57,14 +72,44 @@ const EmpDetailModal = ({ emp, onClose, onEdit, isAdmin = false }) => {
       .catch(() => setAddr(null));
   }, [emp]);
 
+  // 주소가 로드된 후 지도 렌더링
+  useEffect(() => {
+    if (!addr?.address || !mapRef.current) return;
+
+    loadKakaoSdk(() => {
+      const geocoder = new window.kakao.maps.services.Geocoder();
+      geocoder.addressSearch(addr.address, (result, status) => {
+        if (status !== window.kakao.maps.services.Status.OK) return;
+        const coords = new window.kakao.maps.LatLng(result[0].y, result[0].x);
+        const map = new window.kakao.maps.Map(mapRef.current, {
+          center: coords,
+          level: 4,
+        });
+        const marker = new window.kakao.maps.Marker({ position: coords });
+        marker.setMap(map);
+
+        // 주소 인포윈도우
+        const infowindow = new window.kakao.maps.InfoWindow({
+          content: `<div style="padding:6px 10px;font-size:13px;white-space:nowrap;">${addr.address}${addr.addrDetail ? ' ' + addr.addrDetail : ''}</div>`,
+        });
+        infowindow.open(map, marker);
+      });
+    });
+  }, [addr]);
+
   if (!emp) return null;
 
   const yearsOfService = calcYearsOfService(emp.hiredate);
+  const hasAddr = addr && (addr.zipcode || addr.address);
 
   return (
     <>
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-container"
+          onClick={(e) => e.stopPropagation()}
+          style={{ maxWidth: hasAddr ? 560 : undefined }}
+        >
           <div className="modal-header">
             <h2>사원 상세보기</h2>
             <button className="modal-close" onClick={onClose}>✕</button>
@@ -129,7 +174,8 @@ const EmpDetailModal = ({ emp, onClose, onEdit, isAdmin = false }) => {
                 <span className="detail-label">부서번호</span>
                 <span className="detail-value">{emp.deptno ?? '-'}</span>
               </div>
-              {addr && (addr.zipcode || addr.address) && (
+
+              {hasAddr && (
                 <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
                   <span className="detail-label">주소</span>
                   <span className="detail-value">
@@ -148,13 +194,16 @@ const EmpDetailModal = ({ emp, onClose, onEdit, isAdmin = false }) => {
               )}
             </div>
 
+            {/* 카카오 지도 */}
+            {hasAddr && (
+              <div style={{ marginTop: 16, borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                <div ref={mapRef} style={{ width: '100%', height: 260 }} />
+              </div>
+            )}
+
             <div className="modal-footer">
-              {/* 관리자 전용: 비밀번호 설정 버튼 */}
               {isAdmin && (
-                <button
-                  className="btn btn-gray"
-                  onClick={() => setShowSetPw(true)}
-                >
+                <button className="btn btn-gray" onClick={() => setShowSetPw(true)}>
                   🔑 비밀번호 설정
                 </button>
               )}
@@ -169,12 +218,8 @@ const EmpDetailModal = ({ emp, onClose, onEdit, isAdmin = false }) => {
         </div>
       </div>
 
-      {/* 비밀번호 설정 서브 모달 */}
       {showSetPw && (
-        <SetPasswordModal
-          emp={emp}
-          onClose={() => setShowSetPw(false)}
-        />
+        <SetPasswordModal emp={emp} onClose={() => setShowSetPw(false)} />
       )}
     </>
   );
