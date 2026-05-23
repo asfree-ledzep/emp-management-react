@@ -33,3 +33,7 @@ export const updateFaq = (id, faq) =>
 // 삭제
 export const deleteFaq = (id) =>
   authFetch(`${BASE}/${id}`, { method: 'DELETE' });
+
+// 공휴일 월별 조회 (챗봇용)
+export const fetchHolidaysByMonth = (year, month) =>
+  authFetch(`/api/holidays/month?year=${year}&month=${month}`).then(r => r.json());

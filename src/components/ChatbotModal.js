@@ -1,7 +1,38 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { searchFaq } from '../api/faqApi';
+import { searchFaq, fetchHolidaysByMonth } from '../api/faqApi';
 
 const QUICK = ['연차 일수', '급여일', '식비 한도', '출장비', '경조사 지원', '이번 달 휴무일'];
+
+const DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
+
+// 공휴일 관련 질문인지 감지
+const isHolidayQuery = (q) =>
+  /공휴일|휴무일|쉬는\s*날|휴일|빨간\s*날|쉬는날/.test(q);
+
+// 질문에서 대상 연/월 파싱
+const parseTargetMonth = (q) => {
+  const now = new Date();
+  if (/다음\s*달|다음달/.test(q)) {
+    const d = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  }
+  const m = q.match(/(\d{1,2})\s*월/);
+  if (m) return { year: now.getFullYear(), month: parseInt(m[1]) };
+  return { year: now.getFullYear(), month: now.getMonth() + 1 };
+};
+
+// 공휴일 목록 → 챗봇 응답 텍스트 변환
+const formatHolidays = (year, month, list) => {
+  if (!list || list.length === 0)
+    return `📅 ${year}년 ${month}월에는 공휴일이 없습니다.`;
+  const lines = list.map((h) => {
+    const d = new Date(h.holidayDate);
+    const day = DAYS_KO[d.getDay()];
+    const md = h.holidayDate.slice(5); // MM-DD
+    return `• ${md} (${day}) ${h.holidayName}`;
+  });
+  return `📅 ${year}년 ${month}월 공휴일 (${list.length}건)\n\n${lines.join('\n')}\n\n총 ${list.length}일 쉽니다.`;
+};
 
 const BOT_INTRO = {
   role: 'bot',
@@ -25,16 +56,23 @@ function ChatbotModal({ onClose }) {
     setMessages(prev => [...prev, { role: 'user', text: q }]);
     setLoading(true);
     try {
+      // 공휴일/휴무일/쉬는날 질문이면 공공데이터 API 우선 응답
+      if (isHolidayQuery(q)) {
+        const { year, month } = parseTargetMonth(q);
+        const list = await fetchHolidaysByMonth(year, month);
+        setMessages(prev => [
+          ...prev,
+          { role: 'bot', text: formatHolidays(year, month, list), category: '공휴일 정보' },
+        ]);
+        return;
+      }
+
+      // 일반 FAQ 검색
       const res = await searchFaq(q);
       if (res.found) {
         setMessages(prev => [
           ...prev,
-          {
-            role: 'bot',
-            text: res.answer,
-            category: res.category,
-            question: res.question,
-          },
+          { role: 'bot', text: res.answer, category: res.category, question: res.question },
         ]);
       } else {
         setMessages(prev => [
