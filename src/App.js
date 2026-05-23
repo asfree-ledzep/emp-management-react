@@ -13,6 +13,7 @@ import EmployeeExpensePage from './pages/EmployeeExpensePage';
 import DashboardPage from './pages/DashboardPage';
 import OrgChartPage from './pages/OrgChartPage';
 import FaqManagePage from './pages/FaqManagePage';
+import HolidayManagePage from './pages/HolidayManagePage';
 import ChatbotButton from './components/ChatbotModal';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
@@ -138,6 +139,9 @@ function App() {
           )}
           {page === 'faq' && (
             <FaqManagePage onNavigateToList={() => setPage('dashboard')} />
+          )}
+          {page === 'holiday' && (
+            <HolidayManagePage onNavigateToList={() => setPage('dashboard')} />
           )}
           <ChatbotButton />
         </>
