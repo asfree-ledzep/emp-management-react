@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SetPasswordModal from './SetPasswordModal';
+import { fetchEmpAddr } from '../api/empApi';
 import '../styles/Modal.css';
 import '../styles/Button.css';
 
@@ -47,6 +48,14 @@ const calcYearsOfService = (hiredate) => {
 //   isAdmin - 관리자 여부 (비밀번호 설정 버튼 표시)
 const EmpDetailModal = ({ emp, onClose, onEdit, isAdmin = false }) => {
   const [showSetPw, setShowSetPw] = useState(false);
+  const [addr, setAddr] = useState(null);
+
+  useEffect(() => {
+    if (!emp) return;
+    fetchEmpAddr(emp.empno)
+      .then(setAddr)
+      .catch(() => setAddr(null));
+  }, [emp]);
 
   if (!emp) return null;
 
@@ -120,6 +129,23 @@ const EmpDetailModal = ({ emp, onClose, onEdit, isAdmin = false }) => {
                 <span className="detail-label">부서번호</span>
                 <span className="detail-value">{emp.deptno ?? '-'}</span>
               </div>
+              {addr && (addr.zipcode || addr.address) && (
+                <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                  <span className="detail-label">주소</span>
+                  <span className="detail-value">
+                    {addr.zipcode && (
+                      <span style={{
+                        display: 'inline-block', marginRight: 6,
+                        background: '#eff6ff', color: '#3b82f6',
+                        fontSize: '0.78rem', fontWeight: 700,
+                        padding: '2px 7px', borderRadius: 10, border: '1px solid #bfdbfe',
+                      }}>{addr.zipcode}</span>
+                    )}
+                    {addr.address}
+                    {addr.addrDetail && ` ${addr.addrDetail}`}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="modal-footer">

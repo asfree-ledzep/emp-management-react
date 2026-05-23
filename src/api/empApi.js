@@ -90,6 +90,23 @@ export const importEmpsExcel = async (file) => {
   return response.json(); // { total, success, failed, errors[] }
 };
 
+// 사원 주소 조회
+export const fetchEmpAddr = async (empno) => {
+  const response = await authFetch(`${BASE_URL}/emps/${empno}/addr`);
+  if (!response.ok) throw new Error(`주소 조회 실패 (${response.status})`);
+  return response.json(); // { empno, zipcode, address, addrDetail }
+};
+
+// 사원 주소 저장
+export const saveEmpAddr = async (empno, addr) => {
+  const response = await authFetch(`${BASE_URL}/emps/${empno}/addr`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(addr),
+  });
+  if (!response.ok) throw new Error(`주소 저장 실패 (${response.status})`);
+};
+
 // 부서별 급여 통계 조회 (평균, 최고, 최저, 사원 수)
 export const fetchSalaryStats = async () => {
   const response = await authFetch(`${BASE_URL}/stats/salary`);

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import EmpTable from '../components/EmpTable';
 import EmpFormModal from '../components/EmpFormModal';
 import EmpDetailModal from '../components/EmpDetailModal';
-import { fetchEmps, createEmp, updateEmp, deleteEmp, uploadPhoto, exportEmpsExcel, importEmpsExcel } from '../api/empApi';
+import { fetchEmps, createEmp, updateEmp, deleteEmp, uploadPhoto, exportEmpsExcel, importEmpsExcel, saveEmpAddr } from '../api/empApi';
 import '../styles/EmpListPage.css';
 import '../styles/Button.css';
 
@@ -146,9 +146,9 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
     }
   };
 
-  // 폼 저장: 등록 또는 수정 API 호출 후 사진 업로드, 전체 목록으로 복귀
+  // 폼 저장: 등록 또는 수정 API 호출 후 사진/주소 저장, 전체 목록으로 복귀
   const handleSave = async (formData) => {
-    const { _photoFile, ...empData } = formData;
+    const { _photoFile, _addrData, ...empData } = formData;
     setSaving(true);
     try {
       if (modalMode === 'create') {
@@ -158,6 +158,9 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
       }
       if (_photoFile) {
         await uploadPhoto(empData.empno, _photoFile);
+      }
+      if (_addrData && (_addrData.zipcode || _addrData.address || _addrData.addrDetail)) {
+        await saveEmpAddr(empData.empno, _addrData);
       }
       setModalMode(null);
       loadEmps();

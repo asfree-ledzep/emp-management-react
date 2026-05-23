@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDepts } from '../api/deptApi';
+import { fetchEmpAddr } from '../api/empApi';
 import '../styles/Modal.css';
 import '../styles/Button.css';
 
@@ -38,12 +39,20 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [depts, setDepts] = useState([]);
+  const [addr, setAddr] = useState({ zipcode: '', address: '', addrDetail: '' });
 
   useEffect(() => {
     fetchDepts().then(setDepts).catch(() => {});
+    // 카카오 우편번호 서비스 스크립트 동적 로드
+    if (!window.daum?.Postcode) {
+      const script = document.createElement('script');
+      script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+      script.async = true;
+      document.head.appendChild(script);
+    }
   }, []);
 
-  // 수정 모드일 때 기존 데이터로 폼 초기화
+  // 수정 모드일 때 기존 데이터로 폼 초기화 + 주소 조회
   useEffect(() => {
     if (isEdit && emp) {
       setForm({
@@ -57,6 +66,9 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
         deptno:   emp.deptno   ?? '',
       });
       if (emp.photoUrl) setPhotoPreview(emp.photoUrl);
+      fetchEmpAddr(emp.empno)
+        .then((data) => setAddr({ zipcode: data.zipcode ?? '', address: data.address ?? '', addrDetail: data.addrDetail ?? '' }))
+        .catch(() => {});
     }
   }, [isEdit, emp]);
 
@@ -105,7 +117,25 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 폼 제출: 숫자 필드 타입 변환 후 부모에 전달 (_photoFile은 별도 업로드용)
+  // 카카오 주소 검색 팝업 열기
+  const handleAddrSearch = () => {
+    if (!window.daum?.Postcode) {
+      alert('주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    new window.daum.Postcode({
+      oncomplete: (data) => {
+        setAddr((prev) => ({
+          ...prev,
+          zipcode: data.zonecode,
+          address: data.roadAddress || data.jibunAddress,
+        }));
+      },
+    }).open();
+  };
+
+  // 폼 제출: 숫자 필드 타입 변환 후 부모에 전달
+  // _photoFile: 사진 업로드, _addrData: 주소 저장 (별도 API 호출용)
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({
@@ -116,6 +146,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
       comm:   form.comm   !== '' ? Number(form.comm)   : null,
       deptno: form.deptno !== '' ? Number(form.deptno) : null,
       _photoFile: photoFile,
+      _addrData:  addr,
     });
   };
 
@@ -217,6 +248,35 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* 주소 검색 (카카오 우편번호 서비스) */}
+          <div className="form-row" style={{ alignItems: 'flex-start' }}>
+            <label style={{ paddingTop: 6 }}>주소</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  value={addr.zipcode}
+                  readOnly
+                  placeholder="우편번호"
+                  style={{ width: 100, background: '#f9fafb' }}
+                />
+                <button type="button" onClick={handleAddrSearch} className="btn btn-gray" style={{ flexShrink: 0 }}>
+                  주소 검색
+                </button>
+              </div>
+              <input
+                value={addr.address}
+                readOnly
+                placeholder="기본 주소"
+                style={{ background: '#f9fafb' }}
+              />
+              <input
+                value={addr.addrDetail}
+                onChange={(e) => setAddr((prev) => ({ ...prev, addrDetail: e.target.value }))}
+                placeholder="상세 주소 입력"
+              />
+            </div>
           </div>
 
           <div className="form-row">
