@@ -194,7 +194,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
     try {
       const result = await importEmpsExcel(file);
       setImportResult(result);
-      if (result.success > 0) loadEmps();
+      // 목록 reload는 결과 모달 확인 버튼에서 실행
     } catch (err) {
       alert('업로드 실패: ' + err.message);
     } finally {
@@ -439,7 +439,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
             )}
 
             <div style={{ marginTop: 16, textAlign: 'right' }}>
-              <button onClick={() => setImportResult(null)} style={{
+              <button onClick={() => { setImportResult(null); loadEmps(); }} style={{
                 padding: '9px 24px', background: '#4f46e5', color: '#fff',
                 border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600,
               }}>확인</button>
