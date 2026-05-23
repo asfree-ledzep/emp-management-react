@@ -3,6 +3,34 @@ import { parseReceipt, createExpense, fetchMyExpenses } from '../api/expenseApi'
 
 const CATEGORIES = ['식비', '교통비', '숙박비', '업무용품', '접대비', '기타'];
 
+// 스마트폰 고해상도 사진 → 1200px / JPEG 80% 압축 (502 방지)
+const compressImage = (file) =>
+  new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        const r = Math.min(MAX / width, MAX / height);
+        width  = Math.round(width  * r);
+        height = Math.round(height * r);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width  = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })),
+        'image/jpeg',
+        0.8
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '-';
 
 const EmployeeExpensePage = ({ onNavigateToList }) => {
@@ -10,7 +38,9 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
 
   // ── 업로드 탭 ──
   const [file, setFile]             = useState(null);
+  const [fileSize, setFileSize]     = useState(null);   // 압축 후 크기 표시용
   const [preview, setPreview]       = useState(null);
+  const [compressing, setCompressing] = useState(false);
   const [parsing, setParsing]       = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [ocrDone, setOcrDone]       = useState(false);   // OCR 완료 여부
@@ -40,13 +70,29 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
       .finally(() => setListLoading(false));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const f = e.target.files[0];
     if (!f) return;
-    setFile(f);
     setPreview(URL.createObjectURL(f));
     setOcrDone(false);
     setForm(prev => ({ ...prev, receiptUrl: '', amount: '', ocrRaw: '' }));
+
+    if (f.size > 1024 * 1024) {
+      setCompressing(true);
+      try {
+        const compressed = await compressImage(f);
+        setFile(compressed);
+        setFileSize(compressed.size);
+      } catch {
+        setFile(f);
+        setFileSize(f.size);
+      } finally {
+        setCompressing(false);
+      }
+    } else {
+      setFile(f);
+      setFileSize(f.size);
+    }
   };
 
   const handleParse = async () => {
@@ -169,6 +215,18 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
               onChange={handleFileChange}
               style={{ fontSize: '0.9rem' }}
             />
+            {compressing && (
+              <div style={{ marginTop: 10, color: '#7c3aed', fontSize: '0.82rem', fontWeight: 600 }}>
+                ⏳ 이미지 최적화 중...
+              </div>
+            )}
+            {!compressing && fileSize != null && (
+              <div style={{ marginTop: 8, color: '#6b7280', fontSize: '0.78rem' }}>
+                📦 업로드 크기: {fileSize < 1024 * 1024
+                  ? (fileSize / 1024).toFixed(0) + ' KB'
+                  : (fileSize / 1024 / 1024).toFixed(1) + ' MB'}
+              </div>
+            )}
           </div>
 
           {/* 이미지 미리보기 */}
@@ -184,10 +242,10 @@ const EmployeeExpensePage = ({ onNavigateToList }) => {
           {/* OCR 분석 버튼 */}
           <button
             onClick={handleParse}
-            disabled={!file || parsing}
-            style={{ ...btnPrimary, background: '#7c3aed', opacity: (!file || parsing) ? 0.6 : 1 }}
+            disabled={!file || parsing || compressing}
+            style={{ ...btnPrimary, background: '#7c3aed', opacity: (!file || parsing || compressing) ? 0.6 : 1 }}
           >
-            {parsing ? '🔍 분석 중...' : '🔍 OCR 자동 분석 (금액·날짜 자동 추출)'}
+            {compressing ? '⏳ 이미지 최적화 중...' : parsing ? '🔍 분석 중...' : '🔍 OCR 자동 분석 (금액·날짜 자동 추출)'}
           </button>
 
           <hr style={{ border: 'none', borderTop: '1px solid #f3f4f6' }} />
