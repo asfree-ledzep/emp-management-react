@@ -17,7 +17,7 @@ function HolidayManagePage({ onNavigateToList }) {
   const [holidays, setHolidays] = useState([]);
   const [loading,  setLoading]  = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [form,     setForm]     = useState({ holidayDate: '', holidayName: '' });
+  const [form,     setForm]     = useState({ holidayDate: '', holidayEndDate: '', holidayName: '' });
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState('');
 
@@ -40,14 +40,16 @@ function HolidayManagePage({ onNavigateToList }) {
   }, {});
 
   const handleSave = async () => {
-    if (!form.holidayDate) { setError('날짜를 선택해주세요.'); return; }
+    if (!form.holidayDate) { setError('시작일을 선택해주세요.'); return; }
+    if (!form.holidayEndDate) { setError('종료일을 선택해주세요.'); return; }
+    if (form.holidayEndDate < form.holidayDate) { setError('종료일은 시작일 이후여야 합니다.'); return; }
     if (!form.holidayName.trim()) { setError('공휴일 이름을 입력해주세요.'); return; }
     setSaving(true); setError('');
     try {
       const res = await createHoliday(form);
       if (!res.ok) throw new Error('등록 실패');
       setShowForm(false);
-      setForm({ holidayDate: '', holidayName: '' });
+      setForm({ holidayDate: '', holidayEndDate: '', holidayName: '' });
       load();
     } catch (e) {
       setError(e.message);
@@ -130,8 +132,10 @@ function HolidayManagePage({ onNavigateToList }) {
                       <div key={h.holidayId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         padding: '7px 16px', borderBottom: '1px solid #f3f4f6' }}>
                         <div>
-                          <span style={{ fontWeight: 600, color: '#ef4444', fontSize: '0.85rem', marginRight: 8 }}>
+                          <span style={{ fontWeight: 600, color: '#ef4444', fontSize: '0.85rem', marginRight: 6 }}>
                             {fmtDate(h.holidayDate)}
+                            {h.holidayEndDate && h.holidayEndDate !== h.holidayDate &&
+                              ` ~ ${fmtDate(h.holidayEndDate)}`}
                           </span>
                           <span style={{ fontSize: '0.85rem', color: '#374151' }}>{h.holidayName}</span>
                         </div>
@@ -161,13 +165,29 @@ function HolidayManagePage({ onNavigateToList }) {
 
             {error && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: 12 }}>{error}</p>}
 
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: 5, fontSize: '0.85rem' }}>
-                날짜 <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <input type="date" value={form.holidayDate}
-                onChange={e => setForm(f => ({ ...f, holidayDate: e.target.value }))}
-                style={inp} />
+            <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 5, fontSize: '0.85rem' }}>
+                  시작일 <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input type="date" value={form.holidayDate}
+                  onChange={e => setForm(f => ({
+                    ...f,
+                    holidayDate: e.target.value,
+                    holidayEndDate: f.holidayEndDate || e.target.value,
+                  }))}
+                  style={inp} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 5, fontSize: '0.85rem' }}>
+                  종료일 <span style={{ color: '#ef4444' }}>*</span>
+                  <span style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.75rem', marginLeft: 4 }}>(단일공휴일=시작일)</span>
+                </label>
+                <input type="date" value={form.holidayEndDate}
+                  onChange={e => setForm(f => ({ ...f, holidayEndDate: e.target.value }))}
+                  min={form.holidayDate}
+                  style={inp} />
+              </div>
             </div>
 
             <div style={{ marginBottom: 20 }}>
