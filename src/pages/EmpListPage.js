@@ -50,7 +50,7 @@ const EmpListPage = ({ onNavigateToChart, onNavigateToDept, onNavigateToNotice, 
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
   // 페이지당 표시 사원 수
-  const [pageSize, setPageSize] = useState(3);
+  const [pageSize, setPageSize] = useState(10);
 
   // 전체 사원 목록을 서버에서 새로 불러오고 검색 상태 초기화
   const loadEmps = () => {
