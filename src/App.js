@@ -14,6 +14,7 @@ import OrgChartPage from './pages/OrgChartPage';
 import FaqManagePage from './pages/FaqManagePage';
 import HolidayManagePage from './pages/HolidayManagePage';
 import LeaveAdminPage from './pages/LeaveAdminPage';
+import SharedFolderPage from './pages/SharedFolderPage';
 import ChatbotButton from './components/ChatbotModal';
 import EmployeeLayout from './components/EmployeeLayout';
 import { registerPush, unregisterPush } from './utils/pushNotification';
@@ -177,6 +178,9 @@ function App() {
           )}
           {page === 'leave' && (
             <LeaveAdminPage onNavigateToList={() => setPage('dashboard')} />
+          )}
+          {page === 'folder' && (
+            <SharedFolderPage isAdmin={true} darkMode={darkMode} />
           )}
           <ChatbotButton darkMode={darkMode} />
         </>
