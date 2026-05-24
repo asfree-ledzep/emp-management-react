@@ -50,6 +50,10 @@ export const fetchKakaoStatus = () =>
 export const sendKakaoNudge = () =>
   authFetch(`${BASE}/kakao/nudge`, { method: 'POST' }).then(r => r.json());
 
+// 특정 사원 카카오 테스트 메시지 발송 (관리자)
+export const sendKakaoTestMessage = (empno) =>
+  authFetch(`${BASE}/kakao/test/${empno}`, { method: 'POST' }).then(r => r.json());
+
 // 카카오 로그인 URL 조회
 export const getKakaoAuthUrl = () =>
   authFetch(`${BASE}/kakao/auth-url`).then(r => r.json());

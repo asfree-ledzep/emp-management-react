@@ -5,7 +5,7 @@ import {
 import { fetchEmps } from '../api/empApi';
 import { fetchExpensesByMonth, fetchMonthlyStats } from '../api/expenseApi';
 import { fetchSurveys } from '../api/surveyApi';
-import { fetchNotices, fetchKakaoConnectedCount, fetchKakaoStatus } from '../api/noticeApi';
+import { fetchNotices, fetchKakaoConnectedCount, fetchKakaoStatus, sendKakaoTestMessage } from '../api/noticeApi';
 import { sendPushNudgeKakao } from '../api/pushApi';
 import '../styles/DashboardPage.css';
 
@@ -69,6 +69,8 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const [statusLoading,  setStatusLoading]  = useState(false);
   const [nudgeSending,   setNudgeSending]   = useState(false);
   const [nudgeResult,    setNudgeResult]    = useState(null);  // { message, sentCount }
+  const [testingEmpno,   setTestingEmpno]   = useState(null);  // 테스트 발송 중인 empno
+  const [testResults,    setTestResults]    = useState({});    // { empno: '성공'|'실패' }
 
   useEffect(() => {
     const last6 = getLastMonths(6);
@@ -105,12 +107,26 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const openKakaoModal = () => {
     setShowKakaoModal(true);
     setNudgeResult(null);
+    setTestResults({});
     setKakaoStatus(null);
     setStatusLoading(true);
     fetchKakaoStatus()
       .then(data => setKakaoStatus(data))
       .catch(() => setKakaoStatus({ connected: [], unconnected: [] }))
       .finally(() => setStatusLoading(false));
+  };
+
+  // 특정 사원 카카오 테스트 메시지 발송
+  const handleKakaoTest = async (empno, ename) => {
+    setTestingEmpno(empno);
+    try {
+      await sendKakaoTestMessage(empno);
+      setTestResults(prev => ({ ...prev, [empno]: '✅ 발송 성공' }));
+    } catch (e) {
+      setTestResults(prev => ({ ...prev, [empno]: '❌ 발송 실패' }));
+    } finally {
+      setTestingEmpno(null);
+    }
   };
 
   // 카카오 연동 독려 푸시 발송
@@ -514,12 +530,34 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
                   {(kakaoStatus.connected?.length ?? 0) === 0 ? (
                     <div style={{ fontSize: '0.82rem', color: C.textMuted, padding: '8px 0' }}>연동된 직원이 없습니다.</div>
                   ) : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {kakaoStatus.connected.map((emp, i) => (
-                        <span key={i} style={{
-                          background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0',
-                          borderRadius: 20, padding: '3px 12px', fontSize: '0.8rem', fontWeight: 600,
-                        }}>{emp.ename}</span>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{
+                            background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0',
+                            borderRadius: 20, padding: '3px 14px', fontSize: '0.8rem', fontWeight: 600,
+                            minWidth: 60, textAlign: 'center',
+                          }}>{emp.ename}</span>
+                          <button
+                            onClick={() => handleKakaoTest(emp.empno, emp.ename)}
+                            disabled={testingEmpno === emp.empno}
+                            style={{
+                              padding: '3px 10px', borderRadius: 8, border: '1px solid #6366f1',
+                              background: testingEmpno === emp.empno ? '#e0e7ff' : '#fff',
+                              color: '#4f46e5', fontSize: '0.75rem', fontWeight: 600,
+                              cursor: testingEmpno === emp.empno ? 'not-allowed' : 'pointer',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {testingEmpno === emp.empno ? '발송 중...' : '📨 카톡 테스트'}
+                          </button>
+                          {testResults[emp.empno] && (
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600,
+                              color: testResults[emp.empno].startsWith('✅') ? '#15803d' : '#dc2626' }}>
+                              {testResults[emp.empno]}
+                            </span>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}
