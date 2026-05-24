@@ -113,3 +113,20 @@ body {
     font-size: 0.8rem;
   }
 }
+
+@media (max-width: 480px) {
+  .app-topbar {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .app-topbar-user {
+    font-size: 0.75rem;
+  }
+  .app-topbar-role {
+    display: none; /* 작은 화면에서 역할 뱃지 숨김 */
+  }
+  .app-topbar-logout {
+    font-size: 0.75rem;
+    padding: 3px 9px;
+  }
+}

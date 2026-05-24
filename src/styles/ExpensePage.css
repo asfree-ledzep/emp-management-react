@@ -38,4 +38,14 @@
   .expense-donut-card {
     padding: 14px 12px;
   }
+
+  .expense-table-wrap table {
+    font-size: 0.78rem;
+  }
+
+  .expense-table-wrap th,
+  .expense-table-wrap td {
+    padding: 7px 8px !important;
+    font-size: 0.75rem !important;
+  }
 }

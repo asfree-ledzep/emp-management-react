@@ -281,7 +281,7 @@ function OrgChartPage({ onNavigateToList }) {
       </div>
 
       {/* ── 트리 뷰포트 ── */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '40px 60px 80px' }}>
+      <div className="oc-viewport">
         {roots.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#9ca3af', marginTop: 60 }}>
             사원 데이터가 없습니다.

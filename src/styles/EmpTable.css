@@ -94,7 +94,7 @@
   color: #fde68a;
 }
 
-/* ── 반응형: 모바일 ── */
+/* ── 반응형: 태블릿 (≤640px) ── */
 @media (max-width: 640px) {
   .emp-table th,
   .emp-table td {
@@ -113,5 +113,19 @@
     margin: 0;
     font-size: 0.75rem;
     padding: 4px 8px;
+  }
+}
+
+/* ── 반응형: 모바일 (≤480px) ── */
+@media (max-width: 480px) {
+  .emp-table th,
+  .emp-table td {
+    padding: 7px 8px;
+    font-size: 0.75rem;
+  }
+
+  .emp-table .action-cell .btn {
+    font-size: 0.7rem;
+    padding: 3px 6px;
   }
 }

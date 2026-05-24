@@ -55,12 +55,12 @@ const SurveyPage = ({ isAdmin, onNavigateToList }) => {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.6rem' }}>📋 설문조사</h1>
           <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '0.9rem' }}>총 {surveys.length}개</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-gray btn-lg" onClick={onNavigateToList}>🏠 대시보드</button>
           {isAdmin && (
             <button className="btn btn-blue btn-lg" onClick={() => setShowForm(true)}>+ 설문 작성</button>
@@ -79,9 +79,10 @@ const SurveyPage = ({ isAdmin, onNavigateToList }) => {
             <div key={survey.surveyId} style={{
               background: '#fff', border: '1px solid #e5e7eb',
               borderRadius: 12, padding: '20px 24px',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+              flexWrap: 'wrap', gap: 12,
             }}>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                   <span style={{
                     background: survey.status === 'ACTIVE' ? '#dcfce7' : '#f3f4f6',
@@ -103,7 +104,7 @@ const SurveyPage = ({ isAdmin, onNavigateToList }) => {
               </div>
 
               {/* 버튼 영역 */}
-              <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
                 {isAdmin ? (
                   <>
                     <button className="btn btn-blue" onClick={() => setResultSurvey(survey.surveyId)}>

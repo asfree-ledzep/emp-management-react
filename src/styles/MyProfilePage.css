@@ -132,8 +132,49 @@
   letter-spacing: -0.2px;
 }
 
-@media (max-width: 400px) {
+/* ── 모바일 (≤480px) ── */
+@media (max-width: 480px) {
+  .my-profile-page {
+    margin: 16px auto;
+    padding: 0 10px;
+  }
+
+  .my-profile-banner {
+    padding: 24px 16px 14px;
+  }
+
+  .my-profile-info {
+    padding: 16px 18px;
+  }
+
+  .my-profile-row-label {
+    width: 68px;
+    font-size: 0.78rem;
+  }
+
+  .my-profile-row-value {
+    font-size: 0.88rem;
+  }
+
   .my-profile-footer {
     grid-template-columns: repeat(2, 1fr);
+    padding: 14px 16px;
+    gap: 8px;
+  }
+
+  .my-profile-footer .btn {
+    font-size: 0.74rem;
+    padding: 9px 2px;
+  }
+}
+
+/* ── 초소형 (≤360px) ── */
+@media (max-width: 360px) {
+  .my-profile-name {
+    font-size: 1.1rem;
+  }
+
+  .my-profile-footer {
+    grid-template-columns: 1fr 1fr;
   }
 }

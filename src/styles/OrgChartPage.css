@@ -162,3 +162,62 @@
   height: 2px;
   background: #94a3b8;
 }
+
+/* ── 조직도 뷰포트 ── */
+.oc-viewport {
+  flex: 1;
+  overflow: auto;
+  padding: 40px 60px 80px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── 모바일 반응형 (≤640px) ── */
+@media (max-width: 640px) {
+  .oc-viewport {
+    padding: 20px 16px 40px;
+  }
+
+  .oc-card {
+    width: 110px;
+    padding: 10px 6px 8px;
+  }
+
+  .oc-avatar,
+  .oc-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+  }
+
+  .oc-name {
+    font-size: 0.78rem;
+    max-width: 90px;
+  }
+
+  .oc-job {
+    font-size: 0.62rem;
+    margin-bottom: 5px;
+  }
+
+  .oc-dept-badge {
+    font-size: 0.6rem;
+    padding: 1px 5px;
+  }
+
+  .oc-children-row {
+    gap: 8px;
+  }
+
+  .oc-child-wrap {
+    padding-top: 16px;
+  }
+
+  .oc-child-wrap::before {
+    height: 16px;
+  }
+
+  .oc-down-line {
+    height: 16px;
+  }
+}

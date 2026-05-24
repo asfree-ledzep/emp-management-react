@@ -70,7 +70,7 @@ function NoticePage({ isAdmin, onNavigateToList, empno }) {
     <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
 
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: 10 }}>
           📢 공지사항
           {!isAdmin && unreadCount > 0 && (
@@ -82,7 +82,7 @@ function NoticePage({ isAdmin, onNavigateToList, empno }) {
             </span>
           )}
         </h2>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {onNavigateToList && (
             <button onClick={onNavigateToList} style={btnStyle('#6b7280')}>
               {isAdmin ? '🏠 대시보드' : '← 돌아가기'}

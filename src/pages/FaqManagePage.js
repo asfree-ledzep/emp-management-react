@@ -81,9 +81,9 @@ function FaqManagePage({ onNavigateToList }) {
   return (
     <div style={{ padding: '24px', maxWidth: 900, margin: '0 auto' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: '1.4rem' }}>💬 FAQ 관리</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
             onClick={onNavigateToList}
             style={{ padding: '8px 16px', background: '#6b7280', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}

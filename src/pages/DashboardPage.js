@@ -244,7 +244,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   }
 
   return (
-    <div style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto', background: C.bg, minHeight: '100vh' }}>
+    <div className="db-page-wrap" style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto', background: C.bg, minHeight: '100vh' }}>
 
       {/* ── 헤더 ── */}
       <div style={{ marginBottom: 28 }}>

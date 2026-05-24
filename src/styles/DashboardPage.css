@@ -54,4 +54,22 @@
   .db-menu {
     grid-template-columns: 1fr 1fr !important;
   }
+
+  /* 하단 섹션 패딩 */
+  .db-bottom > div {
+    min-width: unset !important;
+  }
+}
+
+/* ── 대시보드 페이지 패딩 ── */
+@media (max-width: 768px) {
+  .db-page-wrap {
+    padding: 16px 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .db-page-wrap {
+    padding: 12px 10px !important;
+  }
 }
