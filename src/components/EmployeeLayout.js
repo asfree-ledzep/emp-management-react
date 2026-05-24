@@ -6,21 +6,30 @@ import SurveyPage from '../pages/SurveyPage';
 import EmployeeExpensePage from '../pages/EmployeeExpensePage';
 import LeaveRequestPage from '../pages/LeaveRequestPage';
 import LeaveMgrPage from '../pages/LeaveMgrPage';
-import { fetchMgrPending } from '../api/leaveApi';
+import { fetchMgrPending, fetchMyBalance } from '../api/leaveApi';
 
 const MENU = [
-  { key: 'profile',  icon: '👤', label: '내 프로필' },
-  { key: 'leave',    icon: '🏖️', label: '연차 신청' },
-  { key: 'mgr',      icon: '✅', label: '연차 승인', mgrOnly: true },
-  { key: 'notice',   icon: '📢', label: '공지사항' },
-  { key: 'survey',   icon: '📊', label: '설문' },
-  { key: 'expense',  icon: '💳', label: '지출 신청' },
+  { key: 'profile',        icon: '👤', label: '내 프로필' },
+  { key: 'leave',          icon: '🏖️', label: '연차 신청' },
+  { key: 'leave-approved', icon: '📋', label: '결제완료 연차' },
+  { key: 'mgr',            icon: '✅', label: '연차 승인', mgrOnly: true },
+  { key: 'notice',         icon: '📢', label: '공지사항' },
+  { key: 'survey',         icon: '📊', label: '설문' },
+  { key: 'expense',        icon: '💳', label: '지출 신청' },
 ];
 
 export default function EmployeeLayout({ empno, darkMode, initialPage }) {
   const [page, setPage] = useState(initialPage || 'profile');
   const [mgrPendingCount, setMgrPendingCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [balance, setBalance] = useState(null);
+
+  // 잔여 연차 조회
+  useEffect(() => {
+    fetchMyBalance()
+      .then(setBalance)
+      .catch(() => {});
+  }, []);
 
   // MGR 승인 대기 건수 주기적으로 체크
   useEffect(() => {
@@ -64,13 +73,52 @@ export default function EmployeeLayout({ empno, darkMode, initialPage }) {
         padding: '20px 0',
       }} className={`emp-sidebar${sidebarOpen ? ' open' : ''}`}>
         {/* 로고 영역 */}
-        <div style={{ padding: '0 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ padding: '0 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ color: '#a5b4fc', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', marginBottom: 4 }}>
             EMPLOYEE PORTAL
           </div>
           <div style={{ color: '#fff', fontSize: '0.95rem', fontWeight: 700 }}>
             사원 메뉴
           </div>
+        </div>
+
+        {/* 잔여 연차 카드 */}
+        <div
+          onClick={() => navigate('leave')}
+          style={{
+            margin: '14px 14px 4px',
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.55) 0%, rgba(124,58,237,0.55) 100%)',
+            border: '1px solid rgba(165,180,252,0.3)',
+            borderRadius: 10, padding: '12px 14px', cursor: 'pointer',
+          }}
+        >
+          <div style={{ fontSize: '0.68rem', color: '#c4b5fd', fontWeight: 600, marginBottom: 4, letterSpacing: '0.05em' }}>
+            {new Date().getFullYear()}년 잔여 연차
+          </div>
+          {balance ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#fff', lineHeight: 1 }}>
+                  {balance.remaining}
+                </span>
+                <span style={{ fontSize: '0.85rem', color: '#c4b5fd', fontWeight: 600 }}>일</span>
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(196,181,253,0.8)', marginTop: 4 }}>
+                총 {balance.totalDays}일 중 사용 {balance.usedDays}일
+              </div>
+              {/* 잔여 비율 바 */}
+              <div style={{ marginTop: 8, background: 'rgba(0,0,0,0.25)', borderRadius: 4, height: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4,
+                  background: balance.remaining > 5 ? '#a5b4fc' : '#f87171',
+                  width: `${Math.min(100, (balance.remaining / (balance.totalDays || 15)) * 100)}%`,
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: '0.8rem', color: 'rgba(196,181,253,0.6)' }}>불러오는 중...</div>
+          )}
         </div>
 
         {/* 메뉴 항목 */}
@@ -137,8 +185,9 @@ export default function EmployeeLayout({ empno, darkMode, initialPage }) {
             onNavigateToNotice={() => navigate('notice')}
           />
         )}
-        {page === 'leave'   && <LeaveRequestPage />}
-        {page === 'mgr'     && <LeaveMgrPage />}
+        {page === 'leave'          && <LeaveRequestPage />}
+        {page === 'leave-approved' && <LeaveRequestPage approvedOnly={true} />}
+        {page === 'mgr'            && <LeaveMgrPage />}
         {page === 'notice'  && <NoticePage isAdmin={false} empno={empno} onNavigateToList={() => navigate('profile')} />}
         {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => navigate('profile')} />}
         {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => navigate('profile')} />}

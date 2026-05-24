@@ -42,7 +42,7 @@ const calcWeekdays = (start, end) => {
   return count;
 };
 
-export default function LeaveRequestPage() {
+export default function LeaveRequestPage({ approvedOnly = false }) {
   const [balance,  setBalance]  = useState(null);
   const [leaves,   setLeaves]   = useState([]);
   const [loading,  setLoading]  = useState(false);
@@ -127,6 +127,11 @@ export default function LeaveRequestPage() {
     fontSize: '0.88rem', width: '100%', boxSizing: 'border-box',
   };
 
+  // approvedOnly 모드면 APPROVED 항목만 필터
+  const displayLeaves = approvedOnly
+    ? leaves.filter(lv => lv.status === 'APPROVED')
+    : leaves;
+
   return (
     <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 4px' }}>
       {/* 잔여 연차 카드 */}
@@ -151,34 +156,37 @@ export default function LeaveRequestPage() {
             <div style={{ fontSize: '1rem', opacity: 0.7 }}>불러오는 중...</div>
           )}
         </div>
-        <button
-          onClick={() => { setShowForm(true); setError(''); }}
-          style={{
-            padding: '10px 22px', background: '#fff', color: '#4f46e5',
-            border: 'none', borderRadius: 8, cursor: 'pointer',
-            fontWeight: 700, fontSize: '0.92rem',
-          }}
-        >+ 연차 신청</button>
+        {/* 결제완료 목록 모드에서는 신청 버튼 숨김 */}
+        {!approvedOnly && (
+          <button
+            onClick={() => { setShowForm(true); setError(''); }}
+            style={{
+              padding: '10px 22px', background: '#fff', color: '#4f46e5',
+              border: 'none', borderRadius: 8, cursor: 'pointer',
+              fontWeight: 700, fontSize: '0.92rem',
+            }}
+          >+ 연차 신청</button>
+        )}
       </div>
 
-      {/* 신청 내역 */}
+      {/* 신청 내역 헤더 */}
       <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 14, color: '#374151' }}>
-        📋 신청 내역
+        {approvedOnly ? '✅ 결제완료 연차 목록' : '📋 신청 내역'}
       </h3>
 
       {loading ? (
         <p style={{ color: '#9ca3af', textAlign: 'center', padding: '30px 0' }}>불러오는 중...</p>
-      ) : leaves.length === 0 ? (
+      ) : displayLeaves.length === 0 ? (
         <div style={{
           background: '#f9fafb', border: '1px dashed #d1d5db', borderRadius: 12,
           padding: '40px 0', textAlign: 'center', color: '#9ca3af',
         }}>
           <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>📄</div>
-          <p style={{ margin: 0 }}>신청 내역이 없습니다.</p>
+          <p style={{ margin: 0 }}>{approvedOnly ? '결제완료된 연차가 없습니다.' : '신청 내역이 없습니다.'}</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {leaves.map(lv => {
+          {displayLeaves.map(lv => {
             const st  = STATUS_LABEL[lv.status] || { text: lv.status, color: '#6b7280', bg: '#f3f4f6' };
             const mgr = mgrStatusLabel(lv.status);
             return (
