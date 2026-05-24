@@ -11,8 +11,8 @@ import { fetchMgrPending, fetchMyBalance } from '../api/leaveApi';
 const MENU = [
   { key: 'profile',        icon: '👤', label: '내 프로필' },
   { key: 'leave',          icon: '🏖️', label: '연차 신청' },
-  { key: 'leave-approved', icon: '📋', label: '결제완료 연차' },
   { key: 'mgr',            icon: '✅', label: '연차 승인', mgrOnly: true },
+  { key: 'leave-approved', icon: '📋', label: '결제 완료 연차' },
   { key: 'notice',         icon: '📢', label: '공지사항' },
   { key: 'survey',         icon: '📊', label: '설문' },
   { key: 'expense',        icon: '💳', label: '지출 신청' },
