@@ -22,3 +22,7 @@ export const testPush = (title, body) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, body }),
   });
+
+// 카카오 미연동 사원에게 연동 독려 푸시 발송 (관리자 전용)
+export const sendPushNudgeKakao = () =>
+  authFetch(`${BASE}/push/nudge-kakao`, { method: 'POST' }).then(r => r.json());

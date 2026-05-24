@@ -5,7 +5,8 @@ import {
 import { fetchEmps } from '../api/empApi';
 import { fetchExpensesByMonth, fetchMonthlyStats } from '../api/expenseApi';
 import { fetchSurveys } from '../api/surveyApi';
-import { fetchNotices, fetchKakaoConnectedCount } from '../api/noticeApi';
+import { fetchNotices, fetchKakaoConnectedCount, fetchKakaoStatus } from '../api/noticeApi';
+import { sendPushNudgeKakao } from '../api/pushApi';
 import '../styles/DashboardPage.css';
 
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '0 원';
@@ -54,13 +55,20 @@ const DonutTooltip = ({ active, payload }) => {
 };
 
 const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
-  const [emps,        setEmps]        = useState([]);
-  const [expenses,    setExpenses]    = useState([]);
-  const [surveys,     setSurveys]     = useState([]);
-  const [notices,     setNotices]     = useState([]);
-  const [trendData,   setTrendData]   = useState([]);
-  const [kakaoCount,  setKakaoCount]  = useState(0);
-  const [loading,     setLoading]     = useState(true);
+  const [emps,           setEmps]           = useState([]);
+  const [expenses,       setExpenses]       = useState([]);
+  const [surveys,        setSurveys]        = useState([]);
+  const [notices,        setNotices]        = useState([]);
+  const [trendData,      setTrendData]      = useState([]);
+  const [kakaoCount,     setKakaoCount]     = useState(0);
+  const [loading,        setLoading]        = useState(true);
+
+  // 카카오 연동 현황 모달
+  const [showKakaoModal, setShowKakaoModal] = useState(false);
+  const [kakaoStatus,    setKakaoStatus]    = useState(null);  // { connected:[], unconnected:[] }
+  const [statusLoading,  setStatusLoading]  = useState(false);
+  const [nudgeSending,   setNudgeSending]   = useState(false);
+  const [nudgeResult,    setNudgeResult]    = useState(null);  // { message, sentCount }
 
   useEffect(() => {
     const last6 = getLastMonths(6);
@@ -92,6 +100,32 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
       setLoading(false);
     });
   }, []);
+
+  // 카카오 현황 모달 열기 (매번 최신 데이터 로드)
+  const openKakaoModal = () => {
+    setShowKakaoModal(true);
+    setNudgeResult(null);
+    setKakaoStatus(null);
+    setStatusLoading(true);
+    fetchKakaoStatus()
+      .then(data => setKakaoStatus(data))
+      .catch(() => setKakaoStatus({ connected: [], unconnected: [] }))
+      .finally(() => setStatusLoading(false));
+  };
+
+  // 카카오 연동 독려 푸시 발송
+  const handleNudge = async () => {
+    setNudgeSending(true);
+    setNudgeResult(null);
+    try {
+      const result = await sendPushNudgeKakao();
+      setNudgeResult(result);
+    } catch (e) {
+      setNudgeResult({ message: '발송 실패', sentCount: 0 });
+    } finally {
+      setNudgeSending(false);
+    }
+  };
 
   // 요약 계산
   const totalEmp       = emps.length;
@@ -209,11 +243,18 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
           </div>
           <div style={cardLabel}>📋 진행중 설문</div>
         </div>
-        <div style={card(kakaoCount > 0 ? '#fff7ed' : '#f9fafb', kakaoCount > 0 ? '#fed7aa' : '#e5e7eb')}>
+        <div
+          style={{
+            ...card(kakaoCount > 0 ? '#fff7ed' : '#f9fafb', kakaoCount > 0 ? '#fed7aa' : '#e5e7eb'),
+            cursor: 'pointer', transition: 'box-shadow 0.15s',
+          }}
+          onClick={openKakaoModal}
+          title="클릭하여 카카오 연동 현황 보기"
+        >
           <div style={{ ...cardNum, color: kakaoCount > 0 ? '#c2410c' : '#374151' }}>
             {kakaoCount}<span style={{ fontSize: '1rem' }}>명</span>
           </div>
-          <div style={cardLabel}>💬 카카오 연동</div>
+          <div style={cardLabel}>💬 카카오 연동 <span style={{ fontSize: '0.72rem', color: '#f97316' }}>▶ 현황 보기</span></div>
         </div>
       </div>
 
@@ -435,6 +476,122 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
         </div>
 
       </div>
+
+      {/* ── 카카오 연동 현황 모달 ── */}
+      {showKakaoModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: 16,
+        }} onClick={() => setShowKakaoModal(false)}>
+          <div style={{
+            background: C.card, borderRadius: 16, padding: '28px 32px',
+            width: '100%', maxWidth: 520, maxHeight: '80vh', overflowY: 'auto',
+            border: `1px solid ${C.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }} onClick={e => e.stopPropagation()}>
+
+            {/* 헤더 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: C.textDark }}>💬 카카오 연동 현황</h3>
+              <button onClick={() => setShowKakaoModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: C.textMuted }}>
+                ✕
+              </button>
+            </div>
+
+            {statusLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: C.textMuted }}>불러오는 중...</div>
+            ) : kakaoStatus ? (
+              <>
+                {/* 연동된 직원 */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{
+                    fontSize: '0.85rem', fontWeight: 700, color: '#15803d',
+                    marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    ✅ 연동 완료 ({kakaoStatus.connected?.length ?? 0}명)
+                  </div>
+                  {(kakaoStatus.connected?.length ?? 0) === 0 ? (
+                    <div style={{ fontSize: '0.82rem', color: C.textMuted, padding: '8px 0' }}>연동된 직원이 없습니다.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {kakaoStatus.connected.map((emp, i) => (
+                        <span key={i} style={{
+                          background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0',
+                          borderRadius: 20, padding: '3px 12px', fontSize: '0.8rem', fontWeight: 600,
+                        }}>{emp.ename}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ borderTop: `1px solid ${C.border}`, margin: '16px 0' }} />
+
+                {/* 미연동 직원 */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{
+                    fontSize: '0.85rem', fontWeight: 700, color: '#b45309',
+                    marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    ⚠️ 미연동 ({kakaoStatus.unconnected?.length ?? 0}명)
+                  </div>
+                  {(kakaoStatus.unconnected?.length ?? 0) === 0 ? (
+                    <div style={{ fontSize: '0.82rem', color: C.textMuted, padding: '8px 0' }}>모든 직원이 연동되었습니다 🎉</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                      {kakaoStatus.unconnected.map((emp, i) => (
+                        <span key={i} style={{
+                          background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d',
+                          borderRadius: 20, padding: '3px 12px', fontSize: '0.8rem', fontWeight: 600,
+                        }}>{emp.ename}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 독려 버튼 */}
+                  {(kakaoStatus.unconnected?.length ?? 0) > 0 && (
+                    <div>
+                      <button
+                        onClick={handleNudge}
+                        disabled={nudgeSending}
+                        style={{
+                          width: '100%', padding: '12px', borderRadius: 10, border: 'none',
+                          background: nudgeSending ? '#e5e7eb' : '#f97316',
+                          color: nudgeSending ? '#9ca3af' : '#fff',
+                          fontWeight: 700, fontSize: '0.9rem', cursor: nudgeSending ? 'not-allowed' : 'pointer',
+                          transition: 'background 0.15s',
+                        }}
+                      >
+                        {nudgeSending ? '발송 중...' : '📲 브라우저 알림으로 연동 독려 발송'}
+                      </button>
+                      <div style={{ fontSize: '0.75rem', color: C.textMuted, marginTop: 6, textAlign: 'center' }}>
+                        앱에 로그인한 미연동 직원에게 브라우저 알림을 전송합니다
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 발송 결과 */}
+                {nudgeResult && (
+                  <div style={{
+                    marginTop: 12, padding: '12px 16px', borderRadius: 10,
+                    background: nudgeResult.sentCount > 0 ? '#dcfce7' : '#fef3c7',
+                    color: nudgeResult.sentCount > 0 ? '#15803d' : '#92400e',
+                    fontSize: '0.85rem', fontWeight: 600, textAlign: 'center',
+                  }}>
+                    {nudgeResult.sentCount > 0
+                      ? `✅ ${nudgeResult.sentCount}명에게 알림을 보냈습니다`
+                      : '⚠️ 알림을 받을 수 있는 미연동 직원이 없습니다 (앱에 미로그인)'}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: C.textMuted }}>데이터를 불러오지 못했습니다</div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

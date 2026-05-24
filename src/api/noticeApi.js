@@ -42,6 +42,14 @@ export const fetchUnreadNoticeCount = () =>
 export const fetchKakaoConnectedCount = () =>
   authFetch(`${BASE}/kakao/connected-count`).then(r => r.json());
 
+// 카카오 연동/미연동 직원 현황 조회 (관리자)
+export const fetchKakaoStatus = () =>
+  authFetch(`${BASE}/kakao/status`).then(r => r.json());
+
+// 미연동 직원 독려 메시지 발송 (관리자)
+export const sendKakaoNudge = () =>
+  authFetch(`${BASE}/kakao/nudge`, { method: 'POST' }).then(r => r.json());
+
 // 카카오 로그인 URL 조회
 export const getKakaoAuthUrl = () =>
   authFetch(`${BASE}/kakao/auth-url`).then(r => r.json());

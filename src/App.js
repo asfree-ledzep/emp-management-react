@@ -58,14 +58,12 @@ function App() {
     setEmpno(data.empno ?? null);
     // 관리자 → 대시보드, 사원 → 목록
     setPage(data.role === 'ADMIN' ? 'dashboard' : 'list');
-    // 관리자 로그인 시 푸시 알림 구독 등록
-    if (data.role === 'ADMIN') {
-      Notification.requestPermission().then((permission) => {
-        if (permission === 'granted') {
-          registerPush();
-        }
-      });
-    }
+    // 로그인 시 푸시 알림 구독 등록 (관리자: empno=null, 사원: empno=사원번호)
+    Notification.requestPermission().then((permission) => {
+      if (permission === 'granted') {
+        registerPush(data.empno ?? null);
+      }
+    });
   };
 
   // 로그아웃

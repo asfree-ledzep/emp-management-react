@@ -16,7 +16,8 @@ export function isPushSupported() {
 }
 
 // Service Worker 등록 + 푸시 구독 → 서버에 저장
-export async function registerPush() {
+// empno: 사원번호 (사원 로그인 시), null: 관리자
+export async function registerPush(empno = null) {
   if (!isPushSupported()) {
     console.warn('이 브라우저는 Web Push를 지원하지 않습니다.');
     return;
@@ -38,14 +39,15 @@ export async function registerPush() {
       console.log('푸시 구독 완료');
     }
 
-    // 서버에 구독 정보 저장
+    // 서버에 구독 정보 저장 (empno 포함)
     const subJson = subscription.toJSON();
     await subscribePush({
       endpoint: subJson.endpoint,
       p256dh: subJson.keys.p256dh,
       auth: subJson.keys.auth,
+      empno: empno,
     });
-    console.log('서버에 구독 정보 저장 완료');
+    console.log('서버에 구독 정보 저장 완료 (empno=' + empno + ')');
   } catch (err) {
     console.error('푸시 등록 실패:', err);
   }
