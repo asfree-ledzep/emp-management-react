@@ -13,6 +13,15 @@ const STATUS_LABEL = {
   REJECTED:     { text: '최종반려',  color: '#ef4444', bg: '#fee2e2' },
 };
 
+// 팀장 처리 상태 (status 기준)
+const mgrStatusLabel = (status) => {
+  if (status === 'PENDING')                       return { text: '대기중',   color: '#f59e0b', bg: '#fef3c7' };
+  if (status === 'MGR_APPROVED' || status === 'APPROVED' || status === 'REJECTED')
+                                                  return { text: '승인완료', color: '#10b981', bg: '#d1fae5' };
+  if (status === 'MGR_REJECTED')                  return { text: '반려',     color: '#ef4444', bg: '#fee2e2' };
+  return { text: '-', color: '#6b7280', bg: '#f3f4f6' };
+};
+
 const fmtDate = (d) => {
   if (!d) return '-';
   if (Array.isArray(d)) return `${d[0]}-${String(d[1]).padStart(2,'0')}-${String(d[2]).padStart(2,'0')}`;
@@ -170,7 +179,8 @@ export default function LeaveRequestPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {leaves.map(lv => {
-            const st = STATUS_LABEL[lv.status] || { text: lv.status, color: '#6b7280', bg: '#f3f4f6' };
+            const st  = STATUS_LABEL[lv.status] || { text: lv.status, color: '#6b7280', bg: '#f3f4f6' };
+            const mgr = mgrStatusLabel(lv.status);
             return (
               <div key={lv.leaveId} style={{
                 background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12,
@@ -178,7 +188,8 @@ export default function LeaveRequestPage() {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    {/* 1행: 전체 상태 · 휴가종류 · 날짜 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, flexWrap: 'wrap' }}>
                       <span style={{
                         padding: '2px 10px', borderRadius: 20, fontSize: '0.78rem',
                         fontWeight: 700, background: st.bg, color: st.color,
@@ -190,6 +201,20 @@ export default function LeaveRequestPage() {
                         &nbsp;({lv.days}일)
                       </span>
                     </div>
+                    {/* 2행: 팀장 정보 + 팀장 처리 상태 */}
+                    {lv.mgrEmpno && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                        <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>팀장</span>
+                        <span style={{
+                          fontSize: '0.78rem', fontWeight: 600, color: '#374151',
+                          background: '#f3f4f6', padding: '1px 8px', borderRadius: 10,
+                        }}>{lv.mgrEmpno}{lv.mgrEname ? ` - ${lv.mgrEname}` : ''}</span>
+                        <span style={{
+                          padding: '1px 8px', borderRadius: 10, fontSize: '0.75rem',
+                          fontWeight: 700, background: mgr.bg, color: mgr.color,
+                        }}>{mgr.text}</span>
+                      </div>
+                    )}
                     {lv.reason && (
                       <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>사유: {lv.reason}</div>
                     )}
