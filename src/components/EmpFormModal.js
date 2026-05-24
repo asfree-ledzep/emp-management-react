@@ -24,7 +24,7 @@ const toInputDate = (val) => {
 const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = true }) => {
   const isEdit = mode === 'edit';
   // 사원 모드: 해당 필드 읽기 전용
-  const readOnly = (field) => !isAdmin && !['ename', 'job'].includes(field);
+  const readOnly = (field) => !isAdmin && !['ename', 'job', 'mgr'].includes(field);
 
   const [form, setForm] = useState({
     empno: '',
