@@ -166,6 +166,9 @@ function App() {
           {page === 'expense' && (
             <ExpensePage onNavigateToList={() => setPage('dashboard')} />
           )}
+          {page === 'expense-pending' && (
+            <ExpensePage onNavigateToList={() => setPage('dashboard')} filterPending={true} />
+          )}
           {page === 'orgchart' && (
             <OrgChartPage onNavigateToList={() => setPage('dashboard')} />
           )}

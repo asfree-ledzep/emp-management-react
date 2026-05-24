@@ -279,17 +279,17 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
           <div style={cardLabel}>💰 이번 달 지출 총액 <span style={{ fontSize: '0.72rem', color: '#16a34a' }}>▶ 관리</span></div>
         </div>
 
-        {/* 미확인 지출 → 지출 관리 */}
+        {/* 미확인 지출 → 미확인 필터 지출 페이지 */}
         <div
           className="db-card-link"
           style={{ ...card(pendingExpense > 0 ? '#fef3c7' : '#f9fafb', pendingExpense > 0 ? '#fcd34d' : '#e5e7eb'), cursor: 'pointer' }}
-          onClick={() => onNavigate('expense')}
-          title="지출 관리로 이동"
+          onClick={() => onNavigate('expense-pending')}
+          title="미확인 지출 목록으로 이동"
         >
           <div style={{ ...cardNum, color: pendingExpense > 0 ? '#b45309' : '#374151' }}>
             {pendingExpense}<span style={{ fontSize: '1rem' }}>건</span>
           </div>
-          <div style={cardLabel}>⏳ 미확인 지출 <span style={{ fontSize: '0.72rem', color: '#d97706' }}>▶ 관리</span></div>
+          <div style={cardLabel}>⏳ 미확인 지출 <span style={{ fontSize: '0.72rem', color: '#d97706' }}>▶ 목록</span></div>
         </div>
 
         {/* 진행중 설문 → 설문 관리 */}

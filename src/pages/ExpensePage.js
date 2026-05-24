@@ -37,7 +37,7 @@ const YEAR_OPTIONS = Array.from({ length: THIS_YEAR - 2000 + 2 }, (_, i) => 2000
 // 2000년 ~ 올해 (연별통계용)
 const YEAR_OPTIONS_Y = Array.from({ length: THIS_YEAR - 2000 + 1 }, (_, i) => 2000 + i);
 
-const ExpensePage = ({ onNavigateToList }) => {
+const ExpensePage = ({ onNavigateToList, filterPending = false }) => {
   const [tab, setTab] = useState('detail'); // 'detail' | 'monthly' | 'yearly'
 
   // ── 지출내역 탭 ──
@@ -46,6 +46,9 @@ const ExpensePage = ({ onNavigateToList }) => {
   const [expenses, setExpenses]   = useState([]);
   const [loading,  setLoading]    = useState(false);
   const [receiptModal, setReceiptModal] = useState(null); // 영수증 이미지 URL
+
+  // 미확인 필터 (대시보드에서 진입 시 true로 초기화)
+  const [showPendingOnly, setShowPendingOnly] = useState(filterPending);
 
   // ── 월별통계 탭 ──
   const [mYear,  setMYear]  = useState(THIS_YEAR);
@@ -121,13 +124,19 @@ const ExpensePage = ({ onNavigateToList }) => {
   const thStyle     = { padding:'10px 12px', background:'#f3f4f6', fontSize:'0.82rem', color:'#374151', fontWeight:600, textAlign:'left', borderBottom:'1px solid #e5e7eb' };
   const tdStyle     = { padding:'9px 12px', fontSize:'0.85rem', color:'#374151', borderBottom:'1px solid #f3f4f6', verticalAlign:'middle' };
 
+  // ─── 필터 적용 ───
+  const displayedExpenses = showPendingOnly
+    ? expenses.filter(e => e.status !== 'CONFIRMED')
+    : expenses;
+
   // ─── 합계 ───
-  const totalAmount = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const totalAmount = displayedExpenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const pendingCount = expenses.filter(e => e.status !== 'CONFIRMED').length;
 
   // ─── 카테고리별 집계 (도넛 차트용) ───
   const categoryData = (() => {
     const map = {};
-    expenses.forEach(e => {
+    displayedExpenses.forEach(e => {
       const cat = e.category || '기타';
       map[cat] = (map[cat] || 0) + (e.amount || 0);
     });
@@ -167,9 +176,25 @@ const ExpensePage = ({ onNavigateToList }) => {
             <button onClick={() => downloadDetailExcel(year, month).catch(()=>alert('다운로드 실패'))} style={btnGreen}>
               📥 엑셀 다운로드
             </button>
-            {expenses.length > 0 && (
+
+            {/* 미확인 필터 토글 */}
+            <button
+              onClick={() => setShowPendingOnly(v => !v)}
+              style={{
+                padding:'7px 14px', border:'none', borderRadius:6, cursor:'pointer',
+                fontSize:'0.85rem', fontWeight:600,
+                background: showPendingOnly ? '#fef3c7' : '#f3f4f6',
+                color:      showPendingOnly ? '#92400e' : '#6b7280',
+              }}
+            >
+              {showPendingOnly
+                ? `⏳ 미확인만 (${pendingCount}건) · 전체 보기 →`
+                : `전체 목록 · ⏳ 미확인만 보기 (${pendingCount}건) →`}
+            </button>
+
+            {displayedExpenses.length > 0 && (
               <span style={{ marginLeft:'auto', fontWeight:700, color:'#4f46e5' }}>
-                총 {expenses.length}건 / {fmt(totalAmount)}
+                {displayedExpenses.length}건 / {fmt(totalAmount)}
               </span>
             )}
           </div>
@@ -177,8 +202,10 @@ const ExpensePage = ({ onNavigateToList }) => {
           {/* 본문 */}
           {loading ? (
             <p style={{ color:'#6b7280', textAlign:'center' }}>불러오는 중...</p>
-          ) : expenses.length === 0 ? (
-            <p style={{ color:'#9ca3af', textAlign:'center' }}>지출 내역이 없습니다.</p>
+          ) : displayedExpenses.length === 0 ? (
+            <p style={{ color:'#9ca3af', textAlign:'center' }}>
+              {showPendingOnly ? '미확인 지출이 없습니다. ✅' : '지출 내역이 없습니다.'}
+            </p>
           ) : (
             <div className="expense-content-layout">
               {/* 카테고리 도넛 차트 */}
@@ -238,7 +265,7 @@ const ExpensePage = ({ onNavigateToList }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {expenses.map(e => (
+                      {displayedExpenses.map(e => (
                         <tr key={e.expenseId} style={{ background: e.status==='CONFIRMED' ? '#f0fdf4' : '#fff' }}>
                           <td style={tdStyle}>{e.ename || '-'}</td>
                           <td style={tdStyle}>{e.expenseDate || '-'}</td>
