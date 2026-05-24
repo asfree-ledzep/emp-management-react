@@ -5,7 +5,7 @@ import {
 import { fetchEmps } from '../api/empApi';
 import { fetchExpensesByMonth, fetchMonthlyStats } from '../api/expenseApi';
 import { fetchSurveys } from '../api/surveyApi';
-import { fetchNotices, fetchKakaoConnectedCount, fetchKakaoStatus, sendKakaoTestMessage } from '../api/noticeApi';
+import { fetchNotices, fetchKakaoConnectedCount, fetchKakaoStatus, sendKakaoTestMessage, sendKakaoNudge } from '../api/noticeApi';
 import { sendPushNudgeKakao } from '../api/pushApi';
 import '../styles/DashboardPage.css';
 
@@ -67,8 +67,10 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const [showKakaoModal, setShowKakaoModal] = useState(false);
   const [kakaoStatus,    setKakaoStatus]    = useState(null);  // { connected:[], unconnected:[] }
   const [statusLoading,  setStatusLoading]  = useState(false);
-  const [nudgeSending,   setNudgeSending]   = useState(false);
-  const [nudgeResult,    setNudgeResult]    = useState(null);  // { message, sentCount }
+  const [nudgeSending,      setNudgeSending]      = useState(false);
+  const [nudgeResult,       setNudgeResult]       = useState(null);  // Web Push 결과
+  const [kakaoNudgeSending, setKakaoNudgeSending] = useState(false);
+  const [kakaoNudgeResult,  setKakaoNudgeResult]  = useState(null);  // 카카오 간접 독려 결과
   const [testingEmpno,   setTestingEmpno]   = useState(null);  // 테스트 발송 중인 empno
   const [testResults,    setTestResults]    = useState({});    // { empno: '성공'|'실패' }
 
@@ -107,6 +109,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const openKakaoModal = () => {
     setShowKakaoModal(true);
     setNudgeResult(null);
+    setKakaoNudgeResult(null);
     setTestResults({});
     setKakaoStatus(null);
     setStatusLoading(true);
@@ -129,7 +132,21 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
     }
   };
 
-  // 카카오 연동 독려 푸시 발송
+  // 카카오 간접 독려 (연동 직원들에게 카카오톡으로 발송)
+  const handleKakaoNudge = async () => {
+    setKakaoNudgeSending(true);
+    setKakaoNudgeResult(null);
+    try {
+      const result = await sendKakaoNudge();
+      setKakaoNudgeResult(result);
+    } catch (e) {
+      setKakaoNudgeResult({ message: '발송 실패', sentCount: 0 });
+    } finally {
+      setKakaoNudgeSending(false);
+    }
+  };
+
+  // Web Push 독려 (미연동 직원에게 브라우저 알림)
   const handleNudge = async () => {
     setNudgeSending(true);
     setNudgeResult(null);
@@ -586,42 +603,84 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
                     </div>
                   )}
 
-                  {/* 독려 버튼 */}
+                  {/* 독려 버튼 2종 */}
                   {(kakaoStatus.unconnected?.length ?? 0) > 0 && (
-                    <div>
-                      <button
-                        onClick={handleNudge}
-                        disabled={nudgeSending}
-                        style={{
-                          width: '100%', padding: '12px', borderRadius: 10, border: 'none',
-                          background: nudgeSending ? '#e5e7eb' : '#f97316',
-                          color: nudgeSending ? '#9ca3af' : '#fff',
-                          fontWeight: 700, fontSize: '0.9rem', cursor: nudgeSending ? 'not-allowed' : 'pointer',
-                          transition: 'background 0.15s',
-                        }}
-                      >
-                        {nudgeSending ? '발송 중...' : '📲 브라우저 알림으로 연동 독려 발송'}
-                      </button>
-                      <div style={{ fontSize: '0.75rem', color: C.textMuted, marginTop: 6, textAlign: 'center' }}>
-                        앱에 로그인한 미연동 직원에게 브라우저 알림을 전송합니다
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+                      {/* ① 카카오 간접 독려 */}
+                      <div>
+                        <button
+                          onClick={handleKakaoNudge}
+                          disabled={kakaoNudgeSending || (kakaoStatus.connected?.length ?? 0) === 0}
+                          style={{
+                            width: '100%', padding: '11px', borderRadius: 10, border: 'none',
+                            background: kakaoNudgeSending || (kakaoStatus.connected?.length ?? 0) === 0
+                              ? '#e5e7eb' : '#fee500',
+                            color: kakaoNudgeSending || (kakaoStatus.connected?.length ?? 0) === 0
+                              ? '#9ca3af' : '#3c1e1e',
+                            fontWeight: 700, fontSize: '0.88rem',
+                            cursor: kakaoNudgeSending || (kakaoStatus.connected?.length ?? 0) === 0
+                              ? 'not-allowed' : 'pointer',
+                            transition: 'background 0.15s',
+                          }}
+                        >
+                          {kakaoNudgeSending ? '발송 중...' : '💬 연동 직원에게 카카오로 간접 독려'}
+                        </button>
+                        <div style={{ fontSize: '0.72rem', color: C.textMuted, marginTop: 4, textAlign: 'center' }}>
+                          연동된 직원들 카카오톡으로 "미연동 동료 독려 부탁" 메시지 전송
+                          {(kakaoStatus.connected?.length ?? 0) === 0 &&
+                            <span style={{ color: '#dc2626' }}> (연동 직원 없음)</span>}
+                        </div>
+                        {kakaoNudgeResult && (
+                          <div style={{
+                            marginTop: 6, padding: '8px 12px', borderRadius: 8,
+                            background: kakaoNudgeResult.sentCount > 0 ? '#dcfce7' : '#fef3c7',
+                            color: kakaoNudgeResult.sentCount > 0 ? '#15803d' : '#92400e',
+                            fontSize: '0.8rem', fontWeight: 600, textAlign: 'center',
+                          }}>
+                            {kakaoNudgeResult.sentCount > 0
+                              ? `✅ ${kakaoNudgeResult.sentCount}명에게 카카오 독려 메시지 발송 완료`
+                              : '⚠️ 발송 실패 (연동 직원 없거나 토큰 오류)'}
+                          </div>
+                        )}
                       </div>
+
+                      {/* ② Web Push 직접 독려 */}
+                      <div>
+                        <button
+                          onClick={handleNudge}
+                          disabled={nudgeSending}
+                          style={{
+                            width: '100%', padding: '11px', borderRadius: 10, border: 'none',
+                            background: nudgeSending ? '#e5e7eb' : '#f97316',
+                            color: nudgeSending ? '#9ca3af' : '#fff',
+                            fontWeight: 700, fontSize: '0.88rem',
+                            cursor: nudgeSending ? 'not-allowed' : 'pointer',
+                            transition: 'background 0.15s',
+                          }}
+                        >
+                          {nudgeSending ? '발송 중...' : '📲 미연동 직원에게 브라우저 알림 직접 발송'}
+                        </button>
+                        <div style={{ fontSize: '0.72rem', color: C.textMuted, marginTop: 4, textAlign: 'center' }}>
+                          앱 로그인 + 알림 허용한 미연동 직원에게만 전달됨
+                        </div>
+                        {nudgeResult && (
+                          <div style={{
+                            marginTop: 6, padding: '8px 12px', borderRadius: 8,
+                            background: nudgeResult.sentCount > 0 ? '#dcfce7' : '#fef3c7',
+                            color: nudgeResult.sentCount > 0 ? '#15803d' : '#92400e',
+                            fontSize: '0.8rem', fontWeight: 600, textAlign: 'center',
+                          }}>
+                            {nudgeResult.sentCount > 0
+                              ? `✅ ${nudgeResult.sentCount}명에게 브라우저 알림 발송 완료`
+                              : '⚠️ 알림 받을 수 있는 미연동 직원 없음 (앱 미로그인)'}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   )}
                 </div>
-
-                {/* 발송 결과 */}
-                {nudgeResult && (
-                  <div style={{
-                    marginTop: 12, padding: '12px 16px', borderRadius: 10,
-                    background: nudgeResult.sentCount > 0 ? '#dcfce7' : '#fef3c7',
-                    color: nudgeResult.sentCount > 0 ? '#15803d' : '#92400e',
-                    fontSize: '0.85rem', fontWeight: 600, textAlign: 'center',
-                  }}>
-                    {nudgeResult.sentCount > 0
-                      ? `✅ ${nudgeResult.sentCount}명에게 알림을 보냈습니다`
-                      : '⚠️ 알림을 받을 수 있는 미연동 직원이 없습니다 (앱에 미로그인)'}
-                  </div>
-                )}
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: '40px 0', color: C.textMuted }}>데이터를 불러오지 못했습니다</div>
