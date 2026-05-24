@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDepts } from '../api/deptApi';
-import { fetchEmpAddr } from '../api/empApi';
+import { fetchEmps, fetchEmpAddr } from '../api/empApi';
 import '../styles/Modal.css';
 import '../styles/Button.css';
 
@@ -39,10 +39,12 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [depts, setDepts] = useState([]);
+  const [emps,  setEmps]  = useState([]);
   const [addr, setAddr] = useState({ zipcode: '', address: '', addrDetail: '' });
 
   useEffect(() => {
     fetchDepts().then(setDepts).catch(() => {});
+    fetchEmps().then(setEmps).catch(() => {});
     // 카카오 우편번호 서비스 스크립트 동적 로드
     if (!window.daum?.Postcode) {
       const script = document.createElement('script');
@@ -192,14 +194,22 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
           </div>
           <div className="form-row">
             <label>상사 사번</label>
-            <input
+            <select
               name="mgr"
-              type="number"
               value={form.mgr}
               onChange={handleChange}
               disabled={readOnly('mgr')}
-              placeholder="상사 사번 입력"
-            />
+            >
+              <option value="">상사 없음</option>
+              {emps
+                .filter(e => e.empno !== Number(form.empno))   // 본인 제외
+                .map(e => (
+                  <option key={e.empno} value={e.empno}>
+                    {e.empno} - {e.ename}{e.job ? ` (${e.job})` : ''}
+                  </option>
+                ))
+              }
+            </select>
           </div>
           <div className="form-row">
             <label>입사일</label>
