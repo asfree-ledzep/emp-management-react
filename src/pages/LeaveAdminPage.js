@@ -41,14 +41,15 @@ const BalanceTooltip = ({ active, payload, label }) => {
 };
 
 export default function LeaveAdminPage({ onNavigateToList }) {
-  const [leaves,   setLeaves]   = useState([]);
-  const [balances, setBalances] = useState([]);
-  const [loading,  setLoading]  = useState(false);
-  const [filter,   setFilter]   = useState('MGR_APPROVED');
-  const [actionId, setActionId] = useState(null);
-  const [commentModal, setCommentModal] = useState(null);
-  const [comment,  setComment]  = useState('');
-  const [chartYear, setChartYear] = useState(CURRENT_YEAR);
+  const [leaves,      setLeaves]      = useState([]);
+  const [balances,    setBalances]    = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const [filter,      setFilter]      = useState('MGR_APPROVED');
+  const [actionId,    setActionId]    = useState(null);
+  const [commentModal,setCommentModal]= useState(null);
+  const [comment,     setComment]     = useState('');
+  const [chartYear,   setChartYear]   = useState(CURRENT_YEAR);
+  const [deptFilter,  setDeptFilter]  = useState('__AUTO__'); // '__AUTO__'=최신신청부서, 'ALL'=전체
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,13 +76,41 @@ export default function LeaveAdminPage({ onNavigateToList }) {
   useEffect(() => { load(); }, [load]);
   useEffect(() => { loadBalances(); }, [loadBalances]);
 
-  // 차트 데이터 가공: remaining 계산
-  const chartData = balances.map(b => ({
+  // 부서 목록 (중복 제거, 정렬)
+  const deptList = [...new Map(
+    balances.filter(b => b.deptno).map(b => [b.deptno, { deptno: b.deptno, dname: b.dname || `부서${b.deptno}` }])
+  ).values()].sort((a, b) => a.deptno - b.deptno);
+
+  // 최신 연차 신청 부서 (leaves[0]이 가장 최신)
+  const latestDeptno = (() => {
+    const latest = [...leaves].sort((a, b) => {
+      const da = Array.isArray(a.createdAt) ? new Date(a.createdAt[0], a.createdAt[1]-1, a.createdAt[2]) : new Date(a.createdAt);
+      const db = Array.isArray(b.createdAt) ? new Date(b.createdAt[0], b.createdAt[1]-1, b.createdAt[2]) : new Date(b.createdAt);
+      return db - da;
+    })[0];
+    if (!latest) return null;
+    const found = balances.find(b => b.empno === latest.empno);
+    return found?.deptno ?? null;
+  })();
+
+  // 실제 표시할 부서 필터
+  const activeDept = deptFilter === '__AUTO__'
+    ? (latestDeptno ?? 'ALL')
+    : deptFilter;
+
+  // 차트 데이터 가공
+  const allChartData = balances.map(b => ({
     name:      b.ename || `#${b.empno}`,
+    deptno:    b.deptno,
+    dname:     b.dname,
     usedDays:  b.usedDays  ?? 0,
     remaining: (b.totalDays ?? 15) - (b.usedDays ?? 0),
     total:     b.totalDays ?? 15,
   }));
+
+  const chartData = activeDept === 'ALL'
+    ? allChartData
+    : allChartData.filter(d => d.deptno === activeDept);
 
   const filtered = filter === 'ALL'
     ? leaves
@@ -139,12 +168,17 @@ export default function LeaveAdminPage({ onNavigateToList }) {
         background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
         padding: '20px 24px', marginBottom: 28, boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
       }}>
-        {/* 차트 헤더 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+        {/* ① 차트 헤더 — 제목 + 연도 선택 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
           <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#374151' }}>
             📊 사원별 연차 현황
+            {activeDept !== 'ALL' && deptList.find(d => d.deptno === activeDept) && (
+              <span style={{ marginLeft: 8, fontSize: '0.82rem', color: '#6366f1', fontWeight: 600 }}>
+                — {deptList.find(d => d.deptno === activeDept).dname}
+              </span>
+            )}
           </h3>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {[CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1].map(y => (
               <button key={y} onClick={() => setChartYear(y)}
                 style={{
@@ -157,19 +191,78 @@ export default function LeaveAdminPage({ onNavigateToList }) {
           </div>
         </div>
 
+        {/* ② 부서 필터 탭 */}
+        {deptList.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* 최신 신청 부서 (기본) */}
+            <button
+              onClick={() => setDeptFilter('__AUTO__')}
+              style={{
+                padding: '4px 12px', borderRadius: 20, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
+                border: `1px solid ${deptFilter === '__AUTO__' ? '#f59e0b' : '#d1d5db'}`,
+                background: deptFilter === '__AUTO__' ? '#fef3c7' : '#fff',
+                color: deptFilter === '__AUTO__' ? '#92400e' : '#374151',
+              }}>
+              🔔 최신신청 부서
+            </button>
+
+            {/* 전체 직원 그래프 */}
+            <button
+              onClick={() => setDeptFilter('ALL')}
+              style={{
+                padding: '4px 12px', borderRadius: 20, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
+                border: `1px solid ${deptFilter === 'ALL' ? '#6366f1' : '#d1d5db'}`,
+                background: deptFilter === 'ALL' ? '#4f46e5' : '#fff',
+                color: deptFilter === 'ALL' ? '#fff' : '#374151',
+              }}>
+              👥 전체 직원 그래프 보기
+            </button>
+
+            {/* 구분선 */}
+            <span style={{ color: '#d1d5db', fontSize: '0.8rem' }}>|</span>
+
+            {/* 부서별 버튼 */}
+            {deptList.map(dept => {
+              const isActive = deptFilter === dept.deptno || (deptFilter === '__AUTO__' && activeDept === dept.deptno);
+              return (
+                <button
+                  key={dept.deptno}
+                  onClick={() => setDeptFilter(dept.deptno)}
+                  style={{
+                    padding: '4px 12px', borderRadius: 20, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
+                    border: `1px solid ${isActive ? '#10b981' : '#d1d5db'}`,
+                    background: isActive ? '#d1fae5' : '#fff',
+                    color: isActive ? '#065f46' : '#374151',
+                    position: 'relative',
+                  }}>
+                  {dept.dname}
+                  {deptFilter === '__AUTO__' && latestDeptno === dept.deptno && (
+                    <span style={{
+                      position: 'absolute', top: -5, right: -5,
+                      background: '#ef4444', color: '#fff',
+                      fontSize: '0.58rem', borderRadius: '50%', width: 14, height: 14,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>N</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {chartData.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '30px 0', color: '#9ca3af', fontSize: '0.88rem' }}>
             연차 데이터가 없습니다. (연차 신청 후 잔여 현황이 생성됩니다)
           </div>
         ) : (
           <>
-            {/* 가로 스택 바 차트 */}
-            <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 44)}>
+            {/* ③ 가로 스택 바 차트 */}
+            <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 46)}>
               <BarChart
                 data={chartData}
                 layout="vertical"
-                margin={{ top: 0, right: 50, left: 20, bottom: 0 }}
-                barSize={22}
+                margin={{ top: 0, right: 55, left: 20, bottom: 0 }}
+                barSize={24}
               >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis
@@ -182,7 +275,7 @@ export default function LeaveAdminPage({ onNavigateToList }) {
                 <YAxis
                   type="category"
                   dataKey="name"
-                  width={72}
+                  width={76}
                   tick={{ fontSize: 12, fill: '#374151', fontWeight: 600 }}
                 />
                 <Tooltip content={<BalanceTooltip />} />
@@ -214,13 +307,17 @@ export default function LeaveAdminPage({ onNavigateToList }) {
               </BarChart>
             </ResponsiveContainer>
 
-            {/* 요약 카드 */}
+            {/* ④ 요약 카드 */}
             <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
               {[
-                { label: '총 사원 수',    value: `${chartData.length}명`,                                color: '#6366f1' },
-                { label: '평균 사용',     value: `${(chartData.reduce((s,d)=>s+d.usedDays,0)/chartData.length||0).toFixed(1)}일`, color: '#f87171' },
-                { label: '평균 잔여',     value: `${(chartData.reduce((s,d)=>s+d.remaining,0)/chartData.length||0).toFixed(1)}일`, color: '#10b981' },
-                { label: '잔여 3일 이하', value: `${chartData.filter(d=>d.remaining<=3).length}명`,     color: '#f59e0b' },
+                { label: '대상 사원',     value: `${chartData.length}명`,
+                  color: '#6366f1' },
+                { label: '평균 사용',     value: `${chartData.length ? (chartData.reduce((s,d)=>s+d.usedDays,0)/chartData.length).toFixed(1) : 0}일`,
+                  color: '#f87171' },
+                { label: '평균 잔여',     value: `${chartData.length ? (chartData.reduce((s,d)=>s+d.remaining,0)/chartData.length).toFixed(1) : 0}일`,
+                  color: '#10b981' },
+                { label: '잔여 3일 이하', value: `${chartData.filter(d=>d.remaining<=3).length}명`,
+                  color: '#f59e0b' },
               ].map(card => (
                 <div key={card.label} style={{
                   flex: '1 1 120px', background: '#f9fafb', borderRadius: 10,
