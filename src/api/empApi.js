@@ -11,12 +11,19 @@ export const fetchEmpById = async (empno) => {
   return response.json();
 };
 
-// 사원 전체 목록 조회
+// 사원 전체 목록 조회 (관리자 전용)
 export const fetchEmps = async () => {
   const response = await authFetch(`${BASE_URL}/emps`);
   if (!response.ok) {
     throw new Error(`서버 오류 (${response.status}): 사원 목록을 불러오지 못했습니다.`);
   }
+  return response.json();
+};
+
+// 상사 선택용 목록 조회 (인증된 모든 사용자 - 사번·이름·직책만 반환)
+export const fetchMgrList = async () => {
+  const response = await authFetch(`${BASE_URL}/emps/mgr-list`);
+  if (!response.ok) return [];
   return response.json();
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDepts } from '../api/deptApi';
-import { fetchEmps, fetchEmpAddr } from '../api/empApi';
+import { fetchMgrList, fetchEmpAddr } from '../api/empApi';
 import '../styles/Modal.css';
 import '../styles/Button.css';
 
@@ -44,7 +44,7 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
 
   useEffect(() => {
     fetchDepts().then(setDepts).catch(() => {});
-    fetchEmps().then(setEmps).catch(() => {});
+    fetchMgrList().then(setEmps).catch(() => {});
     // 카카오 우편번호 서비스 스크립트 동적 로드
     if (!window.daum?.Postcode) {
       const script = document.createElement('script');
