@@ -256,39 +256,68 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
 
       {/* ── 요약 카드 ── */}
       <div className="db-cards" style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
-        <div style={card('#eff6ff', '#bfdbfe')}>
+
+        {/* 전체 직원 → 직원 관리 */}
+        <div
+          className="db-card-link"
+          style={{ ...card('#eff6ff', '#bfdbfe'), cursor: 'pointer' }}
+          onClick={() => onNavigate('list')}
+          title="직원 관리로 이동"
+        >
           <div style={{ ...cardNum, color: '#1d4ed8' }}>{totalEmp}<span style={{ fontSize: '1rem' }}>명</span></div>
-          <div style={cardLabel}>👥 전체 직원</div>
+          <div style={cardLabel}>👥 전체 직원 <span style={{ fontSize: '0.72rem', color: '#3b82f6' }}>▶ 관리</span></div>
         </div>
-        <div style={card('#f0fdf4', '#bbf7d0')}>
+
+        {/* 이번 달 지출 → 지출 관리 */}
+        <div
+          className="db-card-link"
+          style={{ ...card('#f0fdf4', '#bbf7d0'), cursor: 'pointer' }}
+          onClick={() => onNavigate('expense')}
+          title="지출 관리로 이동"
+        >
           <div style={{ ...cardNum, color: '#15803d', fontSize: '1.5rem' }}>{fmt(totalExpense)}</div>
-          <div style={cardLabel}>💰 이번 달 지출 총액</div>
+          <div style={cardLabel}>💰 이번 달 지출 총액 <span style={{ fontSize: '0.72rem', color: '#16a34a' }}>▶ 관리</span></div>
         </div>
-        <div style={card(pendingExpense > 0 ? '#fef3c7' : '#f9fafb', pendingExpense > 0 ? '#fcd34d' : '#e5e7eb')}>
+
+        {/* 미확인 지출 → 지출 관리 */}
+        <div
+          className="db-card-link"
+          style={{ ...card(pendingExpense > 0 ? '#fef3c7' : '#f9fafb', pendingExpense > 0 ? '#fcd34d' : '#e5e7eb'), cursor: 'pointer' }}
+          onClick={() => onNavigate('expense')}
+          title="지출 관리로 이동"
+        >
           <div style={{ ...cardNum, color: pendingExpense > 0 ? '#b45309' : '#374151' }}>
             {pendingExpense}<span style={{ fontSize: '1rem' }}>건</span>
           </div>
-          <div style={cardLabel}>⏳ 미확인 지출</div>
+          <div style={cardLabel}>⏳ 미확인 지출 <span style={{ fontSize: '0.72rem', color: '#d97706' }}>▶ 관리</span></div>
         </div>
-        <div style={card(activeSurveys > 0 ? '#fdf4ff' : '#f9fafb', activeSurveys > 0 ? '#e9d5ff' : '#e5e7eb')}>
+
+        {/* 진행중 설문 → 설문 관리 */}
+        <div
+          className="db-card-link"
+          style={{ ...card(activeSurveys > 0 ? '#fdf4ff' : '#f9fafb', activeSurveys > 0 ? '#e9d5ff' : '#e5e7eb'), cursor: 'pointer' }}
+          onClick={() => onNavigate('survey')}
+          title="설문 관리로 이동"
+        >
           <div style={{ ...cardNum, color: activeSurveys > 0 ? '#7c3aed' : '#374151' }}>
             {activeSurveys}<span style={{ fontSize: '1rem' }}>개</span>
           </div>
-          <div style={cardLabel}>📋 진행중 설문</div>
+          <div style={cardLabel}>📋 진행중 설문 <span style={{ fontSize: '0.72rem', color: '#7c3aed' }}>▶ 관리</span></div>
         </div>
+
+        {/* 카카오 연동 → 현황 모달 */}
         <div
-          style={{
-            ...card(kakaoCount > 0 ? '#fff7ed' : '#f9fafb', kakaoCount > 0 ? '#fed7aa' : '#e5e7eb'),
-            cursor: 'pointer', transition: 'box-shadow 0.15s',
-          }}
+          className="db-card-link"
+          style={{ ...card(kakaoCount > 0 ? '#fff7ed' : '#f9fafb', kakaoCount > 0 ? '#fed7aa' : '#e5e7eb'), cursor: 'pointer' }}
           onClick={openKakaoModal}
-          title="클릭하여 카카오 연동 현황 보기"
+          title="카카오 연동 현황 보기"
         >
           <div style={{ ...cardNum, color: kakaoCount > 0 ? '#c2410c' : '#374151' }}>
             {kakaoCount}<span style={{ fontSize: '1rem' }}>명</span>
           </div>
-          <div style={cardLabel}>💬 카카오 연동 <span style={{ fontSize: '0.72rem', color: '#f97316' }}>▶ 현황 보기</span></div>
+          <div style={cardLabel}>💬 카카오 연동 <span style={{ fontSize: '0.72rem', color: '#f97316' }}>▶ 현황</span></div>
         </div>
+
       </div>
 
       {/* ── 바로가기 메뉴 ── */}

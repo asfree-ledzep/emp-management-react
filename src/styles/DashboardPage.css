@@ -1,5 +1,14 @@
 /* 대시보드 반응형 스타일 */
 
+/* 클릭 가능 카드 호버 효과 */
+.db-card-link {
+  transition: box-shadow 0.15s, transform 0.15s !important;
+}
+.db-card-link:hover {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px) !important;
+}
+
 /* ── 태블릿 (≤ 768px) ── */
 @media (max-width: 768px) {
   /* 요약 카드: 2열 그리드 */
