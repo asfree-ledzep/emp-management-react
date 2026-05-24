@@ -1,0 +1,47 @@
+/* ── Employee Portal 사이드바 레이아웃 ── */
+
+.emp-sidebar {
+  transition: transform 0.25s ease;
+}
+
+/* 사이드바 메뉴 버튼 hover */
+.emp-sidebar button:hover {
+  background: rgba(165, 180, 252, 0.12) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ── 모바일 (≤ 768px): 사이드바 드로어로 전환 ── */
+@media (max-width: 768px) {
+  .emp-sidebar {
+    position: fixed !important;
+    top: 44px; /* 상단 바 높이 */
+    left: 0;
+    bottom: 0;
+    z-index: 250;
+    transform: translateX(-100%);
+    width: 220px !important;
+  }
+
+  .emp-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block !important;
+  }
+
+  .sidebar-toggle {
+    display: flex !important;
+  }
+
+  /* 콘텐츠 전체 너비 */
+  main {
+    padding: 16px 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 12px 10px !important;
+  }
+}

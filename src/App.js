@@ -4,18 +4,18 @@ import { useState, useEffect } from 'react';
 import EmpListPage    from './pages/EmpListPage';
 import SalaryChartPage from './pages/SalaryChartPage';
 import DeptListPage   from './pages/DeptListPage';
-import MyProfilePage  from './pages/MyProfilePage';
 import NoticePage     from './pages/NoticePage';
 import LoginPage      from './pages/LoginPage';
 import KakaoCallbackPage from './pages/KakaoCallbackPage';
 import SurveyPage from './pages/SurveyPage';
 import ExpensePage from './pages/ExpensePage';
-import EmployeeExpensePage from './pages/EmployeeExpensePage';
 import DashboardPage from './pages/DashboardPage';
 import OrgChartPage from './pages/OrgChartPage';
 import FaqManagePage from './pages/FaqManagePage';
 import HolidayManagePage from './pages/HolidayManagePage';
+import LeaveAdminPage from './pages/LeaveAdminPage';
 import ChatbotButton from './components/ChatbotModal';
+import EmployeeLayout from './components/EmployeeLayout';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -124,13 +124,10 @@ function App() {
         </button>
       </div>
 
-      {/* 일반 사원 */}
+      {/* 일반 사원 → 왼쪽 사이드바 레이아웃 */}
       {role === 'USER' && (
         <>
-          {page === 'list'    && <MyProfilePage empno={empno} onNavigateToSurvey={() => setPage('survey')} onNavigateToExpense={() => setPage('expense')} onNavigateToNotice={() => setPage('notice')} />}
-          {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => setPage('list')} />}
-          {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => setPage('list')} />}
-          {page === 'notice'  && <NoticePage isAdmin={false} empno={empno} onNavigateToList={() => setPage('list')} />}
+          <EmployeeLayout empno={empno} darkMode={darkMode} />
           <ChatbotButton darkMode={darkMode} />
         </>
       )}
@@ -177,6 +174,9 @@ function App() {
           )}
           {page === 'holiday' && (
             <HolidayManagePage onNavigateToList={() => setPage('dashboard')} />
+          )}
+          {page === 'leave' && (
+            <LeaveAdminPage onNavigateToList={() => setPage('dashboard')} />
           )}
           <ChatbotButton darkMode={darkMode} />
         </>

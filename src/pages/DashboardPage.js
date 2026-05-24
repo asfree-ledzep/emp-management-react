@@ -333,6 +333,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
           <button style={menuBtn('#0f766e')} onClick={() => onNavigate('orgchart')}>🏢<br />조직도</button>
           <button style={menuBtn('#7c3aed')} onClick={() => onNavigate('faq')}>💬<br />FAQ 관리</button>
           <button style={menuBtn('#dc2626')} onClick={() => onNavigate('holiday')}>📅<br />공휴일 관리</button>
+          <button style={menuBtn('#0d9488')} onClick={() => onNavigate('leave')}>🏖️<br />연차 관리</button>
         </div>
       </div>
 
