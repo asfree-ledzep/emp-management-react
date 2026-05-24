@@ -4,6 +4,7 @@ import {
 } from 'recharts';
 import { fetchEmps } from '../api/empApi';
 import { fetchExpensesByMonth, fetchMonthlyStats } from '../api/expenseApi';
+import { fetchAllLeaves } from '../api/leaveApi';
 import { fetchSurveys } from '../api/surveyApi';
 import { fetchNotices, fetchKakaoConnectedCount, fetchKakaoStatus, sendKakaoTestMessage, sendKakaoNudge } from '../api/noticeApi';
 import { sendPushNudgeKakao } from '../api/pushApi';
@@ -57,6 +58,7 @@ const DonutTooltip = ({ active, payload }) => {
 const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const [emps,           setEmps]           = useState([]);
   const [expenses,       setExpenses]       = useState([]);
+  const [allLeaves,      setAllLeaves]      = useState([]);
   const [surveys,        setSurveys]        = useState([]);
   const [notices,        setNotices]        = useState([]);
   const [trendData,      setTrendData]      = useState([]);
@@ -80,6 +82,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
     Promise.all([
       fetchEmps().catch(() => []),
       fetchExpensesByMonth(YEAR, MONTH).catch(() => []),
+      fetchAllLeaves().catch(() => []),
       fetchSurveys().catch(() => []),
       fetchNotices().catch(() => []),
       // 최근 6개월 월별 통계 병렬 요청
@@ -94,9 +97,10 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
         )
       ),
       fetchKakaoConnectedCount().catch(() => ({ count: 0 })),
-    ]).then(([e, ex, s, n, trend, kakao]) => {
+    ]).then(([e, ex, lv, s, n, trend, kakao]) => {
       setEmps(e);
       setExpenses(ex);
+      setAllLeaves(Array.isArray(lv) ? lv : []);
       setSurveys(s);
       setNotices(n);
       setTrendData(trend);
@@ -161,10 +165,11 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   };
 
   // 요약 계산
-  const totalEmp       = emps.length;
-  const totalExpense   = expenses.reduce((s, e) => s + (e.amount || 0), 0);
-  const pendingExpense = expenses.filter(e => e.status !== 'CONFIRMED').length;
-  const activeSurveys  = surveys.filter(s => s.status !== 'CLOSED').length;
+  const totalEmp         = emps.length;
+  const totalExpense     = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const pendingExpense   = expenses.filter(e => e.status !== 'CONFIRMED').length;
+  const pendingLeaveCount = allLeaves.filter(l => l.status === 'PENDING' || l.status === 'MGR_APPROVED').length;
+  const activeSurveys    = surveys.filter(s => s.status !== 'CLOSED').length;
 
   // 미확인 지출 최근 5건
   const pendingList = expenses.filter(e => e.status !== 'CONFIRMED').slice(0, 5);
@@ -234,6 +239,32 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
     padding: '9px 12px', fontSize: '0.83rem', color: C.text,
     borderBottom: `1px solid ${C.borderSub}`, verticalAlign: 'middle',
   };
+
+  // 배지 표시 버튼 래퍼
+  const BadgeBtn = ({ color, label, icon, count, onClick }) => (
+    <div style={{ position: 'relative', flex: 1, minWidth: 120 }}>
+      <button
+        style={{ ...menuBtn(color), flex: 'unset', minWidth: 'unset', width: '100%' }}
+        onClick={onClick}
+      >
+        {icon}<br />{label}
+      </button>
+      {count > 0 && (
+        <span style={{
+          position: 'absolute', top: -7, right: -7,
+          background: '#ef4444', color: '#fff',
+          borderRadius: 999, minWidth: 20, height: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '0.7rem', fontWeight: 800, lineHeight: 1,
+          padding: '0 5px', pointerEvents: 'none',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+          border: '2px solid #fff',
+        }}>
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -326,14 +357,14 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
         <div className="db-menu" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button style={menuBtn('#4f46e5')} onClick={() => onNavigate('list')}>👥<br />직원 관리</button>
           <button style={menuBtn('#0891b2')} onClick={() => onNavigate('dept')}>🏢<br />부서 관리</button>
-          <button style={menuBtn('#059669')} onClick={() => onNavigate('expense')}>💰<br />지출 관리</button>
+          <BadgeBtn color="#059669" icon="💰" label="지출 관리" count={pendingExpense} onClick={() => onNavigate('expense')} />
           <button style={menuBtn('#d97706')} onClick={() => onNavigate('chart')}>📊<br />급여 통계</button>
           <button style={menuBtn('#7c3aed')} onClick={() => onNavigate('survey')}>📋<br />설문 관리</button>
           <button style={menuBtn('#6b7280')} onClick={() => onNavigate('notice')}>📢<br />공지사항</button>
           <button style={menuBtn('#0f766e')} onClick={() => onNavigate('orgchart')}>🏢<br />조직도</button>
           <button style={menuBtn('#7c3aed')} onClick={() => onNavigate('faq')}>💬<br />FAQ 관리</button>
           <button style={menuBtn('#dc2626')} onClick={() => onNavigate('holiday')}>📅<br />공휴일 관리</button>
-          <button style={menuBtn('#0d9488')} onClick={() => onNavigate('leave')}>🏖️<br />연차 관리</button>
+          <BadgeBtn color="#0d9488" icon="🏖️" label="연차 관리" count={pendingLeaveCount} onClick={() => onNavigate('leave')} />
         </div>
       </div>
 
