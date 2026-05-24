@@ -46,6 +46,10 @@ export const mgrReject = (leaveId, comment = '') =>
 export const fetchAllLeaves = () =>
   authFetch(`${BASE}/admin/all`).then(r => r.json());
 
+// ── ADMIN: 전체 사원 연차 잔여 현황 ──
+export const fetchAllBalances = (year = 0) =>
+  authFetch(`${BASE}/admin/balances?year=${year}`).then(r => r.json());
+
 // ── ADMIN: 최종 승인 ──
 export const adminApprove = (leaveId, comment = '') =>
   authFetch(`${BASE}/${leaveId}/approve`, {

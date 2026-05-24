@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchAllLeaves, adminApprove, adminReject } from '../api/leaveApi';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  Legend, ResponsiveContainer, Cell, LabelList,
+} from 'recharts';
+import { fetchAllLeaves, adminApprove, adminReject, fetchAllBalances } from '../api/leaveApi';
 
 const STATUS_LABEL = {
   PENDING:      { text: '대기중',    color: '#f59e0b', bg: '#fef3c7' },
@@ -15,13 +19,36 @@ const fmtDate = (d) => {
   return String(d).slice(0, 10);
 };
 
+const CURRENT_YEAR = new Date().getFullYear();
+
+// 툴팁 커스텀
+const BalanceTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const used      = payload.find(p => p.dataKey === 'usedDays');
+  const remaining = payload.find(p => p.dataKey === 'remaining');
+  const total     = (used?.value || 0) + (remaining?.value || 0);
+  return (
+    <div style={{
+      background: '#1e293b', color: '#f1f5f9', padding: '10px 14px',
+      borderRadius: 8, fontSize: '0.82rem', lineHeight: 1.8,
+    }}>
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>
+      <div>총 연차: <strong>{total}일</strong></div>
+      <div style={{ color: '#f87171' }}>사용: <strong>{used?.value ?? 0}일</strong></div>
+      <div style={{ color: '#6ee7b7' }}>잔여: <strong>{remaining?.value ?? 0}일</strong></div>
+    </div>
+  );
+};
+
 export default function LeaveAdminPage({ onNavigateToList }) {
-  const [leaves,  setLeaves]  = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [filter,  setFilter]  = useState('MGR_APPROVED'); // 기본: 1차승인 대기
+  const [leaves,   setLeaves]   = useState([]);
+  const [balances, setBalances] = useState([]);
+  const [loading,  setLoading]  = useState(false);
+  const [filter,   setFilter]   = useState('MGR_APPROVED');
   const [actionId, setActionId] = useState(null);
   const [commentModal, setCommentModal] = useState(null);
-  const [comment, setComment] = useState('');
+  const [comment,  setComment]  = useState('');
+  const [chartYear, setChartYear] = useState(CURRENT_YEAR);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,7 +62,26 @@ export default function LeaveAdminPage({ onNavigateToList }) {
     }
   }, []);
 
+  // 차트용 잔여 연차 현황 로드
+  const loadBalances = useCallback(async () => {
+    try {
+      const data = await fetchAllBalances(chartYear);
+      setBalances(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [chartYear]);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadBalances(); }, [loadBalances]);
+
+  // 차트 데이터 가공: remaining 계산
+  const chartData = balances.map(b => ({
+    name:      b.ename || `#${b.empno}`,
+    usedDays:  b.usedDays  ?? 0,
+    remaining: (b.totalDays ?? 15) - (b.usedDays ?? 0),
+    total:     b.totalDays ?? 15,
+  }));
 
   const filtered = filter === 'ALL'
     ? leaves
@@ -86,6 +132,108 @@ export default function LeaveAdminPage({ onNavigateToList }) {
           onClick={onNavigateToList}
           style={{ padding: '8px 16px', background: '#6b7280', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
         >🏠 대시보드</button>
+      </div>
+
+      {/* ── 연차 현황 차트 ── */}
+      <div style={{
+        background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
+        padding: '20px 24px', marginBottom: 28, boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+      }}>
+        {/* 차트 헤더 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#374151' }}>
+            📊 사원별 연차 현황
+          </h3>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1].map(y => (
+              <button key={y} onClick={() => setChartYear(y)}
+                style={{
+                  padding: '4px 14px', borderRadius: 20, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
+                  border: `1px solid ${chartYear === y ? '#4f46e5' : '#d1d5db'}`,
+                  background: chartYear === y ? '#4f46e5' : '#fff',
+                  color: chartYear === y ? '#fff' : '#374151',
+                }}>{y}년</button>
+            ))}
+          </div>
+        </div>
+
+        {chartData.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '30px 0', color: '#9ca3af', fontSize: '0.88rem' }}>
+            연차 데이터가 없습니다. (연차 신청 후 잔여 현황이 생성됩니다)
+          </div>
+        ) : (
+          <>
+            {/* 가로 스택 바 차트 */}
+            <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 44)}>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 0, right: 50, left: 20, bottom: 0 }}
+                barSize={22}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis
+                  type="number"
+                  domain={[0, 'dataMax + 2']}
+                  tickCount={6}
+                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  tickFormatter={v => `${v}일`}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={72}
+                  tick={{ fontSize: 12, fill: '#374151', fontWeight: 600 }}
+                />
+                <Tooltip content={<BalanceTooltip />} />
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  height={28}
+                  formatter={v => v === 'usedDays' ? '사용' : '잔여'}
+                  wrapperStyle={{ fontSize: '0.8rem' }}
+                />
+                <Bar dataKey="usedDays" name="usedDays" stackId="a" fill="#f87171" radius={[4,0,0,4]}>
+                  <LabelList dataKey="usedDays" position="insideLeft"
+                    style={{ fill: '#fff', fontSize: 11, fontWeight: 700 }}
+                    formatter={v => v > 0 ? `${v}일` : ''}
+                  />
+                </Bar>
+                <Bar dataKey="remaining" name="remaining" stackId="a" fill="#6ee7b7" radius={[0,4,4,0]}>
+                  <LabelList dataKey="remaining" position="insideRight"
+                    style={{ fill: '#065f46', fontSize: 11, fontWeight: 700 }}
+                    formatter={v => v > 0 ? `${v}일` : ''}
+                  />
+                  {chartData.map((entry, idx) => (
+                    <Cell
+                      key={idx}
+                      fill={entry.remaining <= 3 ? '#fbbf24' : '#6ee7b7'}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+
+            {/* 요약 카드 */}
+            <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+              {[
+                { label: '총 사원 수',    value: `${chartData.length}명`,                                color: '#6366f1' },
+                { label: '평균 사용',     value: `${(chartData.reduce((s,d)=>s+d.usedDays,0)/chartData.length||0).toFixed(1)}일`, color: '#f87171' },
+                { label: '평균 잔여',     value: `${(chartData.reduce((s,d)=>s+d.remaining,0)/chartData.length||0).toFixed(1)}일`, color: '#10b981' },
+                { label: '잔여 3일 이하', value: `${chartData.filter(d=>d.remaining<=3).length}명`,     color: '#f59e0b' },
+              ].map(card => (
+                <div key={card.label} style={{
+                  flex: '1 1 120px', background: '#f9fafb', borderRadius: 10,
+                  padding: '10px 16px', textAlign: 'center',
+                  border: `1px solid ${card.color}33`,
+                }}>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: card.color }}>{card.value}</div>
+                  <div style={{ fontSize: '0.73rem', color: '#6b7280', marginTop: 2 }}>{card.label}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* 필터 탭 */}
