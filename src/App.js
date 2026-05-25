@@ -112,7 +112,7 @@ function App() {
             ⚠️ 출퇴근 QR 처리를 위해 로그인이 필요합니다.
           </p>
         )}
-        <ChatbotButton darkMode={darkMode} />
+        {/* 로그인 전엔 ChatbotButton 렌더링 안 함 → authFetch 401 무한 새로고침 방지 */}
       </>
     );
   }
