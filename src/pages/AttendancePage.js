@@ -475,6 +475,7 @@ function AttendanceTable({ rows, showName, showDept }) {
       <table style={styles.table}>
         <thead>
           <tr style={styles.thead}>
+            <th style={styles.th}>사번</th>
             {showName && <th style={styles.th}>이름</th>}
             {showDept && <th style={styles.th}>부서</th>}
             <th style={styles.th}>날짜</th>
@@ -489,6 +490,7 @@ function AttendanceTable({ rows, showName, showDept }) {
             const st = STATUS_LABEL[row.status] || { text: row.status, color: '#555', bg: '#eee' };
             return (
               <tr key={row.attendId} style={styles.tr}>
+                <td style={{ ...styles.td, color: '#888', fontSize: 13 }}>{row.empno}</td>
                 {showName && <td style={styles.td}>{row.ename}</td>}
                 {showDept && <td style={styles.td}>{row.dname}</td>}
                 <td style={styles.td}>{row.workDate}</td>

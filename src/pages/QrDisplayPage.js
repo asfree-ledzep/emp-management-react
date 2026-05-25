@@ -9,9 +9,9 @@ import {
   updateCheckInTime,
 } from '../api/attendanceApi';
 
-const QR_REFRESH_MS   = 30_000;  // 30초마다 토큰 자동 갱신 체크
-const LIST_REFRESH_MS = 15_000;  // 15초마다 목록 갱신
-const TOKEN_DURATION  = 300;     // QR 토큰 유효시간 5분(고정)
+const QR_REFRESH_MS   = 30_000;
+const LIST_REFRESH_MS = 15_000;
+const TOKEN_DURATION  = 300;
 
 const VERCEL_BASE = window.location.origin;
 
@@ -70,43 +70,40 @@ function CheckInTimeModal({ current, onSave, onClose }) {
 
 /* ─────────── 메인 QR 화면 ─────────── */
 export default function QrDisplayPage({ onDashboard }) {
-  const [token,       setToken]       = useState(null);
-  const [expiresAt,   setExpires]     = useState('');
-  const [secondsLeft, setSecondsLeft] = useState(TOKEN_DURATION);
-  const [present,     setPresent]     = useState([]);
-  const [absent,      setAbsent]      = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState('');
-  const [activeTab,   setActiveTab]   = useState('present');
-  const [checkInTime, setCheckInTime] = useState('09:00');
+  const [token,         setToken]         = useState(null);
+  const [expiresAt,     setExpires]       = useState('');
+  const [secondsLeft,   setSecondsLeft]   = useState(TOKEN_DURATION);
+  const [present,       setPresent]       = useState([]);
+  const [absent,        setAbsent]        = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState('');
+  const [activeTab,     setActiveTab]     = useState('present');
+  const [presentFilter, setPresentFilter] = useState('all'); // 'all' | 'late' | 'early_leave'
+  const [checkInTime,   setCheckInTime]   = useState('09:00');
   const [showTimeModal, setShowTimeModal] = useState(false);
 
-  /* ── 강제 새 QR 발급 (🔄 버튼 또는 만료 시) ── */
   const generateNewToken = useCallback(async () => {
     try {
       const data = await forceGenerateQr();
       setToken(data.token);
       setExpires(data.expiresAt);
-      setSecondsLeft(TOKEN_DURATION); // 항상 5분으로 리셋
+      setSecondsLeft(TOKEN_DURATION);
       setError('');
     } catch {
       setError('QR 토큰 생성 실패');
     }
   }, []);
 
-  /* ── 현재 유효 토큰 조회 (최초 로드 & 30초 자동 체크) ── */
   const loadToken = useCallback(async () => {
     try {
       const data = await fetchCurrentQr();
       setToken(data.token);
       setExpires(data.expiresAt);
-      // 남은 시간 계산 (Oracle UTC 기준)
       const expiryMs = new Date(data.expiresAt.replace(' ', 'T') + 'Z').getTime();
       const diff = Math.floor((expiryMs - Date.now()) / 1000);
       if (diff > 0) {
         setSecondsLeft(diff);
       } else {
-        // 만료됨 → 강제 새 발급
         await generateNewToken();
       }
       setError('');
@@ -115,24 +112,21 @@ export default function QrDisplayPage({ onDashboard }) {
     }
   }, [generateNewToken]);
 
-  /* ── 목록 갱신 ── */
   const loadLists = useCallback(async () => {
     try {
       const [p, a] = await Promise.all([fetchTodayAttendance(), fetchAbsentToday()]);
       setPresent(p);
       setAbsent(a);
-    } catch { /* 조용히 */ }
+    } catch { }
   }, []);
 
-  /* ── 출근 시간 설정 로드 ── */
   const loadConfig = useCallback(async () => {
     try {
       const cfg = await fetchCheckInConfig();
       setCheckInTime(cfg.checkInDeadline || '09:00');
-    } catch { /* 기본값 유지 */ }
+    } catch { }
   }, []);
 
-  /* ── 최초 로드 ── */
   useEffect(() => {
     (async () => {
       await Promise.all([loadToken(), loadLists(), loadConfig()]);
@@ -140,40 +134,39 @@ export default function QrDisplayPage({ onDashboard }) {
     })();
   }, [loadToken, loadLists, loadConfig]);
 
-  /* ── 30초마다 토큰 상태 체크 ── */
   useEffect(() => {
     const id = setInterval(loadToken, QR_REFRESH_MS);
     return () => clearInterval(id);
   }, [loadToken]);
 
-  /* ── 15초마다 목록 갱신 ── */
   useEffect(() => {
     const id = setInterval(loadLists, LIST_REFRESH_MS);
     return () => clearInterval(id);
   }, [loadLists]);
 
-  /* ── 1초 카운트다운 ── */
   useEffect(() => {
     if (secondsLeft <= 0) return;
     const id = setTimeout(() => setSecondsLeft(s => Math.max(0, s - 1)), 1000);
     return () => clearTimeout(id);
   }, [secondsLeft]);
 
-  /* ── 0초 도달 → 강제 새 토큰 발급 ── */
   useEffect(() => {
-    if (secondsLeft === 0 && !loading) {
-      generateNewToken();
-    }
+    if (secondsLeft === 0 && !loading) generateNewToken();
   }, [secondsLeft, loading, generateNewToken]);
 
   const qrUrl = token ? `${VERCEL_BASE}?qr=${encodeURIComponent(token)}` : '';
-
   const todayStr = new Date().toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
   });
-
-  /* 카운트다운 색상 */
   const timerColor = secondsLeft <= 30 ? '#e74c3c' : secondsLeft <= 60 ? '#e67e22' : '#333';
+
+  /* 출근 현황 필터 */
+  const lateList  = present.filter(r => r.status === 'LATE');
+  const earlyList = present.filter(r => r.status === 'EARLY_LEAVE');
+  const filteredPresent =
+    presentFilter === 'late'        ? lateList  :
+    presentFilter === 'early_leave' ? earlyList :
+    present;
 
   if (loading) return <div style={s.center}>QR 코드 로딩 중...</div>;
 
@@ -188,13 +181,11 @@ export default function QrDisplayPage({ onDashboard }) {
         <h2 style={s.heading}>출퇴근 QR 코드</h2>
         <p style={s.date}>{todayStr}</p>
 
-        {/* 출근 마감 시간 표시 + 설정 버튼 */}
+        {/* 출근 마감 시간 */}
         <div style={s.checkInRow}>
           <span style={s.checkInLabel}>출근 마감</span>
           <span style={s.checkInTime}>{checkInTime}</span>
-          <button style={s.timeBtn} onClick={() => setShowTimeModal(true)} title="출근 마감 시간 변경">
-            ✏️ 변경
-          </button>
+          <button style={s.timeBtn} onClick={() => setShowTimeModal(true)}>✏️ 변경</button>
         </div>
 
         {error ? (
@@ -208,7 +199,6 @@ export default function QrDisplayPage({ onDashboard }) {
               만료까지: <strong>{secondsLeft}초</strong>
             </div>
             <div style={s.expiresAt}>만료: {expiresAt}</div>
-            {/* 🔄 버튼 → 강제 새 토큰 발급 */}
             <button style={s.refreshBtn} onClick={generateNewToken}>🔄 QR 새로고침</button>
             <p style={s.hint}>스마트폰으로 QR을 스캔하면<br />출퇴근이 자동으로 기록됩니다.</p>
           </>
@@ -222,23 +212,29 @@ export default function QrDisplayPage({ onDashboard }) {
           </div>
           <div style={s.statDiv} />
           <div style={s.statBox}>
-            <span style={{ color: '#e74c3c', fontWeight: 700, fontSize: 22 }}>{absent.length}</span>
-            <span style={s.statLabel}>미출근</span>
+            <span style={{ color: '#e67e22', fontWeight: 700, fontSize: 22 }}>{lateList.length}</span>
+            <span style={s.statLabel}>지각</span>
           </div>
           <div style={s.statDiv} />
           <div style={s.statBox}>
-            <span style={{ color: '#333', fontWeight: 700, fontSize: 22 }}>{present.length + absent.length}</span>
-            <span style={s.statLabel}>전체</span>
+            <span style={{ color: '#e74c3c', fontWeight: 700, fontSize: 22 }}>{earlyList.length}</span>
+            <span style={s.statLabel}>조퇴</span>
+          </div>
+          <div style={s.statDiv} />
+          <div style={s.statBox}>
+            <span style={{ color: '#6c757d', fontWeight: 700, fontSize: 22 }}>{absent.length}</span>
+            <span style={s.statLabel}>미출근</span>
           </div>
         </div>
       </div>
 
-      {/* ── 오른쪽: 출근/미출근 탭 ── */}
+      {/* ── 오른쪽: 탭 패널 ── */}
       <div style={s.listPanel}>
         <div style={s.tabBar}>
+          {/* 메인 탭 */}
           <button
             style={activeTab === 'present' ? s.tabActive : s.tab}
-            onClick={() => setActiveTab('present')}
+            onClick={() => { setActiveTab('present'); setPresentFilter('all'); }}
           >
             ✅ 출근 현황 <span style={s.badge}>{present.length}</span>
           </button>
@@ -246,20 +242,49 @@ export default function QrDisplayPage({ onDashboard }) {
             style={activeTab === 'absent' ? s.tabActiveRed : s.tab}
             onClick={() => setActiveTab('absent')}
           >
-            ⏳ 미출근 사원 <span style={{ ...s.badge, background: '#fee2e2', color: '#e74c3c' }}>{absent.length}</span>
+            ⏳ 미출근 <span style={{ ...s.badge, background: '#fee2e2', color: '#e74c3c' }}>{absent.length}</span>
           </button>
           <button style={s.refreshSmall} onClick={loadLists} title="새로고침">↻</button>
         </div>
 
+        {/* 출근 현황 탭 — 필터 버튼 */}
+        {activeTab === 'present' && (
+          <div style={s.filterBar}>
+            <button
+              style={presentFilter === 'all' ? s.filterActive : s.filterBtn}
+              onClick={() => setPresentFilter('all')}
+            >
+              전체 <span style={s.filterCount}>{present.length}</span>
+            </button>
+            <button
+              style={presentFilter === 'late' ? { ...s.filterActive, borderColor: '#e67e22', color: '#e67e22', background: '#fef3e2' } : s.filterBtn}
+              onClick={() => setPresentFilter('late')}
+            >
+              ⏰ 지각자 <span style={{ ...s.filterCount, background: '#fef3e2', color: '#e67e22' }}>{lateList.length}</span>
+            </button>
+            <button
+              style={presentFilter === 'early_leave' ? { ...s.filterActive, borderColor: '#e74c3c', color: '#e74c3c', background: '#fde8e8' } : s.filterBtn}
+              onClick={() => setPresentFilter('early_leave')}
+            >
+              🚪 조기퇴근자 <span style={{ ...s.filterCount, background: '#fde8e8', color: '#e74c3c' }}>{earlyList.length}</span>
+            </button>
+          </div>
+        )}
+
         {/* 출근 현황 탭 */}
         {activeTab === 'present' && (
-          present.length === 0 ? (
-            <p style={s.empty}>아직 출근한 직원이 없습니다.</p>
+          filteredPresent.length === 0 ? (
+            <p style={s.empty}>
+              {presentFilter === 'late'        ? '지각자가 없습니다.' :
+               presentFilter === 'early_leave' ? '조기퇴근자가 없습니다.' :
+               '아직 출근한 직원이 없습니다.'}
+            </p>
           ) : (
             <div style={s.tableWrap}>
               <table style={s.table}>
                 <thead>
                   <tr style={s.thead}>
+                    <th style={s.th}>사번</th>
                     <th style={s.th}>이름</th>
                     <th style={s.th}>부서</th>
                     <th style={s.th}>출근</th>
@@ -268,10 +293,11 @@ export default function QrDisplayPage({ onDashboard }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {present.map(row => {
+                  {filteredPresent.map(row => {
                     const st = STATUS_LABEL[row.status] || { text: row.status, color: '#555', bg: '#eee' };
                     return (
                       <tr key={row.attendId} style={s.tr}>
+                        <td style={{ ...s.td, color: '#888', fontSize: 12 }}>{row.empno}</td>
                         <td style={s.td}>{row.ename}</td>
                         <td style={s.td}>{row.dname}</td>
                         <td style={s.td}>{row.checkIn  || '-'}</td>
@@ -299,6 +325,7 @@ export default function QrDisplayPage({ onDashboard }) {
               <table style={s.table}>
                 <thead>
                   <tr style={s.thead}>
+                    <th style={s.th}>사번</th>
                     <th style={s.th}>이름</th>
                     <th style={s.th}>부서</th>
                     <th style={s.th}>상태</th>
@@ -307,6 +334,7 @@ export default function QrDisplayPage({ onDashboard }) {
                 <tbody>
                   {absent.map((row, i) => (
                     <tr key={i} style={s.tr}>
+                      <td style={{ ...s.td, color: '#888', fontSize: 12 }}>{row.empno}</td>
                       <td style={s.td}>{row.ename}</td>
                       <td style={s.td}>{row.dname}</td>
                       <td style={s.td}>
@@ -323,7 +351,6 @@ export default function QrDisplayPage({ onDashboard }) {
         )}
       </div>
 
-      {/* 출근 시간 설정 모달 */}
       {showTimeModal && (
         <CheckInTimeModal
           current={checkInTime}
@@ -348,30 +375,28 @@ const s = {
     padding: '24px 24px 20px',
     textAlign: 'center',
   },
-  dashBtn:    { display: 'block', marginBottom: 14, background: 'none', border: '1.5px solid #c7d2fe', borderRadius: 8, color: '#4f46e5', fontSize: 13, fontWeight: 600, padding: '6px 14px', cursor: 'pointer', textAlign: 'left' },
-  heading:    { fontSize: 20, fontWeight: 700, margin: '0 0 4px' },
-  date:       { color: '#888', fontSize: 13, marginBottom: 12 },
-
-  /* 출근 마감 시간 영역 */
-  checkInRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#fef3e2', borderRadius: 10, padding: '8px 14px', marginBottom: 14 },
+  dashBtn:     { display: 'block', marginBottom: 14, background: 'none', border: '1.5px solid #c7d2fe', borderRadius: 8, color: '#4f46e5', fontSize: 13, fontWeight: 600, padding: '6px 14px', cursor: 'pointer', textAlign: 'left' },
+  heading:     { fontSize: 20, fontWeight: 700, margin: '0 0 4px' },
+  date:        { color: '#888', fontSize: 13, marginBottom: 12 },
+  checkInRow:  { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#fef3e2', borderRadius: 10, padding: '8px 14px', marginBottom: 14 },
   checkInLabel:{ fontSize: 12, color: '#888' },
   checkInTime: { fontSize: 16, fontWeight: 700, color: '#e67e22' },
-  timeBtn:    { background: 'none', border: '1px solid #f0c06a', borderRadius: 6, color: '#c07020', fontSize: 11, fontWeight: 600, padding: '3px 8px', cursor: 'pointer' },
+  timeBtn:     { background: 'none', border: '1px solid #f0c06a', borderRadius: 6, color: '#c07020', fontSize: 11, fontWeight: 600, padding: '3px 8px', cursor: 'pointer' },
+  qrBox:       { display: 'inline-block', background: '#fff', padding: 14, borderRadius: 12, border: '2px solid #e9ecef', marginBottom: 12 },
+  timer:       { fontSize: 16, margin: '6px 0 2px', fontWeight: 600, transition: 'color 0.3s' },
+  expiresAt:   { fontSize: 11, color: '#bbb', marginBottom: 10 },
+  refreshBtn:  { background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 22px', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginBottom: 10 },
+  hint:        { fontSize: 12, color: '#aaa', lineHeight: 1.6, margin: '0 0 16px' },
+  errorBox:    { color: '#e74c3c', background: '#fef0f0', borderRadius: 8, padding: 14, margin: '12px 0' },
 
-  qrBox:     { display: 'inline-block', background: '#fff', padding: 14, borderRadius: 12, border: '2px solid #e9ecef', marginBottom: 12 },
-  timer:     { fontSize: 16, margin: '6px 0 2px', fontWeight: 600, transition: 'color 0.3s' },
-  expiresAt: { fontSize: 11, color: '#bbb', marginBottom: 10 },
-  refreshBtn:{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 22px', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginBottom: 10 },
-  hint:      { fontSize: 12, color: '#aaa', lineHeight: 1.6, margin: '0 0 16px' },
-  errorBox:  { color: '#e74c3c', background: '#fef0f0', borderRadius: 8, padding: 14, margin: '12px 0' },
-
-  statsRow:  { display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: '#f8f9fa', borderRadius: 10, padding: '12px 8px', marginTop: 8 },
+  /* 통계 — 4칸으로 확장 */
+  statsRow:  { display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: '#f8f9fa', borderRadius: 10, padding: '12px 4px', marginTop: 8 },
   statBox:   { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 },
-  statLabel: { fontSize: 11, color: '#888' },
+  statLabel: { fontSize: 10, color: '#888' },
   statDiv:   { width: 1, height: 28, background: '#dee2e6' },
 
-  listPanel: { flex: 1, background: '#fff', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.10)', padding: 24, minWidth: 0 },
-  tabBar:    { display: 'flex', gap: 8, marginBottom: 20, alignItems: 'center' },
+  listPanel:  { flex: 1, background: '#fff', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.10)', padding: 24, minWidth: 0 },
+  tabBar:     { display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' },
   tab: {
     background: '#f3f4f6', color: '#555', border: 'none', borderRadius: 8,
     padding: '9px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
@@ -384,19 +409,24 @@ const s = {
     background: '#fef2f2', color: '#e74c3c', border: '1.5px solid #fca5a5', borderRadius: 8,
     padding: '9px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
   },
-  badge:       { background: '#e0e7ff', color: '#4f46e5', borderRadius: 10, padding: '1px 8px', fontSize: 12, fontWeight: 700 },
-  refreshSmall:{ marginLeft: 'auto', background: 'none', border: '1px solid #dee2e6', borderRadius: 8, color: '#666', fontSize: 18, padding: '4px 10px', cursor: 'pointer' },
+  badge:        { background: '#e0e7ff', color: '#4f46e5', borderRadius: 10, padding: '1px 8px', fontSize: 12, fontWeight: 700 },
+  refreshSmall: { marginLeft: 'auto', background: 'none', border: '1px solid #dee2e6', borderRadius: 8, color: '#666', fontSize: 18, padding: '4px 10px', cursor: 'pointer' },
+
+  /* 필터 버튼 */
+  filterBar:    { display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
+  filterBtn:    { background: '#f3f4f6', color: '#555', border: '1.5px solid transparent', borderRadius: 20, padding: '5px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 },
+  filterActive: { background: '#eef2ff', color: '#4f46e5', border: '1.5px solid #c7d2fe', borderRadius: 20, padding: '5px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 },
+  filterCount:  { background: '#e0e7ff', color: '#4f46e5', borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 700 },
 
   tableWrap: { overflowX: 'auto' },
   table:  { width: '100%', borderCollapse: 'collapse' },
   thead:  { background: '#f8f9fa' },
-  th:     { padding: '10px 14px', textAlign: 'left', fontWeight: 600, fontSize: 13, color: '#555', borderBottom: '2px solid #dee2e6' },
+  th:     { padding: '10px 12px', textAlign: 'left', fontWeight: 600, fontSize: 13, color: '#555', borderBottom: '2px solid #dee2e6' },
   tr:     { borderBottom: '1px solid #f5f5f5' },
-  td:     { padding: '10px 14px', fontSize: 14 },
+  td:     { padding: '10px 12px', fontSize: 14 },
   empty:  { color: '#aaa', textAlign: 'center', padding: 48, fontSize: 15 },
 };
 
-/* ─────────── 출근 시간 설정 모달 스타일 ─────────── */
 const cm = {
   overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   modal:     { background: '#fff', borderRadius: 16, padding: '28px 32px', maxWidth: 360, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center' },
