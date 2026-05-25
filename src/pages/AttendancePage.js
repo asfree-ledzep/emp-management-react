@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchMyAttendance, fetchAdminAttendance, fetchMonthlyStats } from '../api/attendanceApi';
+import { fetchDepts } from '../api/deptApi';
 
 const STATUS_LABEL = {
   NORMAL:      { text: '정상',  color: '#28a745', bg: '#d4edda' },
@@ -382,10 +383,18 @@ function AdminAttendanceTab() {
   const today = new Date().toISOString().slice(0, 10);
   const [date,      setDate]      = useState(today);
   const [deptno,    setDeptno]    = useState('');
+  const [depts,     setDepts]     = useState([]);
   const [list,      setList]      = useState([]);
   const [loading,   setLoading]   = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showPoor,  setShowPoor]  = useState(false);
+
+  // 부서 목록 동적 로드 (하드코딩 제거)
+  useEffect(() => {
+    fetchDepts()
+      .then(data => setDepts(Array.isArray(data) ? data : []))
+      .catch(() => setDepts([]));
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -408,10 +417,9 @@ function AdminAttendanceTab() {
           onChange={e => setDate(e.target.value)} style={styles.dateInput} />
         <select value={deptno} onChange={e => setDeptno(e.target.value)} style={styles.select}>
           <option value="">전체 부서</option>
-          <option value="10">ACCOUNTING</option>
-          <option value="20">RESEARCH</option>
-          <option value="30">SALES</option>
-          <option value="40">OPERATIONS</option>
+          {depts.map(d => (
+            <option key={d.deptno} value={d.deptno}>{d.dname}</option>
+          ))}
         </select>
         <button style={styles.searchBtn} onClick={load}>조회</button>
         <button
