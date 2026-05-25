@@ -480,7 +480,6 @@ function ChatbotButton({ darkMode = false }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'background 0.2s, transform 0.15s',
           transform: anyOpen || menuOpen ? 'rotate(45deg) scale(0.95)' : 'none',
-          position: 'fixed',  // ensure positioning context for badge
         }}
       >
         {anyOpen || menuOpen ? '✕' : '👥'}
