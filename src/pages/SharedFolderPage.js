@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchFiles, fetchAdminFiles, uploadFile, downloadFile, deleteFile, fetchR2Status } from '../api/fileApi';
+import {
+  fetchFiles, fetchAdminFiles, uploadFile, downloadFile, deleteFile, fetchR2Status,
+  fetchFolders, createFolder, renameFolder, deleteFolder,
+} from '../api/fileApi';
 import { fetchDepts } from '../api/deptApi';
 
 // ── 파일 확장자 → 이모지 아이콘 ──
@@ -32,36 +35,51 @@ const fmtSize = (bytes) => {
 export default function SharedFolderPage({ isAdmin = false, empno = null, darkMode = false }) {
   const dk = darkMode;
   const C = {
-    bg:      dk ? '#0f172a' : '#f3f4f6',
-    card:    dk ? '#1e293b' : '#ffffff',
-    border:  dk ? '#334155' : '#e5e7eb',
-    text:    dk ? '#e2e8f0' : '#374151',
-    muted:   dk ? '#94a3b8' : '#6b7280',
-    dark:    dk ? '#f1f5f9' : '#1f2937',
-    subBg:   dk ? '#0f172a' : '#f9fafb',
-    hover:   dk ? '#1e293b' : '#f3f4f6',
+    bg:     dk ? '#0f172a' : '#f3f4f6',
+    card:   dk ? '#1e293b' : '#ffffff',
+    border: dk ? '#334155' : '#e5e7eb',
+    text:   dk ? '#e2e8f0' : '#374151',
+    muted:  dk ? '#94a3b8' : '#6b7280',
+    dark:   dk ? '#f1f5f9' : '#1f2937',
+    subBg:  dk ? '#0f172a' : '#f9fafb',
+    folderBg: dk ? '#1e3a5f' : '#eff6ff',
+    folderBorder: dk ? '#2563eb' : '#bfdbfe',
   };
 
   // ── 탭: ALL | DEPT ──
-  const [tab,        setTab]        = useState('ALL');
-  const [files,      setFiles]      = useState([]);
-  const [loading,    setLoading]    = useState(false);
+  const [tab,       setTab]       = useState('ALL');
+  const [files,     setFiles]     = useState([]);
+  const [folders,   setFolders]   = useState([]);
+  const [loading,   setLoading]   = useState(false);
+
+  // ── 폴더 탐색 상태 ──
+  // folderPath: [{ id, name }, ...] — 브레드크럼용
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [folderPath,      setFolderPath]      = useState([]); // [{id, name}]
 
   // 관리자 전용 부서 필터
-  const [depts,      setDepts]      = useState([]);
-  const [adminDept,  setAdminDept]  = useState(null);  // deptno 또는 null
+  const [depts,     setDepts]     = useState([]);
+  const [adminDept, setAdminDept] = useState(null);
+
+  // 폴더 생성 UI
+  const [showNewFolder,   setShowNewFolder]   = useState(false);
+  const [newFolderName,   setNewFolderName]   = useState('');
+  const [creatingFolder,  setCreatingFolder]  = useState(false);
+
+  // 폴더 이름 변경 UI
+  const [renamingId,   setRenamingId]   = useState(null);
+  const [renameValue,  setRenameValue]  = useState('');
 
   // 업로드 패널
-  const [showUpload,  setShowUpload]  = useState(false);
-  const [dragOver,    setDragOver]    = useState(false);
-  const [pendingFiles,setPendingFiles]= useState([]);
-  const [uploading,   setUploading]   = useState(false);
-  const [uploadScope, setUploadScope] = useState('ALL');
-  const [uploadDept,  setUploadDept]  = useState(null);
+  const [showUpload,   setShowUpload]   = useState(false);
+  const [dragOver,     setDragOver]     = useState(false);
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [uploading,    setUploading]    = useState(false);
+  const [uploadScope,  setUploadScope]  = useState('ALL');
+  const [uploadDept,   setUploadDept]   = useState(null);
 
   // R2 상태
-  const [r2Ready,    setR2Ready]    = useState(true);
-
+  const [r2Ready, setR2Ready] = useState(true);
 
   // ── R2 준비 여부 확인 ──
   useEffect(() => {
@@ -72,40 +90,113 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
 
   // ── 부서 목록 (관리자용) ──
   useEffect(() => {
-    if (isAdmin) {
-      fetchDepts().then(setDepts).catch(() => {});
-    }
+    if (isAdmin) fetchDepts().then(setDepts).catch(() => {});
   }, [isAdmin]);
 
-  // ── 파일 목록 로드 ──
-  const loadFiles = useCallback(async () => {
+  // ── 현재 위치의 폴더 + 파일 로드 ──
+  const loadContents = useCallback(async () => {
     setLoading(true);
     try {
-      let data;
+      const scope     = tab === 'DEPT' ? 'DEPT' : 'ALL';
+      const deptno    = tab === 'DEPT' ? adminDept : null;
+      const folderId  = currentFolderId;
+
+      // 폴더 목록
+      const folderData = await fetchFolders(scope, deptno, folderId).catch(() => []);
+      setFolders(Array.isArray(folderData) ? folderData : []);
+
+      // 파일 목록
+      let fileData;
       if (isAdmin) {
-        // 관리자: scope + deptno 필터
-        const scope = tab === 'DEPT' ? 'DEPT' : 'ALL';
-        data = await fetchAdminFiles(scope, tab === 'DEPT' ? adminDept : null);
+        fileData = await fetchAdminFiles(scope, deptno, folderId);
       } else {
-        data = await fetchFiles(tab);
+        fileData = await fetchFiles(scope, folderId);
       }
-      setFiles(Array.isArray(data) ? data : []);
-    } catch (e) {
+      setFiles(Array.isArray(fileData) ? fileData : []);
+    } catch {
+      setFolders([]);
       setFiles([]);
     } finally {
       setLoading(false);
     }
-  }, [tab, isAdmin, adminDept]);
+  }, [tab, isAdmin, adminDept, currentFolderId]);
 
-  useEffect(() => { loadFiles(); }, [loadFiles]);
+  useEffect(() => { loadContents(); }, [loadContents]);
 
-  // 탭 전환 시 업로드 스코프 동기화
+  // 탭 전환 시 폴더 경로 초기화
   useEffect(() => {
+    setCurrentFolderId(null);
+    setFolderPath([]);
     setUploadScope(tab);
     setUploadDept(adminDept);
   }, [tab, adminDept]);
 
-  // ── 업로드 처리 ──
+  // ── 폴더 진입 ──
+  const enterFolder = (folder) => {
+    setCurrentFolderId(folder.folderId);
+    setFolderPath(prev => [...prev, { id: folder.folderId, name: folder.folderName }]);
+    setShowNewFolder(false);
+  };
+
+  // ── 브레드크럼 이동 ──
+  const navigateTo = (idx) => {
+    if (idx < 0) {
+      // 루트로
+      setCurrentFolderId(null);
+      setFolderPath([]);
+    } else {
+      const target = folderPath[idx];
+      setCurrentFolderId(target.id);
+      setFolderPath(folderPath.slice(0, idx + 1));
+    }
+    setShowNewFolder(false);
+  };
+
+  // ── 폴더 생성 ──
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return;
+    setCreatingFolder(true);
+    try {
+      const scope  = tab === 'DEPT' ? 'DEPT' : 'ALL';
+      const deptno = tab === 'DEPT' ? adminDept : null;
+      const res = await createFolder(newFolderName.trim(), scope, deptno, currentFolderId);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || '폴더 생성 실패');
+      }
+      setNewFolderName('');
+      setShowNewFolder(false);
+      loadContents();
+    } catch (e) { alert(e.message); }
+    finally { setCreatingFolder(false); }
+  };
+
+  // ── 폴더 이름 변경 ──
+  const handleRename = async (folderId) => {
+    if (!renameValue.trim()) return;
+    try {
+      const res = await renameFolder(folderId, renameValue.trim());
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || '변경 실패'); }
+      setRenamingId(null);
+      loadContents();
+    } catch (e) { alert(e.message); }
+  };
+
+  // ── 폴더 삭제 ──
+  const handleDeleteFolder = async (folder) => {
+    const hasContent = (folder.fileCount > 0) || (folder.subFolderCount > 0);
+    const msg = hasContent
+      ? `"${folder.folderName}" 안의 파일 ${folder.fileCount}개가 루트로 이동되고 폴더가 삭제됩니다. 계속할까요?`
+      : `"${folder.folderName}" 폴더를 삭제할까요?`;
+    if (!window.confirm(msg)) return;
+    try {
+      const res = await deleteFolder(folder.folderId);
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || '삭제 실패'); }
+      loadContents();
+    } catch (e) { alert(e.message); }
+  };
+
+  // ── 파일 업로드 ──
   const handleUpload = async () => {
     if (!pendingFiles.length) return;
     if (!r2Ready) { alert('R2 자격증명이 설정되지 않았습니다.'); return; }
@@ -113,7 +204,7 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
     try {
       for (const f of pendingFiles) {
         const actualDept = uploadScope === 'DEPT' ? (uploadDept ?? adminDept) : null;
-        const res = await uploadFile(f, uploadScope, actualDept);
+        const res = await uploadFile(f, uploadScope, actualDept, currentFolderId);
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error || '업로드 실패');
@@ -121,53 +212,46 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
       }
       setPendingFiles([]);
       setShowUpload(false);
-      loadFiles();
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setUploading(false);
-    }
+      loadContents();
+    } catch (e) { alert(e.message); }
+    finally { setUploading(false); }
   };
 
   const fallbackInputRef = useRef();
-
   const onFilePick = (e) => {
     setPendingFiles(prev => [...prev, ...Array.from(e.target.files)]);
     e.target.value = '';
   };
 
-  // File System Access API — 확장프로그램 우회, 브라우저 네이티브 파일 선택창
   const handleBrowseFiles = async () => {
     try {
       if (typeof window.showOpenFilePicker === 'function') {
         const handles = await window.showOpenFilePicker({ multiple: true });
-        const files   = await Promise.all(handles.map(h => h.getFile()));
-        setPendingFiles(prev => [...prev, ...files]);
+        const picked  = await Promise.all(handles.map(h => h.getFile()));
+        setPendingFiles(prev => [...prev, ...picked]);
       } else {
-        fallbackInputRef.current?.click(); // 구형 브라우저 폴백
+        fallbackInputRef.current?.click();
       }
     } catch (e) {
       if (e.name !== 'AbortError') alert('파일 선택 오류: ' + e.message);
     }
   };
 
-  // ── 다운로드 ──
+  // ── 파일 다운로드 / 삭제 ──
   const handleDownload = async (fileId, fileName) => {
     try { await downloadFile(fileId, fileName); }
     catch (e) { alert('다운로드 실패: ' + e.message); }
   };
-
-  // ── 삭제 ──
-  const handleDelete = async (fileId, uploaderKey) => {
+  const handleDelete = async (fileId) => {
     if (!window.confirm('이 파일을 삭제할까요?')) return;
     try {
       const res = await deleteFile(fileId);
       if (!res.ok) throw new Error('삭제 실패');
-      loadFiles();
+      loadContents();
     } catch (e) { alert(e.message); }
   };
 
-  // ── 스타일 ──
+  // ── 공통 스타일 ──
   const tabBtn = (active) => ({
     padding: '8px 20px', border: 'none', borderRadius: 8, cursor: 'pointer',
     fontWeight: active ? 700 : 400, fontSize: '0.88rem',
@@ -175,6 +259,39 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
     color:      active ? '#fff'    : C.muted,
     transition: 'all 0.15s',
   });
+
+  const isEmpty = folders.length === 0 && files.length === 0;
+
+  // ── 브레드크럼 ──
+  const Breadcrumb = () => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 4,
+      fontSize: '0.83rem', color: C.muted, flexWrap: 'wrap',
+      marginBottom: 14,
+    }}>
+      <span
+        onClick={() => navigateTo(-1)}
+        style={{ cursor: 'pointer', color: '#4f46e5', fontWeight: 600 }}
+      >
+        🏠 루트
+      </span>
+      {folderPath.map((seg, i) => (
+        <React.Fragment key={seg.id}>
+          <span style={{ color: C.border }}>›</span>
+          <span
+            onClick={() => navigateTo(i)}
+            style={{
+              cursor: i < folderPath.length - 1 ? 'pointer' : 'default',
+              color:  i < folderPath.length - 1 ? '#4f46e5' : C.dark,
+              fontWeight: i === folderPath.length - 1 ? 700 : 400,
+            }}
+          >
+            {seg.name}
+          </span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
 
   return (
     <div style={{ padding: '28px 24px', maxWidth: 900, margin: '0 auto' }}>
@@ -217,7 +334,12 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
           borderRadius: 14, padding: '20px 24px', marginBottom: 24,
           boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
         }}>
-          <h4 style={{ margin: '0 0 16px', color: C.dark, fontSize: '1rem' }}>📤 파일 업로드</h4>
+          <h4 style={{ margin: '0 0 4px', color: C.dark, fontSize: '1rem' }}>📤 파일 업로드</h4>
+          {currentFolderId && (
+            <p style={{ margin: '0 0 14px', fontSize: '0.8rem', color: '#4f46e5' }}>
+              📂 현재 폴더에 업로드됩니다: <strong>{folderPath[folderPath.length - 1]?.name}</strong>
+            </p>
+          )}
 
           {/* 스코프 선택 */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -233,8 +355,6 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
                 {s === 'ALL' ? '📂 전체 공유' : '🏢 부서 공유'}
               </button>
             ))}
-
-            {/* 부서 선택 (DEPT + 관리자) */}
             {uploadScope === 'DEPT' && isAdmin && (
               <select
                 value={uploadDept ?? ''}
@@ -245,14 +365,12 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
                 }}
               >
                 <option value="">부서 선택</option>
-                {depts.map(d => (
-                  <option key={d.deptno} value={d.deptno}>{d.dname}</option>
-                ))}
+                {depts.map(d => <option key={d.deptno} value={d.deptno}>{d.dname}</option>)}
               </select>
             )}
           </div>
 
-          {/* 드래그존 (드래그 전용) + 파일선택 버튼 분리 */}
+          {/* 드래그존 */}
           <div
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -272,24 +390,18 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             <div style={{ fontSize: '0.72rem', color: C.muted, marginTop: 4 }}>최대 50MB</div>
           </div>
 
-          {/* 파일 선택 버튼 — File System Access API (확장프로그램 우회) */}
           <div style={{ textAlign: 'center', marginBottom: 14 }}>
-            <button
-              type="button"
-              onClick={handleBrowseFiles}
+            <button type="button" onClick={handleBrowseFiles}
               style={{
                 background: '#f1f5f9', border: `1px solid ${C.border}`,
                 borderRadius: 8, padding: '9px 24px', cursor: 'pointer',
                 fontSize: '0.85rem', fontWeight: 600, color: '#4f46e5',
-              }}
-            >
+              }}>
               📁 파일 선택하기
             </button>
-            {/* 구형 브라우저 폴백 input */}
             <input ref={fallbackInputRef} type="file" multiple onChange={onFilePick} style={{ display: 'none' }} />
           </div>
 
-          {/* 선택된 파일 목록 */}
           {pendingFiles.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               {pendingFiles.map((f, i) => (
@@ -302,7 +414,7 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ color: C.muted }}>{fmtSize(f.size)}</span>
                     <button
-                      onClick={e => { e.stopPropagation(); setPendingFiles(prev => prev.filter((_, j) => j !== i)); }}
+                      onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '1rem' }}
                     >✕</button>
                   </div>
@@ -316,14 +428,12 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
               style={{ padding: '9px 18px', borderRadius: 9, border: `1px solid ${C.border}`, background: C.card, color: C.text, cursor: 'pointer', fontSize: '0.85rem' }}>
               취소
             </button>
-            <button
-              onClick={handleUpload}
-              disabled={uploading || !pendingFiles.length}
+            <button onClick={handleUpload} disabled={uploading || !pendingFiles.length}
               style={{
                 padding: '9px 22px', borderRadius: 9, border: 'none',
                 background: uploading || !pendingFiles.length ? '#e5e7eb' : '#4f46e5',
-                color: uploading || !pendingFiles.length ? '#9ca3af' : '#fff',
-                cursor: uploading || !pendingFiles.length ? 'not-allowed' : 'pointer',
+                color:      uploading || !pendingFiles.length ? '#9ca3af' : '#fff',
+                cursor:     uploading || !pendingFiles.length ? 'not-allowed' : 'pointer',
                 fontWeight: 600, fontSize: '0.85rem',
               }}>
               {uploading ? '업로드 중...' : `업로드 (${pendingFiles.length}개)`}
@@ -333,7 +443,7 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
       )}
 
       {/* ── 탭 + 부서 필터 ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <button onClick={() => { setTab('ALL'); setAdminDept(null); }} style={tabBtn(tab === 'ALL')}>
           📂 전체 공유
         </button>
@@ -341,7 +451,6 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
           🏢 부서 공유
         </button>
 
-        {/* 관리자: 부서 선택 드롭다운 */}
         {isAdmin && tab === 'DEPT' && (
           <select
             value={adminDept ?? ''}
@@ -352,62 +461,202 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             }}
           >
             <option value="">전체 부서</option>
-            {depts.map(d => (
-              <option key={d.deptno} value={d.deptno}>{d.dname}</option>
-            ))}
+            {depts.map(d => <option key={d.deptno} value={d.deptno}>{d.dname}</option>)}
           </select>
         )}
 
-        <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: C.muted }}>
-          {files.length}개 파일
-        </span>
+        {/* 폴더 만들기 버튼 */}
+        <button
+          onClick={() => { setShowNewFolder(s => !s); setNewFolderName(''); }}
+          style={{
+            marginLeft: 'auto', padding: '8px 16px', border: `1px solid ${C.border}`,
+            borderRadius: 8, cursor: 'pointer', fontSize: '0.83rem', fontWeight: 600,
+            background: showNewFolder ? '#ede9fe' : C.card,
+            color: showNewFolder ? '#4f46e5' : C.text,
+          }}>
+          📁 새 폴더
+        </button>
       </div>
 
-      {/* ── 파일 목록 ── */}
+      {/* ── 새 폴더 입력 ── */}
+      {showNewFolder && (
+        <div style={{
+          display: 'flex', gap: 8, alignItems: 'center',
+          padding: '12px 16px', marginBottom: 14,
+          background: C.card, border: `1px solid ${C.border}`, borderRadius: 10,
+        }}>
+          <span style={{ fontSize: '1.2rem' }}>📁</span>
+          <input
+            value={newFolderName}
+            onChange={e => setNewFolderName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleCreateFolder(); if (e.key === 'Escape') setShowNewFolder(false); }}
+            placeholder="폴더 이름 입력 후 Enter"
+            autoFocus
+            style={{
+              flex: 1, padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
+              background: C.subBg, color: C.dark, fontSize: '0.88rem', outline: 'none',
+            }}
+          />
+          <button onClick={handleCreateFolder} disabled={creatingFolder || !newFolderName.trim()}
+            style={{
+              padding: '8px 16px', borderRadius: 8, border: 'none',
+              background: creatingFolder || !newFolderName.trim() ? '#e5e7eb' : '#4f46e5',
+              color: creatingFolder || !newFolderName.trim() ? '#9ca3af' : '#fff',
+              cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem',
+            }}>
+            {creatingFolder ? '생성 중...' : '만들기'}
+          </button>
+          <button onClick={() => setShowNewFolder(false)}
+            style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.muted, cursor: 'pointer', fontSize: '0.83rem' }}>
+            취소
+          </button>
+        </div>
+      )}
+
+      {/* ── 브레드크럼 ── */}
+      {folderPath.length > 0 && <Breadcrumb />}
+
+      {/* ── 파일/폴더 목록 ── */}
       <div style={{
         background: C.card, border: `1px solid ${C.border}`,
         borderRadius: 14, overflow: 'hidden',
       }}>
         {loading ? (
-          <div style={{ padding: '48px', textAlign: 'center', color: C.muted }}>
-            불러오는 중...
-          </div>
-        ) : files.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: C.muted }}>불러오는 중...</div>
+        ) : isEmpty && folderPath.length === 0 ? (
           <div style={{ padding: '56px', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: 12 }}>📭</div>
             <div style={{ color: C.muted, fontSize: '0.9rem' }}>
               {tab === 'ALL' ? '전체 공유 파일이 없습니다' : '부서 공유 파일이 없습니다'}
             </div>
             <div style={{ color: C.muted, fontSize: '0.8rem', marginTop: 6 }}>
-              "파일 올리기" 버튼으로 첫 번째 파일을 올려보세요
+              "파일 올리기" 버튼으로 파일을 올리거나 "새 폴더" 버튼으로 폴더를 만드세요
             </div>
           </div>
         ) : (
           <>
-            {/* 파일 카드 목록 */}
+            {/* 상위 폴더로 (루트가 아닐 때) */}
+            {folderPath.length > 0 && (
+              <div
+                onClick={() => navigateTo(folderPath.length - 2)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 20px', cursor: 'pointer',
+                  borderBottom: `1px solid ${C.border}`,
+                  color: C.muted, fontSize: '0.88rem',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = (dk ? '#243347' : '#f8fafc')}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <span style={{ fontSize: '1.4rem' }}>⬆️</span>
+                <span style={{ fontWeight: 600 }}>상위 폴더로</span>
+              </div>
+            )}
+
+            {/* ── 폴더 목록 ── */}
+            {folders.map((folder, idx) => (
+              <div key={folder.folderId} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '13px 20px',
+                borderBottom: (idx < folders.length - 1 || files.length > 0) ? `1px solid ${C.border}` : 'none',
+                background: C.folderBg,
+              }}>
+                {/* 폴더 아이콘 + 이름 (클릭으로 진입) */}
+                <div
+                  onClick={() => setRenamingId(null) || enterFolder(folder)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, cursor: 'pointer', minWidth: 0 }}
+                >
+                  <span style={{ fontSize: '1.7rem', flexShrink: 0 }}>📁</span>
+                  {renamingId === folder.folderId ? (
+                    <div style={{ display: 'flex', gap: 6, flex: 1 }} onClick={e => e.stopPropagation()}>
+                      <input
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleRename(folder.folderId);
+                          if (e.key === 'Escape') setRenamingId(null);
+                        }}
+                        autoFocus
+                        style={{
+                          flex: 1, padding: '5px 10px', borderRadius: 6,
+                          border: `1px solid #4f46e5`, background: C.card,
+                          color: C.dark, fontSize: '0.88rem', outline: 'none',
+                        }}
+                      />
+                      <button onClick={() => handleRename(folder.folderId)}
+                        style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: '#4f46e5', color: '#fff', cursor: 'pointer', fontSize: '0.82rem' }}>
+                        저장
+                      </button>
+                      <button onClick={() => setRenamingId(null)}
+                        style={{ padding: '5px 10px', borderRadius: 6, border: `1px solid ${C.border}`, background: C.card, color: C.muted, cursor: 'pointer', fontSize: '0.82rem' }}>
+                        취소
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: C.dark }}>{folder.folderName}</div>
+                      <div style={{ fontSize: '0.76rem', color: C.muted, marginTop: 2 }}>
+                        {folder.subFolderCount > 0 && <span>📁 {folder.subFolderCount}개 · </span>}
+                        <span>📄 {folder.fileCount}개 파일</span>
+                        <span> · {folder.creatorName} · {folder.createdAt}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 폴더 액션 버튼 */}
+                {renamingId !== folder.folderId && (
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button
+                      onClick={e => { e.stopPropagation(); setRenamingId(folder.folderId); setRenameValue(folder.folderName); }}
+                      title="이름 변경"
+                      style={{
+                        padding: '6px 10px', borderRadius: 7, border: `1px solid ${C.border}`,
+                        background: C.card, cursor: 'pointer', fontSize: '0.82rem', color: C.text,
+                      }}>✏️</button>
+                    {(isAdmin || folder.creator === String(empno) || folder.creator === 'admin') && (
+                      <button
+                        onClick={e => { e.stopPropagation(); handleDeleteFolder(folder); }}
+                        title="삭제"
+                        style={{
+                          padding: '6px 10px', borderRadius: 7, border: '1px solid #fca5a5',
+                          background: C.card, cursor: 'pointer', fontSize: '0.82rem', color: '#ef4444',
+                        }}>🗑</button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* ── 파일 목록 ── */}
+            {files.length === 0 && folders.length > 0 && (
+              <div style={{ padding: '28px', textAlign: 'center', color: C.muted, fontSize: '0.85rem', borderTop: `1px solid ${C.border}` }}>
+                이 폴더에 파일이 없습니다
+              </div>
+            )}
+            {files.length === 0 && folders.length === 0 && folderPath.length > 0 && (
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>📂</div>
+                <div style={{ color: C.muted, fontSize: '0.88rem' }}>빈 폴더입니다</div>
+                <div style={{ color: C.muted, fontSize: '0.8rem', marginTop: 4 }}>파일을 올리거나 새 폴더를 만드세요</div>
+              </div>
+            )}
             {files.map((f, idx) => (
               <div key={f.fileId} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 padding: '14px 20px',
                 borderBottom: idx < files.length - 1 ? `1px solid ${C.border}` : 'none',
+                borderTop: idx === 0 && folders.length > 0 ? `1px solid ${C.border}` : 'none',
                 transition: 'background 0.1s',
               }}
               onMouseEnter={e => e.currentTarget.style.background = (dk ? '#243347' : '#f8fafc')}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
-                {/* 파일 아이콘 */}
                 <span style={{ fontSize: '1.8rem', flexShrink: 0 }}>{fileIcon(f.fileName)}</span>
-
-                {/* 파일 정보 (남은 공간 전체 사용) */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  {/* 파일명 — 전체 너비 사용, 긴 이름은 두 줄까지 허용 */}
-                  <div style={{
-                    fontWeight: 700, fontSize: '0.92rem', color: C.dark,
-                    wordBreak: 'break-all', lineHeight: 1.4,
-                  }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: C.dark, wordBreak: 'break-all', lineHeight: 1.4 }}>
                     {f.fileName}
                   </div>
-                  {/* 부서 뱃지 (관리자 + 부서 파일) */}
                   {isAdmin && f.scope === 'DEPT' && f.dname && (
                     <span style={{
                       display: 'inline-block', marginTop: 3,
@@ -415,7 +664,6 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
                       padding: '1px 8px', borderRadius: 10, fontWeight: 600,
                     }}>{f.dname}</span>
                   )}
-                  {/* 크기 · 올린 사람 · 날짜 */}
                   <div style={{
                     marginTop: 4, fontSize: '0.78rem', color: C.muted,
                     display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center',
@@ -427,25 +675,17 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
                     <span>{f.createdAt}</span>
                   </div>
                 </div>
-
-                {/* 관리 버튼 */}
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <button
-                    onClick={() => handleDownload(f.fileId, f.fileName)}
-                    title="다운로드"
+                  <button onClick={() => handleDownload(f.fileId, f.fileName)} title="다운로드"
                     style={{
                       padding: '7px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
-                      background: C.card, cursor: 'pointer', fontSize: '0.85rem',
-                      color: '#4f46e5', fontWeight: 700,
+                      background: C.card, cursor: 'pointer', fontSize: '0.85rem', color: '#4f46e5', fontWeight: 700,
                     }}>⬇</button>
                   {(isAdmin || f.uploader === String(empno)) && (
-                    <button
-                      onClick={() => handleDelete(f.fileId, f.uploader)}
-                      title="삭제"
+                    <button onClick={() => handleDelete(f.fileId)} title="삭제"
                       style={{
                         padding: '7px 12px', borderRadius: 8, border: '1px solid #fca5a5',
-                        background: C.card, cursor: 'pointer', fontSize: '0.85rem',
-                        color: '#ef4444', fontWeight: 700,
+                        background: C.card, cursor: 'pointer', fontSize: '0.85rem', color: '#ef4444', fontWeight: 700,
                       }}>🗑</button>
                   )}
                 </div>
@@ -454,6 +694,13 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
           </>
         )}
       </div>
+
+      {/* 파일 수 요약 */}
+      {!loading && !isEmpty && (
+        <div style={{ marginTop: 10, fontSize: '0.78rem', color: C.muted, textAlign: 'right' }}>
+          📁 {folders.length}개 폴더 · 📄 {files.length}개 파일
+        </div>
+      )}
     </div>
   );
 }
