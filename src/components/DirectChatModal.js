@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { authFetch } from '../api/apiClient';
+import { authFetch, triggerLogout } from '../api/apiClient';
 
 /**
  * 1:1 DM 채팅 모달
@@ -12,15 +12,16 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
   const myEmpno = sessionStorage.getItem('empno');   // null → 관리자
   const myName  = sessionStorage.getItem('username') || '알 수 없음';
 
-  const [screen,    setScreen]    = useState('search');
-  const [query,     setQuery]     = useState('');
-  const [results,   setResults]   = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [peer,      setPeer]      = useState(null);  // { empno, ename, job, photoUrl }
-  const [messages,  setMessages]  = useState([]);
-  const [input,     setInput]     = useState('');
-  const [connected, setConnected] = useState(false);
-  const [connecting,setConnecting]= useState(true);
+  const [screen,      setScreen]      = useState('search');
+  const [query,       setQuery]       = useState('');
+  const [results,     setResults]     = useState([]);
+  const [searching,   setSearching]   = useState(false);
+  const [sessionErr,  setSessionErr]  = useState(false); // 401 세션 만료
+  const [peer,        setPeer]        = useState(null);  // { empno, ename, job, photoUrl }
+  const [messages,    setMessages]    = useState([]);
+  const [input,       setInput]       = useState('');
+  const [connected,   setConnected]   = useState(false);
+  const [connecting,  setConnecting]  = useState(true);
 
   const clientRef = useRef(null);
   const peerRef   = useRef(null);
@@ -76,8 +77,20 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
   const doSearch = useCallback(async (name) => {
     if (!myEmpno) return;
     setSearching(true);
+    setSessionErr(false);
     try {
-      const res  = await authFetch(`/api/employees/search?name=${encodeURIComponent(name ?? query)}`);
+      // noAutoLogout: true → 서버 401 수신 시 전역 로그아웃 안 함; 여기서 직접 처리
+      const res = await authFetch(
+        `/api/employees/search?name=${encodeURIComponent(name ?? query)}`,
+        { noAutoLogout: true },
+      );
+      if (res.status === 401) {
+        // 세션 만료 UI 표시 (강제 로그아웃 안 함 → 사용자가 확인 후 재로그인 선택)
+        setSessionErr(true);
+        setResults([]);
+        setSearching(false);
+        return;
+      }
       const data = await res.json();
       setResults(Array.isArray(data)
         ? data.filter(e => e.empno !== Number(myEmpno))
@@ -93,7 +106,11 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
     setScreen('chat');
     if (myEmpno) {
       try {
-        const res  = await authFetch(`/api/dm/history?empno1=${myEmpno}&empno2=${emp.empno}`);
+        const res = await authFetch(
+          `/api/dm/history?empno1=${myEmpno}&empno2=${emp.empno}`,
+          { noAutoLogout: true },
+        );
+        if (res.status === 401) { setSessionErr(true); return; }
         const data = await res.json();
         setMessages(Array.isArray(data) ? data : []);
       } catch { /* ignore */ }
@@ -269,17 +286,43 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
                   ⚠️ 관리자는 1:1 채팅을 이용할 수 없습니다.
                 </div>
               )}
-              {myEmpno && searching && (
+
+              {/* 세션 만료 안내 */}
+              {myEmpno && sessionErr && (
+                <div style={{
+                  textAlign: 'center', marginTop: 60, padding: '0 20px',
+                }}>
+                  <div style={{ fontSize: '2rem', marginBottom: 12 }}>🔒</div>
+                  <div style={{ color: C.txtMain, fontWeight: 700, fontSize: '0.9rem', marginBottom: 6 }}>
+                    세션이 만료되었습니다
+                  </div>
+                  <div style={{ color: C.txtSub, fontSize: '0.78rem', marginBottom: 16 }}>
+                    보안을 위해 다시 로그인해주세요.
+                  </div>
+                  <button
+                    onClick={() => triggerLogout('session_expired_ui')}
+                    style={{
+                      padding: '8px 20px', background: '#7c3aed', color: '#fff',
+                      border: 'none', borderRadius: 10, cursor: 'pointer',
+                      fontWeight: 700, fontSize: '0.83rem',
+                    }}
+                  >
+                    다시 로그인
+                  </button>
+                </div>
+              )}
+
+              {myEmpno && !sessionErr && searching && (
                 <div style={{ textAlign: 'center', color: C.txtSub, marginTop: 80, fontSize: 13 }}>
                   🔍 검색 중...
                 </div>
               )}
-              {myEmpno && !searching && results.length === 0 && (
+              {myEmpno && !sessionErr && !searching && results.length === 0 && (
                 <div style={{ textAlign: 'center', color: C.txtSub, marginTop: 80, fontSize: 13 }}>
                   검색 결과가 없습니다.
                 </div>
               )}
-              {myEmpno && !searching && results.map(emp => (
+              {myEmpno && !sessionErr && !searching && results.map(emp => (
                 <div
                   key={emp.empno}
                   onClick={() => selectPeer(emp)}
