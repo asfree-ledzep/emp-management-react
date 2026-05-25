@@ -217,29 +217,6 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
     finally { setUploading(false); }
   };
 
-  // ── 파일 선택 (Grabbit 확장 프로그램 우회) ──
-  // showOpenFilePicker 시도 → AbortError 시 힌트 표시
-  const [pickerBlocked, setPickerBlocked] = useState(false);
-
-  const handleBrowseFiles = async () => {
-    setPickerBlocked(false);
-    try {
-      if (typeof window.showOpenFilePicker === 'function') {
-        const handles = await window.showOpenFilePicker({ multiple: true });
-        const files   = await Promise.all(handles.map(h => h.getFile()));
-        if (files.length > 0) setPendingFiles(prev => [...prev, ...files]);
-      } else {
-        setPickerBlocked(true);
-      }
-    } catch (e) {
-      if (e.name === 'AbortError') {
-        // Grabbit 등 확장 프로그램이 가로챈 경우 힌트 표시
-        setPickerBlocked(true);
-      } else {
-        alert('파일 선택 오류: ' + e.message);
-      }
-    }
-  };
 
   // ── 파일 다운로드 / 삭제 ──
   const handleDownload = async (fileId, fileName) => {
@@ -416,27 +393,6 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             <div style={{ fontSize: '0.72rem', color: C.muted, marginTop: 8 }}>최대 50MB · 다중 파일 지원</div>
           </div>
 
-          {/* 파일 선택하기 버튼 */}
-          <div style={{ textAlign: 'center', marginBottom: 14 }}>
-            <button type="button" onClick={handleBrowseFiles}
-              style={{
-                background: '#f1f5f9', border: `1px solid ${C.border}`,
-                borderRadius: 8, padding: '9px 24px', cursor: 'pointer',
-                fontSize: '0.85rem', fontWeight: 600, color: '#4f46e5',
-              }}>
-              📁 파일 선택하기
-            </button>
-            {pickerBlocked && (
-              <div style={{
-                marginTop: 8, fontSize: '0.78rem', color: '#b45309',
-                background: '#fef3c7', border: '1px solid #fcd34d',
-                borderRadius: 6, padding: '6px 12px', display: 'inline-block',
-              }}>
-                ⚠️ 브라우저 확장 프로그램(Grabbit 등)이 파일 선택을 차단했습니다.<br />
-                위 드래그 또는 <strong>Ctrl+V</strong>를 사용해주세요.
-              </div>
-            )}
-          </div>
 
           {pendingFiles.length > 0 && (
             <div style={{ marginBottom: 14 }}>
