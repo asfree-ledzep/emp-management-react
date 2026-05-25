@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchFiles, fetchAdminFiles, uploadFile, downloadFile, deleteFile, fetchR2Status } from '../api/fileApi';
 import { fetchDepts } from '../api/deptApi';
 
@@ -129,9 +129,26 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
     }
   };
 
+  const fallbackInputRef = useRef();
+
   const onFilePick = (e) => {
     setPendingFiles(prev => [...prev, ...Array.from(e.target.files)]);
     e.target.value = '';
+  };
+
+  // File System Access API — 확장프로그램 우회, 브라우저 네이티브 파일 선택창
+  const handleBrowseFiles = async () => {
+    try {
+      if (typeof window.showOpenFilePicker === 'function') {
+        const handles = await window.showOpenFilePicker({ multiple: true });
+        const files   = await Promise.all(handles.map(h => h.getFile()));
+        setPendingFiles(prev => [...prev, ...files]);
+      } else {
+        fallbackInputRef.current?.click(); // 구형 브라우저 폴백
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') alert('파일 선택 오류: ' + e.message);
+    }
   };
 
   // ── 다운로드 ──
@@ -235,7 +252,7 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             )}
           </div>
 
-          {/* 드래그&드롭 영역 — input을 투명하게 전체 덮기 (확장프로그램 완전 우회) */}
+          {/* 드래그존 (드래그 전용) + 파일선택 버튼 분리 */}
           <div
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -244,29 +261,32 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
               setPendingFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
             }}
             style={{
-              position: 'relative',
               border: `2px dashed ${dragOver ? '#4f46e5' : C.border}`,
-              borderRadius: 10, padding: '28px 20px', textAlign: 'center',
+              borderRadius: 10, padding: '20px', textAlign: 'center',
               background: dragOver ? '#ede9fe' : C.subBg,
-              transition: 'all 0.2s', marginBottom: 14, overflow: 'hidden',
+              transition: 'all 0.2s', marginBottom: 12,
             }}
           >
-            {/* 투명 input이 전체 영역을 덮음 → 클릭 즉시 파일 선택창 오픈 */}
-            <input
-              type="file"
-              multiple
-              onChange={onFilePick}
+            <div style={{ fontSize: '2rem', marginBottom: 6 }}>🗂️</div>
+            <div style={{ fontSize: '0.85rem', color: C.muted }}>여기에 파일을 드래그하세요</div>
+            <div style={{ fontSize: '0.72rem', color: C.muted, marginTop: 4 }}>최대 50MB</div>
+          </div>
+
+          {/* 파일 선택 버튼 — File System Access API (확장프로그램 우회) */}
+          <div style={{ textAlign: 'center', marginBottom: 14 }}>
+            <button
+              type="button"
+              onClick={handleBrowseFiles}
               style={{
-                position: 'absolute', inset: 0,
-                width: '100%', height: '100%',
-                opacity: 0, cursor: 'pointer', zIndex: 10,
+                background: '#f1f5f9', border: `1px solid ${C.border}`,
+                borderRadius: 8, padding: '9px 24px', cursor: 'pointer',
+                fontSize: '0.85rem', fontWeight: 600, color: '#4f46e5',
               }}
-            />
-            <div style={{ fontSize: '2rem', marginBottom: 8 }}>📂</div>
-            <div style={{ fontSize: '0.88rem', color: C.muted }}>
-              클릭하거나 파일을 드래그하세요
-            </div>
-            <div style={{ fontSize: '0.75rem', color: C.muted, marginTop: 4 }}>최대 50MB</div>
+            >
+              📁 파일 선택하기
+            </button>
+            {/* 구형 브라우저 폴백 input */}
+            <input ref={fallbackInputRef} type="file" multiple onChange={onFilePick} style={{ display: 'none' }} />
           </div>
 
           {/* 선택된 파일 목록 */}
