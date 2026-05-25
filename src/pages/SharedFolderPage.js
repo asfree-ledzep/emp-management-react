@@ -218,24 +218,28 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
   };
 
   // ── 파일 선택 (Grabbit 확장 프로그램 우회) ──
-  // 전략: 투명 <input> overlay → 사용자가 직접 클릭 (JS 클릭 없음)
-  //        + window.focus 이벤트로 el.files 직접 읽기 (change 이벤트 완전 우회)
-  const nativeInputRef = useRef();
+  // showOpenFilePicker 시도 → AbortError 시 힌트 표시
+  const [pickerBlocked, setPickerBlocked] = useState(false);
 
-  useEffect(() => {
-    const el = nativeInputRef.current;
-    if (!el) return;
-    const onFocus = () => {
-      setTimeout(() => {
-        if (el.files && el.files.length > 0) {
-          setPendingFiles(prev => [...prev, ...Array.from(el.files)]);
-          try { el.value = ''; } catch (_) {}
-        }
-      }, 150);
-    };
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-  }, []);
+  const handleBrowseFiles = async () => {
+    setPickerBlocked(false);
+    try {
+      if (typeof window.showOpenFilePicker === 'function') {
+        const handles = await window.showOpenFilePicker({ multiple: true });
+        const files   = await Promise.all(handles.map(h => h.getFile()));
+        if (files.length > 0) setPendingFiles(prev => [...prev, ...files]);
+      } else {
+        setPickerBlocked(true);
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        // Grabbit 등 확장 프로그램이 가로챈 경우 힌트 표시
+        setPickerBlocked(true);
+      } else {
+        alert('파일 선택 오류: ' + e.message);
+      }
+    }
+  };
 
   // ── 파일 다운로드 / 삭제 ──
   const handleDownload = async (fileId, fileName) => {
@@ -370,7 +374,7 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             )}
           </div>
 
-          {/* 드래그존 + Ctrl+V 붙여넣기 */}
+          {/* 드래그존 + Ctrl+V 붙여넣기 (Grabbit 우회 핵심 방법) */}
           <div
             tabIndex={0}
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -380,7 +384,6 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
               setPendingFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
             }}
             onPaste={e => {
-              // Windows 탐색기에서 Ctrl+C 한 파일을 Ctrl+V로 붙여넣기
               const files = Array.from(e.clipboardData?.files || []);
               if (files.length > 0) {
                 e.preventDefault();
@@ -389,45 +392,50 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             }}
             style={{
               border: `2px dashed ${dragOver ? '#4f46e5' : C.border}`,
-              borderRadius: 10, padding: '20px', textAlign: 'center',
+              borderRadius: 10, padding: '22px 16px', textAlign: 'center',
               background: dragOver ? '#ede9fe' : C.subBg,
               transition: 'all 0.2s', marginBottom: 12,
-              outline: 'none',
+              outline: 'none', cursor: 'default',
             }}
           >
-            <div style={{ fontSize: '2rem', marginBottom: 4 }}>🗂️</div>
-            <div style={{ fontSize: '0.85rem', color: C.muted }}>파일을 드래그하거나</div>
-            <div style={{ fontSize: '0.78rem', color: C.muted, marginTop: 3 }}>
-              탐색기에서 파일 복사 후 이 영역 클릭 → <kbd style={{ background: C.card, padding: '1px 5px', borderRadius: 4, border: `1px solid ${C.border}`, fontSize: '0.75rem' }}>Ctrl+V</kbd>
+            <div style={{ fontSize: '2rem', marginBottom: 6 }}>🗂️</div>
+            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: C.text, marginBottom: 6 }}>
+              여기로 파일 드래그
             </div>
-            <div style={{ fontSize: '0.72rem', color: C.muted, marginTop: 4 }}>최대 50MB</div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: '#ede9fe', borderRadius: 8, padding: '6px 14px',
+              fontSize: '0.82rem', color: '#4f46e5', fontWeight: 600,
+            }}>
+              <span>또는 탐색기에서 파일 복사 후 이 영역 클릭 →</span>
+              <kbd style={{
+                background: '#4f46e5', color: '#fff',
+                padding: '2px 8px', borderRadius: 4, fontSize: '0.78rem', fontWeight: 700,
+              }}>Ctrl+V</kbd>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: C.muted, marginTop: 8 }}>최대 50MB · 다중 파일 지원</div>
           </div>
 
-          {/* 파일 선택 버튼 — 투명 input이 버튼 위를 덮음 (Grabbit 우회) */}
+          {/* 파일 선택하기 버튼 */}
           <div style={{ textAlign: 'center', marginBottom: 14 }}>
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              {/* 눈에 보이는 버튼 텍스트 */}
-              <div style={{
+            <button type="button" onClick={handleBrowseFiles}
+              style={{
                 background: '#f1f5f9', border: `1px solid ${C.border}`,
-                borderRadius: 8, padding: '9px 24px',
+                borderRadius: 8, padding: '9px 24px', cursor: 'pointer',
                 fontSize: '0.85rem', fontWeight: 600, color: '#4f46e5',
-                userSelect: 'none', pointerEvents: 'none',
               }}>
-                📁 파일 선택하기
+              📁 파일 선택하기
+            </button>
+            {pickerBlocked && (
+              <div style={{
+                marginTop: 8, fontSize: '0.78rem', color: '#b45309',
+                background: '#fef3c7', border: '1px solid #fcd34d',
+                borderRadius: 6, padding: '6px 12px', display: 'inline-block',
+              }}>
+                ⚠️ 브라우저 확장 프로그램(Grabbit 등)이 파일 선택을 차단했습니다.<br />
+                위 드래그 또는 <strong>Ctrl+V</strong>를 사용해주세요.
               </div>
-              {/* 투명 input: 사용자 클릭이 직접 전달 → OS 파일 다이얼로그 오픈
-                  window.focus 이벤트로 el.files 읽기 (change 이벤트 불필요) */}
-              <input
-                ref={nativeInputRef}
-                type="file"
-                multiple
-                style={{
-                  position: 'absolute', inset: 0,
-                  opacity: 0, cursor: 'pointer',
-                  width: '100%', height: '100%',
-                }}
-              />
-            </div>
+            )}
           </div>
 
           {pendingFiles.length > 0 && (
