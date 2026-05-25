@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-qr-code": "^2.0.21",
     "react-scripts": "5.0.1",
     "recharts": "^3.8.1",
     "web-vitals": "^2.1.4"

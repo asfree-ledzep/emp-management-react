@@ -366,6 +366,8 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
           <button style={menuBtn('#dc2626')} onClick={() => onNavigate('holiday')}>📅<br />공휴일 관리</button>
           <BadgeBtn color="#0d9488" icon="🏖️" label="연차 관리" count={pendingLeaveCount} onClick={() => onNavigate('leave')} />
           <button style={menuBtn('#7c3aed')} onClick={() => onNavigate('folder')}>📁<br />공유 폴더</button>
+          <button style={menuBtn('#0f766e')} onClick={() => onNavigate('qr')}>📷<br />QR 출퇴근</button>
+          <button style={menuBtn('#1d4ed8')} onClick={() => onNavigate('attendance')}>🕐<br />출근 기록</button>
         </div>
       </div>
 

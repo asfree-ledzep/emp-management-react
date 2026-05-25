@@ -15,6 +15,9 @@ import FaqManagePage from './pages/FaqManagePage';
 import HolidayManagePage from './pages/HolidayManagePage';
 import LeaveAdminPage from './pages/LeaveAdminPage';
 import SharedFolderPage from './pages/SharedFolderPage';
+import QrDisplayPage from './pages/QrDisplayPage';
+import QrScanPage from './pages/QrScanPage';
+import AttendancePage from './pages/AttendancePage';
 import ChatbotButton from './components/ChatbotModal';
 import EmployeeLayout from './components/EmployeeLayout';
 import { registerPush, unregisterPush } from './utils/pushNotification';
@@ -25,10 +28,11 @@ function App() {
   const [role,     setRole]     = useState(sessionStorage.getItem('role'));
   const [empno,    setEmpno]    = useState(Number(sessionStorage.getItem('empno')) || null);
 
-  // URL 쿼리 파라미터로 초기 페이지 결정 (?page=notice, ?page=survey)
+  // URL 쿼리 파라미터로 초기 페이지 결정 (?page=notice, ?page=survey, ?qr=TOKEN)
   const [page, setPage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const p = params.get('page');
+    if (params.get('qr')) return 'qr-scan';  // QR 스캔 URL 감지
     return (p === 'notice' || p === 'survey') ? p : 'list';
   });
 
@@ -88,16 +92,26 @@ function App() {
     return <KakaoCallbackPage />;
   }
 
-  // 토큰 없으면 로그인 페이지 (챗봇은 로그인 없이도 사용 가능)
+  // 토큰 없으면 로그인 페이지 (QR 스캔 URL이면 로그인 후 바로 처리)
   if (!token) {
+    const qrToken = new URLSearchParams(window.location.search).get('qr');
     return (
       <>
-        {/* 로그인 화면 다크 모드 토글 */}
         <button className="dark-toggle-login" onClick={toggleDark}
           title={darkMode ? '라이트 모드' : '다크 모드'}>
           {darkMode ? '☀️' : '🌙'}
         </button>
-        <LoginPage onLogin={handleLogin} />
+        <LoginPage
+          onLogin={(data) => {
+            handleLogin(data);
+            if (qrToken) setPage('qr-scan');
+          }}
+        />
+        {qrToken && (
+          <p style={{ textAlign: 'center', color: '#4f46e5', marginTop: 12 }}>
+            ⚠️ 출퇴근 QR 처리를 위해 로그인이 필요합니다.
+          </p>
+        )}
         <ChatbotButton darkMode={darkMode} />
       </>
     );
@@ -125,10 +139,19 @@ function App() {
         </button>
       </div>
 
+      {/* QR 스캔 처리 (로그인 후 ?qr= URL 접근) */}
+      {page === 'qr-scan' && (
+        <QrScanPage
+          user={{ empno, role, username }}
+          onHome={() => setPage(role === 'ADMIN' ? 'dashboard' : 'list')}
+          onAttendance={() => setPage('attendance')}
+        />
+      )}
+
       {/* 일반 사원 → 왼쪽 사이드바 레이아웃 */}
-      {role === 'USER' && (
+      {role === 'USER' && page !== 'qr-scan' && (
         <>
-          <EmployeeLayout empno={empno} darkMode={darkMode} />
+          <EmployeeLayout empno={empno} darkMode={darkMode} role={role} username={username} />
           <ChatbotButton darkMode={darkMode} />
         </>
       )}
@@ -181,6 +204,12 @@ function App() {
           )}
           {page === 'folder' && (
             <SharedFolderPage isAdmin={true} darkMode={darkMode} />
+          )}
+          {page === 'qr' && (
+            <QrDisplayPage />
+          )}
+          {page === 'attendance' && (
+            <AttendancePage user={{ empno, role, username }} />
           )}
           <ChatbotButton darkMode={darkMode} />
         </>
