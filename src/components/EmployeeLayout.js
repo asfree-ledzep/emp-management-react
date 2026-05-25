@@ -52,30 +52,29 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
     setSidebarOpen(false); // 모바일에서 메뉴 선택 시 닫기
   };
 
+  const currentMenu = MENU.find(m => m.key === page);
+
   return (
     <div style={{ display: 'flex', minHeight: 'calc(100vh - 44px)', background: '#f3f4f6' }}>
 
-      {/* 모바일 오버레이 */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-            zIndex: 200, display: 'none',
-          }}
-          className="sidebar-overlay"
-        />
-      )}
+      {/* ── 모바일 사이드바 오버레이 ── */}
+      <div
+        onClick={() => setSidebarOpen(false)}
+        className={`sidebar-overlay${sidebarOpen ? ' active' : ''}`}
+      />
 
-      {/* 사이드바 */}
-      <aside style={{
-        width: 220,
-        background: '#1e1b4b',
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '20px 0',
-      }} className={`emp-sidebar${sidebarOpen ? ' open' : ''}`}>
+      {/* ── 사이드바 ── */}
+      <aside
+        style={{
+          width: 220,
+          background: '#1e1b4b',
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '20px 0',
+        }}
+        className={`emp-sidebar${sidebarOpen ? ' open' : ''}`}
+      >
         {/* 로고 영역 */}
         <div style={{ padding: '0 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ color: '#a5b4fc', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', marginBottom: 4 }}>
@@ -128,9 +127,6 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
         {/* 메뉴 항목 */}
         <nav style={{ flex: 1, padding: '12px 0' }}>
           {MENU.map(item => {
-            if (item.mgrOnly && mgrPendingCount === 0 && page !== 'mgr') {
-              // MGR 메뉴: 승인 대기가 없어도 항상 표시 (팀장인지 확인 어려우니 일단 표시)
-            }
             const isActive = page === item.key;
             return (
               <button
@@ -164,39 +160,42 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
         </nav>
       </aside>
 
-      {/* 모바일 햄버거 버튼 */}
-      <button
-        onClick={() => setSidebarOpen(o => !o)}
-        className="sidebar-toggle"
-        style={{
-          display: 'none',
-          position: 'fixed', bottom: 20, right: 20, zIndex: 300,
-          width: 48, height: 48, borderRadius: '50%',
-          background: '#4f46e5', color: '#fff',
-          border: 'none', cursor: 'pointer', fontSize: '1.3rem',
-          boxShadow: '0 4px 12px rgba(79,70,229,0.5)',
-          alignItems: 'center', justifyContent: 'center',
-        }}
-      >☰</button>
+      {/* ── 콘텐츠 영역 ── */}
+      <main style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
 
-      {/* 콘텐츠 영역 */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', minWidth: 0 }}>
-        {page === 'profile' && (
-          <MyProfilePage
-            empno={empno}
-            onNavigateToSurvey={() => navigate('survey')}
-            onNavigateToExpense={() => navigate('expense')}
-            onNavigateToNotice={() => navigate('notice')}
-          />
-        )}
-        {page === 'leave'          && <LeaveRequestPage />}
-        {page === 'leave-approved' && <LeaveRequestPage approvedOnly={true} />}
-        {page === 'mgr'            && <LeaveMgrPage />}
-        {page === 'folder'         && <SharedFolderPage isAdmin={false} empno={empno} />}
-        {page === 'attendance'     && <AttendancePage user={{ empno, role: role || 'USER', username }} />}
-        {page === 'notice'  && <NoticePage isAdmin={false} empno={empno} onNavigateToList={() => navigate('profile')} />}
-        {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => navigate('profile')} />}
-        {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => navigate('profile')} />}
+        {/* 모바일 메뉴 헤더바 (모바일에서만 표시) */}
+        <div className="mobile-menubar">
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setSidebarOpen(o => !o)}
+            aria-label={sidebarOpen ? '메뉴 닫기' : '메뉴 열기'}
+          >
+            {sidebarOpen ? '✕' : '☰'}
+          </button>
+          <span className="mobile-page-title">
+            {currentMenu ? `${currentMenu.icon} ${currentMenu.label}` : '사원 포털'}
+          </span>
+        </div>
+
+        {/* 페이지 콘텐츠 */}
+        <div className="emp-main-content">
+          {page === 'profile' && (
+            <MyProfilePage
+              empno={empno}
+              onNavigateToSurvey={() => navigate('survey')}
+              onNavigateToExpense={() => navigate('expense')}
+              onNavigateToNotice={() => navigate('notice')}
+            />
+          )}
+          {page === 'leave'          && <LeaveRequestPage />}
+          {page === 'leave-approved' && <LeaveRequestPage approvedOnly={true} />}
+          {page === 'mgr'            && <LeaveMgrPage />}
+          {page === 'folder'         && <SharedFolderPage isAdmin={false} empno={empno} />}
+          {page === 'attendance'     && <AttendancePage user={{ empno, role: role || 'USER', username }} />}
+          {page === 'notice'  && <NoticePage isAdmin={false} empno={empno} onNavigateToList={() => navigate('profile')} />}
+          {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => navigate('profile')} />}
+          {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => navigate('profile')} />}
+        </div>
       </main>
     </div>
   );

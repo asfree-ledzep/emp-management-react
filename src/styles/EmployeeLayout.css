@@ -10,8 +10,67 @@
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
+/* ── 사이드바 오버레이 (모바일 드로어용) ── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+}
+
+/* ── 모바일 메뉴 헤더바 (항상 숨김, 모바일에서만 표시) ── */
+.mobile-menubar {
+  display: none;
+  align-items: center;
+  gap: 14px;
+  background: #1e1b4b;
+  padding: 10px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-menu-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 1.2rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  line-height: 1;
+}
+.mobile-menu-btn:hover,
+.mobile-menu-btn:active {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.mobile-page-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 콘텐츠 내부 패딩 (데스크톱) ── */
+.emp-main-content {
+  padding: 24px 20px;
+}
+
 /* ── 모바일 (≤ 768px): 사이드바 드로어로 전환 ── */
 @media (max-width: 768px) {
+  /* 사이드바: 화면 왼쪽에 고정, 기본 숨김 */
   .emp-sidebar {
     position: fixed !important;
     top: 44px; /* 상단 바 높이 */
@@ -19,29 +78,51 @@
     bottom: 0;
     z-index: 250;
     transform: translateX(-100%);
-    width: 220px !important;
+    width: 240px !important;
   }
 
+  /* 사이드바 열림 */
   .emp-sidebar.open {
     transform: translateX(0);
   }
 
-  .sidebar-overlay {
-    display: block !important;
+  /* 오버레이: 사이드바 열릴 때만 표시 */
+  .sidebar-overlay.active {
+    display: block;
   }
 
-  .sidebar-toggle {
-    display: flex !important;
+  /* 모바일 메뉴바 표시 */
+  .mobile-menubar {
+    display: flex;
   }
 
-  /* 콘텐츠 전체 너비 */
-  main {
-    padding: 16px 14px !important;
+  /* 콘텐츠 내부 패딩 조정 */
+  .emp-main-content {
+    padding: 16px 14px;
   }
 }
 
 @media (max-width: 480px) {
-  main {
-    padding: 12px 10px !important;
+  .emp-sidebar {
+    width: 100% !important; /* 아주 좁은 화면에서는 전체 너비 */
+    max-width: 280px !important;
+  }
+
+  .emp-main-content {
+    padding: 12px 10px;
+  }
+
+  .mobile-menubar {
+    padding: 8px 12px;
+  }
+
+  .mobile-menu-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .mobile-page-title {
+    font-size: 0.88rem;
   }
 }
