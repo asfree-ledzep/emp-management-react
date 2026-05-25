@@ -202,6 +202,8 @@ function EmployeeBar({ row, maxBad }) {
 
 /* ──────────────────────── 통계 모달 ──────────────────────── */
 function StatsModal({ list, onClose }) {
+  const [activeFilter, setActiveFilter] = React.useState(null);
+
   const total      = list.length;
   const normal     = list.filter(r => r.status === 'NORMAL').length;
   const late       = list.filter(r => r.status === 'LATE').length;
@@ -209,6 +211,31 @@ function StatsModal({ list, onClose }) {
   const checkedOut = list.filter(r => r.checkOut).length;
   const totalMins  = list.reduce((s, r) => s + (r.workMinutes || 0), 0);
   const avgMins    = total > 0 ? Math.round(totalMins / total) : 0;
+
+  /* 카드 클릭 → 필터 토글 */
+  const handleCard = (key) => {
+    setActiveFilter(prev => prev === key ? null : key);
+  };
+
+  /* 필터별 목록 계산 */
+  const filteredRows = (() => {
+    if (!activeFilter || activeFilter === 'ALL')         return list;
+    if (activeFilter === 'NORMAL')                       return list.filter(r => r.status === 'NORMAL');
+    if (activeFilter === 'LATE')                         return list.filter(r => r.status === 'LATE');
+    if (activeFilter === 'EARLY_LEAVE')                  return list.filter(r => r.status === 'EARLY_LEAVE');
+    if (activeFilter === 'CHECKED_OUT')                  return list.filter(r => r.checkOut);
+    if (activeFilter === 'AVG')                          return list.filter(r => r.workMinutes);
+    return list;
+  })();
+
+  const FILTER_META = {
+    ALL:         { label: '전체 기록', color: '#4f46e5' },
+    NORMAL:      { label: '정상',      color: '#28a745' },
+    LATE:        { label: '지각',      color: '#e67e22' },
+    EARLY_LEAVE: { label: '조퇴',      color: '#e74c3c' },
+    CHECKED_OUT: { label: '퇴근 완료', color: '#0891b2' },
+    AVG:         { label: '근무 기록', color: '#7c3aed' },
+  };
 
   const byDept = list.reduce((acc, r) => {
     const d = r.dname || '미배정';
@@ -236,22 +263,94 @@ function StatsModal({ list, onClose }) {
           <button style={m.closeBtn} onClick={onClose}>✕</button>
         </div>
 
+        {/* ── 카드 (클릭 시 목록 필터) ── */}
         <div style={m.cardRow}>
-          <StatCard label="전체 기록"  value={total}                  color="#4f46e5" icon="📋" />
-          <StatCard label="정상"       value={normal}                 color="#28a745" icon="✅" />
-          <StatCard label="지각"       value={late}                   color="#e67e22" icon="⏰" />
-          <StatCard label="조퇴"       value={earlyLeave}             color="#e74c3c" icon="🚪" />
-          <StatCard label="퇴근 완료"  value={checkedOut}             color="#0891b2" icon="🏠" />
-          <StatCard label="평균 근무"  value={formatMinutes(avgMins)} color="#7c3aed" icon="⏱️" />
+          <StatCard label="전체 기록"  value={total}                  color="#4f46e5" icon="📋"
+            filterKey="ALL"         active={activeFilter === 'ALL'}         onCardClick={handleCard} />
+          <StatCard label="정상"       value={normal}                 color="#28a745" icon="✅"
+            filterKey="NORMAL"      active={activeFilter === 'NORMAL'}      onCardClick={handleCard} />
+          <StatCard label="지각"       value={late}                   color="#e67e22" icon="⏰"
+            filterKey="LATE"        active={activeFilter === 'LATE'}        onCardClick={handleCard} />
+          <StatCard label="조퇴"       value={earlyLeave}             color="#e74c3c" icon="🚪"
+            filterKey="EARLY_LEAVE" active={activeFilter === 'EARLY_LEAVE'} onCardClick={handleCard} />
+          <StatCard label="퇴근 완료"  value={checkedOut}             color="#0891b2" icon="🏠"
+            filterKey="CHECKED_OUT" active={activeFilter === 'CHECKED_OUT'} onCardClick={handleCard} />
+          <StatCard label="평균 근무"  value={formatMinutes(avgMins)} color="#7c3aed" icon="⏱️"
+            filterKey="AVG"         active={activeFilter === 'AVG'}         onCardClick={handleCard} />
         </div>
 
+        {/* ── 카드 클릭 시: 해당 목록 표시 ── */}
+        {activeFilter && (
+          <div style={m.section}>
+            <div style={{ ...m.sectionTitle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>
+                <span style={{
+                  display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
+                  background: FILTER_META[activeFilter].color, marginRight: 6,
+                }} />
+                {FILTER_META[activeFilter].label} 상세 목록
+                <span style={{ marginLeft: 8, fontSize: 12, color: '#888', fontWeight: 400 }}>
+                  ({filteredRows.length}건)
+                </span>
+              </span>
+              <button
+                onClick={() => setActiveFilter(null)}
+                style={{ background: 'none', border: 'none', color: '#aaa', fontSize: 12, cursor: 'pointer', padding: '2px 6px' }}
+              >✕ 닫기</button>
+            </div>
+
+            {filteredRows.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#aaa', padding: '20px 0', fontSize: 13 }}>
+                해당하는 기록이 없습니다.
+              </p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ ...m.table, fontSize: 13 }}>
+                  <thead>
+                    <tr style={m.thead}>
+                      <th style={m.th}>사번</th>
+                      <th style={m.th}>이름</th>
+                      <th style={m.th}>부서</th>
+                      <th style={m.th}>출근</th>
+                      <th style={m.th}>퇴근</th>
+                      <th style={m.th}>근무시간</th>
+                      <th style={m.th}>상태</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRows.map((row, i) => {
+                      const st = STATUS_LABEL[row.status] || { text: row.status, color: '#555', bg: '#eee' };
+                      return (
+                        <tr key={row.attendId ?? i} style={m.tr}>
+                          <td style={{ ...m.td, color: '#888' }}>{row.empno}</td>
+                          <td style={{ ...m.td, fontWeight: 600 }}>{row.ename}</td>
+                          <td style={m.td}>{row.dname || '-'}</td>
+                          <td style={m.td}>{row.checkIn  || '-'}</td>
+                          <td style={m.td}>{row.checkOut || '-'}</td>
+                          <td style={m.td}>{formatMinutes(row.workMinutes)}</td>
+                          <td style={m.td}>
+                            <span style={{ background: st.bg, color: st.color, borderRadius: 10, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
+                              {st.text}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── 상태 비율 바 ── */}
         {total > 0 && (
           <div style={m.section}>
             <div style={m.sectionTitle}>상태 비율</div>
             <div style={m.barWrap}>
-              {normal     > 0 && <div style={{ ...m.barSeg, width: `${(normal/total)*100}%`,     background: '#28a745' }} title={`정상 ${normal}명`} />}
-              {late       > 0 && <div style={{ ...m.barSeg, width: `${(late/total)*100}%`,       background: '#e67e22' }} title={`지각 ${late}명`} />}
-              {earlyLeave > 0 && <div style={{ ...m.barSeg, width: `${(earlyLeave/total)*100}%`, background: '#e74c3c' }} title={`조퇴 ${earlyLeave}명`} />}
+              {normal     > 0 && <div style={{ ...m.barSeg, width: `${(normal/total)*100}%`,     background: '#28a745', cursor: 'pointer' }} title={`정상 ${normal}명`}   onClick={() => handleCard('NORMAL')} />}
+              {late       > 0 && <div style={{ ...m.barSeg, width: `${(late/total)*100}%`,       background: '#e67e22', cursor: 'pointer' }} title={`지각 ${late}명`}     onClick={() => handleCard('LATE')} />}
+              {earlyLeave > 0 && <div style={{ ...m.barSeg, width: `${(earlyLeave/total)*100}%`, background: '#e74c3c', cursor: 'pointer' }} title={`조퇴 ${earlyLeave}명`} onClick={() => handleCard('EARLY_LEAVE')} />}
             </div>
             <div style={m.legend}>
               <span style={m.dot('#28a745')} />정상 {normal}
@@ -261,6 +360,7 @@ function StatsModal({ list, onClose }) {
           </div>
         )}
 
+        {/* ── 시간대별 차트 ── */}
         {hours.length > 0 && (
           <div style={m.section}>
             <div style={m.sectionTitle}>시간대별 출근 현황</div>
@@ -285,6 +385,7 @@ function StatsModal({ list, onClose }) {
           </div>
         )}
 
+        {/* ── 부서별 집계 ── */}
         {Object.keys(byDept).length > 0 && (
           <div style={m.section}>
             <div style={m.sectionTitle}>부서별 집계</div>
@@ -299,7 +400,12 @@ function StatsModal({ list, onClose }) {
               </thead>
               <tbody>
                 {Object.entries(byDept).map(([dept, d]) => (
-                  <tr key={dept} style={m.tr}>
+                  <tr key={dept} style={{ ...m.tr, cursor: 'pointer' }}
+                    onClick={() => {
+                      setActiveFilter('ALL');
+                      /* 향후 부서 필터 확장 가능 */
+                    }}
+                  >
                     <td style={m.td}>{dept}</td>
                     <td style={m.td}>{d.total}명</td>
                     <td style={{ ...m.td, color: d.late > 0 ? '#e67e22' : '#333' }}>
@@ -317,12 +423,28 @@ function StatsModal({ list, onClose }) {
   );
 }
 
-function StatCard({ label, value, color, icon }) {
+function StatCard({ label, value, color, icon, filterKey, active, onCardClick }) {
   return (
-    <div style={{ ...m.statCard, borderTop: `3px solid ${color}` }}>
+    <div
+      onClick={() => onCardClick && onCardClick(filterKey)}
+      style={{
+        ...m.statCard,
+        borderTop: `3px solid ${color}`,
+        cursor: onCardClick ? 'pointer' : 'default',
+        background: active ? `${color}14` : '#fafafa',
+        boxShadow: active
+          ? `0 0 0 2px ${color}55, 0 4px 12px rgba(0,0,0,0.08)`
+          : '0 2px 6px rgba(0,0,0,0.05)',
+        transform: active ? 'translateY(-2px)' : 'none',
+        transition: 'all 0.15s ease',
+      }}
+    >
       <div style={{ fontSize: 20 }}>{icon}</div>
       <div style={{ color, fontSize: 20, fontWeight: 700 }}>{value}</div>
-      <div style={{ color: '#888', fontSize: 12 }}>{label}</div>
+      <div style={{ color: active ? color : '#888', fontSize: 12, fontWeight: active ? 700 : 400 }}>{label}</div>
+      {active && (
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, marginTop: 2 }} />
+      )}
     </div>
   );
 }
