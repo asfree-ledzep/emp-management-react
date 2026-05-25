@@ -14,7 +14,7 @@ function formatMinutes(mins) {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
-/* ──────────────────────── 근태불량자 모달 ──────────────────────── */
+/* ──────────────────────── 근퇴불량자 모달 ──────────────────────── */
 function PoorAttendanceModal({ onClose }) {
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -39,34 +39,30 @@ function PoorAttendanceModal({ onClose }) {
 
   useEffect(() => { load(); }, [load]);
 
-  /* 최대 badCnt (막대 비율 계산용) */
   const maxBad = Math.max(...list.map(r => Number(r.badCnt) || 0), 1);
 
-  /* 엑셀 다운로드 */
   const downloadExcel = () => {
     const rows = list.map(r => ({
-      '사번':      r.empno,
-      '이름':      r.ename,
-      '부서':      r.dname,
-      '출근일수':  r.totalDays,
-      '정상':      r.normalCnt,
-      '지각':      r.lateCnt,
-      '조퇴':      r.earlyLeaveCnt,
-      '근태불량':  r.badCnt,
+      '사번':        r.empno,
+      '이름':        r.ename,
+      '부서':        r.dname,
+      '출근일수':    r.totalDays,
+      '정상':        r.normalCnt,
+      '지각':        r.lateCnt,
+      '조퇴':        r.earlyLeaveCnt,
+      '근퇴불량':    r.badCnt,
       '평균근무(분)': r.avgWorkMin ?? '-',
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
-    /* 열 너비 자동 설정 */
     ws['!cols'] = [
       { wch: 8 }, { wch: 10 }, { wch: 14 }, { wch: 10 },
       { wch: 8 }, { wch: 8 },  { wch: 8 },  { wch: 10 }, { wch: 14 },
     ];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '근태불량자');
-    XLSX.writeFile(wb, `근태불량자_${month}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, '근퇴불량자');
+    XLSX.writeFile(wb, `근퇴불량자_${month}.xlsx`);
   };
 
-  /* 불량자 기준: badCnt >= 1 */
   const badList  = list.filter(r => Number(r.badCnt) >= 1);
   const goodList = list.filter(r => Number(r.badCnt) === 0);
 
@@ -74,13 +70,11 @@ function PoorAttendanceModal({ onClose }) {
     <div style={p.overlay} onClick={onClose}>
       <div style={p.modal} onClick={e => e.stopPropagation()}>
 
-        {/* 헤더 */}
         <div style={p.header}>
-          <h3 style={p.title}>⚠️ 근태불량자 확인</h3>
+          <h3 style={p.title}>⚠️ 근퇴불량자 확인</h3>
           <button style={p.closeBtn} onClick={onClose}>✕</button>
         </div>
 
-        {/* 월 선택 + 조회 + 엑셀 */}
         <div style={p.toolbar}>
           <input
             type="month"
@@ -98,11 +92,10 @@ function PoorAttendanceModal({ onClose }) {
           </button>
         </div>
 
-        {/* 요약 칩 */}
         {list.length > 0 && (
           <div style={p.summaryChips}>
             <span style={{ ...p.chip, background: '#fef3e2', color: '#e67e22' }}>
-              근태불량자 <strong>{badList.length}</strong>명
+              근퇴불량자 <strong>{badList.length}</strong>명
             </span>
             <span style={{ ...p.chip, background: '#d4edda', color: '#28a745' }}>
               정상 <strong>{goodList.length}</strong>명
@@ -120,17 +113,15 @@ function PoorAttendanceModal({ onClose }) {
           <p style={p.center}>해당 월 출근 기록이 없습니다.</p>
         )}
 
-        {/* 불량자 목록 */}
         {!loading && badList.length > 0 && (
           <div style={p.section}>
-            <div style={p.sectionTitle}>🔴 근태불량자 ({badList.length}명)</div>
+            <div style={p.sectionTitle}>🔴 근퇴불량자 ({badList.length}명)</div>
             {badList.map(r => (
               <EmployeeBar key={r.empno} row={r} maxBad={maxBad} />
             ))}
           </div>
         )}
 
-        {/* 정상 근태자 (접힌 목록) */}
         {!loading && goodList.length > 0 && (
           <div style={p.section}>
             <div style={p.sectionTitle}>🟢 정상 근태자 ({goodList.length}명)</div>
@@ -165,12 +156,12 @@ function PoorAttendanceModal({ onClose }) {
 
 /* 직원별 막대 카드 */
 function EmployeeBar({ row, maxBad }) {
-  const total       = Number(row.totalDays)     || 0;
-  const normalCnt   = Number(row.normalCnt)     || 0;
-  const lateCnt     = Number(row.lateCnt)       || 0;
-  const earlyLeave  = Number(row.earlyLeaveCnt) || 0;
-  const badCnt      = Number(row.badCnt)        || 0;
-  const avgMin      = row.avgWorkMin;
+  const total      = Number(row.totalDays)     || 0;
+  const normalCnt  = Number(row.normalCnt)     || 0;
+  const lateCnt    = Number(row.lateCnt)       || 0;
+  const earlyLeave = Number(row.earlyLeaveCnt) || 0;
+  const badCnt     = Number(row.badCnt)        || 0;
+  const avgMin     = row.avgWorkMin;
 
   const badRate = total > 0 ? Math.round((badCnt / total) * 100) : 0;
   const barW    = maxBad > 0 ? Math.round((badCnt / maxBad) * 100) : 0;
@@ -194,13 +185,9 @@ function EmployeeBar({ row, maxBad }) {
           </span>
         </div>
       </div>
-
-      {/* 가로 막대 */}
       <div style={p.barTrack}>
         <div style={{ ...p.barFill, width: `${barW}%`, background: badCnt >= 3 ? '#e74c3c' : badCnt >= 2 ? '#e67e22' : '#f59e0b' }} />
       </div>
-
-      {/* 상태별 분포 */}
       <div style={p.empBottom}>
         <span style={p.tiny}>출근 {total}일</span>
         <span style={{ ...p.tiny, color: '#28a745' }}>정상 {normalCnt}</span>
@@ -214,13 +201,13 @@ function EmployeeBar({ row, maxBad }) {
 
 /* ──────────────────────── 통계 모달 ──────────────────────── */
 function StatsModal({ list, onClose }) {
-  const total     = list.length;
-  const normal    = list.filter(r => r.status === 'NORMAL').length;
-  const late      = list.filter(r => r.status === 'LATE').length;
-  const earlyLeave= list.filter(r => r.status === 'EARLY_LEAVE').length;
-  const checkedOut= list.filter(r => r.checkOut).length;
-  const totalMins = list.reduce((s, r) => s + (r.workMinutes || 0), 0);
-  const avgMins   = total > 0 ? Math.round(totalMins / total) : 0;
+  const total      = list.length;
+  const normal     = list.filter(r => r.status === 'NORMAL').length;
+  const late       = list.filter(r => r.status === 'LATE').length;
+  const earlyLeave = list.filter(r => r.status === 'EARLY_LEAVE').length;
+  const checkedOut = list.filter(r => r.checkOut).length;
+  const totalMins  = list.reduce((s, r) => s + (r.workMinutes || 0), 0);
+  const avgMins    = total > 0 ? Math.round(totalMins / total) : 0;
 
   const byDept = list.reduce((acc, r) => {
     const d = r.dname || '미배정';
@@ -231,7 +218,7 @@ function StatsModal({ list, onClose }) {
     return acc;
   }, {});
 
-  const byHour = list.reduce((acc, r) => {
+  const byHour   = list.reduce((acc, r) => {
     if (!r.checkIn) return acc;
     const h = r.checkIn.split(':')[0];
     acc[h] = (acc[h] || 0) + 1;
@@ -344,8 +331,8 @@ function MyAttendanceTab({ user }) {
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  const [month, setMonth]   = useState(defaultMonth);
-  const [list, setList]     = useState([]);
+  const [month,   setMonth]   = useState(defaultMonth);
+  const [list,    setList]    = useState([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -375,9 +362,9 @@ function MyAttendanceTab({ user }) {
         <button style={styles.searchBtn} onClick={load}>조회</button>
       </div>
       <div style={styles.summaryRow}>
-        <SummaryCard label="출근 일수"  value={`${totalDays}일`}        color="#4f46e5" />
+        <SummaryCard label="출근 일수"   value={`${totalDays}일`}        color="#4f46e5" />
         <SummaryCard label="총 근무시간" value={formatMinutes(totalMins)} color="#28a745" />
-        <SummaryCard label="지각"       value={`${lateDays}회`}         color="#e67e22" />
+        <SummaryCard label="지각"        value={`${lateDays}회`}         color="#e67e22" />
       </div>
       {loading ? (
         <p style={styles.loading}>로딩 중...</p>
@@ -416,7 +403,6 @@ function AdminAttendanceTab() {
 
   return (
     <div>
-      {/* 필터 행 */}
       <div style={styles.filterRow}>
         <input type="date" value={date}
           onChange={e => setDate(e.target.value)} style={styles.dateInput} />
@@ -436,15 +422,11 @@ function AdminAttendanceTab() {
         >
           📊 통계
         </button>
-        <button
-          style={styles.poorBtn}
-          onClick={() => setShowPoor(true)}
-        >
-          ⚠️ 근태불량자 확인
+        <button style={styles.poorBtn} onClick={() => setShowPoor(true)}>
+          ⚠️ 근퇴불량자 확인
         </button>
       </div>
 
-      {/* 결과 요약 바 */}
       {list.length > 0 && (
         <div style={styles.miniSummary}>
           <span style={styles.miniItem}>전체 <strong>{list.length}</strong>건</span>
@@ -591,33 +573,33 @@ const styles = {
 
 /* ──────────────────────── 통계 모달 스타일 ──────────────────────── */
 const m = {
-  overlay:    { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  modal:      { background: '#fff', borderRadius: 20, padding: 28, maxWidth: 640, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' },
-  header:     { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  title:      { fontSize: 18, fontWeight: 700, margin: 0 },
-  closeBtn:   { background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#888', padding: '4px 8px' },
-  cardRow:    { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 },
-  statCard:   { flex: '1 1 90px', background: '#fafafa', borderRadius: 10, padding: '12px 10px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
-  section:    { marginBottom: 22 },
+  overlay:     { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  modal:       { background: '#fff', borderRadius: 20, padding: 28, maxWidth: 640, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' },
+  header:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  title:       { fontSize: 18, fontWeight: 700, margin: 0 },
+  closeBtn:    { background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#888', padding: '4px 8px' },
+  cardRow:     { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 },
+  statCard:    { flex: '1 1 90px', background: '#fafafa', borderRadius: 10, padding: '12px 10px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
+  section:     { marginBottom: 22 },
   sectionTitle:{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 10 },
-  barWrap:    { height: 28, borderRadius: 8, overflow: 'hidden', background: '#f0f0f0', display: 'flex' },
-  barSeg:     { height: '100%', transition: 'width 0.4s ease' },
-  legend:     { display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#666', marginTop: 8 },
-  dot:        (c) => ({ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: c, marginRight: 4 }),
-  chartRow:   { display: 'flex', gap: 8, alignItems: 'flex-end', height: 100, padding: '0 4px' },
-  barCol:     { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
-  barColLabel:{ fontSize: 10, color: '#888' },
-  barColBar:  { flex: 1, width: '100%', background: '#f0f0f0', borderRadius: 4, display: 'flex', alignItems: 'flex-end', overflow: 'hidden' },
-  barColFill: { width: '100%', borderRadius: 4, minHeight: 4, transition: 'height 0.4s ease' },
-  barColHour: { fontSize: 11, color: '#555' },
-  table:      { width: '100%', borderCollapse: 'collapse' },
-  thead:      { background: '#f8f9fa' },
-  th:         { padding: '8px 12px', textAlign: 'left', fontWeight: 600, fontSize: 13, color: '#555', borderBottom: '2px solid #dee2e6' },
-  tr:         { borderBottom: '1px solid #f5f5f5' },
-  td:         { padding: '8px 12px', fontSize: 13 },
+  barWrap:     { height: 28, borderRadius: 8, overflow: 'hidden', background: '#f0f0f0', display: 'flex' },
+  barSeg:      { height: '100%', transition: 'width 0.4s ease' },
+  legend:      { display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#666', marginTop: 8 },
+  dot:         (c) => ({ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: c, marginRight: 4 }),
+  chartRow:    { display: 'flex', gap: 8, alignItems: 'flex-end', height: 100, padding: '0 4px' },
+  barCol:      { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
+  barColLabel: { fontSize: 10, color: '#888' },
+  barColBar:   { flex: 1, width: '100%', background: '#f0f0f0', borderRadius: 4, display: 'flex', alignItems: 'flex-end', overflow: 'hidden' },
+  barColFill:  { width: '100%', borderRadius: 4, minHeight: 4, transition: 'height 0.4s ease' },
+  barColHour:  { fontSize: 11, color: '#555' },
+  table:       { width: '100%', borderCollapse: 'collapse' },
+  thead:       { background: '#f8f9fa' },
+  th:          { padding: '8px 12px', textAlign: 'left', fontWeight: 600, fontSize: 13, color: '#555', borderBottom: '2px solid #dee2e6' },
+  tr:          { borderBottom: '1px solid #f5f5f5' },
+  td:          { padding: '8px 12px', fontSize: 13 },
 };
 
-/* ──────────────────────── 근태불량자 모달 스타일 ──────────────────────── */
+/* ──────────────────────── 근퇴불량자 모달 스타일 ──────────────────────── */
 const p = {
   overlay:     { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
   modal:       { background: '#fff', borderRadius: 20, padding: 28, maxWidth: 680, width: '100%', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' },

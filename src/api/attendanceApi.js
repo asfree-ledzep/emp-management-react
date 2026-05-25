@@ -53,11 +53,35 @@ export async function fetchAbsentToday() {
   return res.json();
 }
 
-/** 월별 직원별 근태 누계 (근태불량자 분석) */
+/** 월별 직원별 근태 누계 (근퇴불량자 분석) */
 export async function fetchMonthlyStats(month) {
   const params = new URLSearchParams();
   if (month) params.append('month', month);
   const res = await authFetch(`${BASE}/attendance/monthly-stats?${params}`);
   if (!res.ok) throw new Error('근태 통계 조회 실패');
+  return res.json();
+}
+
+/** 강제 QR 새 토큰 발급 (관리자 🔄 버튼용) */
+export async function forceGenerateQr() {
+  const res = await authFetch(`${BASE}/qr/generate`, { method: 'POST' });
+  if (!res.ok) throw new Error('QR 토큰 생성 실패');
+  return res.json();
+}
+
+/** 출근 마감 시간 조회 */
+export async function fetchCheckInConfig() {
+  const res = await authFetch(`${BASE}/attendance/config/checkin-time`);
+  if (!res.ok) throw new Error('설정 조회 실패');
+  return res.json();
+}
+
+/** 출근 마감 시간 변경 */
+export async function updateCheckInTime(time) {
+  const res = await authFetch(
+    `${BASE}/attendance/config/checkin-time?time=${encodeURIComponent(time)}`,
+    { method: 'POST' }
+  );
+  if (!res.ok) throw new Error('설정 변경 실패');
   return res.json();
 }
