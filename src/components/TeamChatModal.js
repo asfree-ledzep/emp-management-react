@@ -67,10 +67,20 @@ export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) 
     return () => client.deactivate();
   }, []); // eslint-disable-line
 
-  /* ── 자동 스크롤 ── */
+  /* ── 자동 스크롤: 새 메시지 수신 시 ── */
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  /* ── 자동 스크롤: 채팅창 열릴 때 즉시 맨 아래로 ── */
+  useEffect(() => {
+    if (visible) {
+      // DOM 렌더링 완료 후 실행되도록 setTimeout 0
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+      }, 0);
+    }
+  }, [visible]);
 
   /* ── 메시지 전송 ── */
   const send = useCallback(() => {
