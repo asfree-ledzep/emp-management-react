@@ -203,7 +203,7 @@ function App() {
             <LeaveAdminPage onNavigateToList={() => setPage('dashboard')} />
           )}
           {page === 'folder' && (
-            <SharedFolderPage isAdmin={true} darkMode={darkMode} />
+            <SharedFolderPage isAdmin={true} darkMode={darkMode} onDashboard={() => setPage('dashboard')} />
           )}
           {page === 'qr' && (
             <QrDisplayPage onDashboard={() => setPage('dashboard')} />

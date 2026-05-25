@@ -32,7 +32,7 @@ const fmtSize = (bytes) => {
  *   empno    {number}   사원 번호 (사원 전용)
  *   darkMode {boolean}
  */
-export default function SharedFolderPage({ isAdmin = false, empno = null, darkMode = false }) {
+export default function SharedFolderPage({ isAdmin = false, empno = null, darkMode = false, onDashboard = null }) {
   const dk = darkMode;
   const C = {
     bg:     dk ? '#0f172a' : '#f3f4f6',
@@ -280,6 +280,13 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
       {/* ── 헤더 ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
+          {onDashboard && (
+            <button onClick={onDashboard} style={{
+              background: 'none', border: '1.5px solid #c7d2fe', borderRadius: 8,
+              color: '#4f46e5', fontSize: 13, fontWeight: 600, padding: '6px 14px',
+              cursor: 'pointer', marginBottom: 10, display: 'inline-block',
+            }}>← 대시보드</button>
+          )}
           <h2 style={{ margin: 0, fontSize: '1.4rem', color: C.dark }}>📁 공유 폴더</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.83rem', color: C.muted }}>
             전체 공유 / 부서별 공유 파일 관리
