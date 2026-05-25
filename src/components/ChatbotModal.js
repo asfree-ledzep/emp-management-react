@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { searchFaq, fetchHolidaysByMonth } from '../api/faqApi';
+import TeamChatModal from './TeamChatModal';
 
 const QUICK = ['연차 일수', '급여일', '식비 한도', '출장비', '경조사 지원', '이번 달 휴무일'];
 
@@ -269,15 +270,73 @@ function ChatbotModal({ onClose, darkMode = false }) {
   );
 }
 
-/* ── 플로팅 버튼 + 챗봇 통합 컴포넌트 ── */
+/* ── 플로팅 버튼 + 챗봇 + 팀채팅 통합 컴포넌트 ── */
 function ChatbotButton({ darkMode = false }) {
-  const [open, setOpen] = useState(false);
+  const [open,      setOpen]      = useState(false);   // HR 챗봇
+  const [chatOpen,  setChatOpen]  = useState(false);   // 팀 채팅
+  const [chatUnread, setChatUnread] = useState(0);     // 읽지 않은 메시지 수
+
+  const handleChatToggle = () => {
+    setChatOpen(o => !o);
+    if (!chatOpen) setChatUnread(0); // 열 때 배지 초기화
+  };
+
+  const handleUnread = () => {
+    // 팀 채팅이 닫혀 있을 때만 카운트
+    if (!chatOpen) setChatUnread(n => n + 1);
+  };
 
   return (
     <>
+      {/* ── 팀 채팅 모달 ── */}
+      {chatOpen && (
+        <TeamChatModal
+          onClose={() => setChatOpen(false)}
+          darkMode={darkMode}
+          onUnread={handleUnread}
+        />
+      )}
+
+      {/* ── HR 챗봇 모달 ── */}
       {open && <ChatbotModal onClose={() => setOpen(false)} darkMode={darkMode} />}
 
-      {/* 플로팅 버튼 */}
+      {/* ── 팀 채팅 플로팅 버튼 (💬 버튼 왼쪽) ── */}
+      <button
+        onClick={handleChatToggle}
+        title="팀 채팅"
+        style={{
+          position: 'fixed', bottom: 24, right: 92, zIndex: 1998,
+          width: 56, height: 56, borderRadius: '50%',
+          background: chatOpen
+            ? '#6b7280'
+            : 'linear-gradient(135deg, #0369a1, #0891b2)',
+          color: '#fff', border: 'none', cursor: 'pointer',
+          fontSize: '1.4rem',
+          boxShadow: '0 4px 16px rgba(8,145,178,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'background 0.2s, transform 0.15s',
+          transform: chatOpen ? 'rotate(45deg) scale(0.95)' : 'none',
+        }}
+      >
+        {chatOpen ? '✕' : '👥'}
+
+        {/* 읽지 않은 메시지 배지 */}
+        {!chatOpen && chatUnread > 0 && (
+          <span style={{
+            position: 'absolute', top: 2, right: 2,
+            background: '#ef4444', color: '#fff',
+            borderRadius: '50%', fontSize: '0.65rem', fontWeight: 700,
+            width: 18, height: 18,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            pointerEvents: 'none',
+          }}>
+            {chatUnread > 9 ? '9+' : chatUnread}
+          </span>
+        )}
+      </button>
+
+      {/* ── HR 챗봇 플로팅 버튼 ── */}
       <button
         onClick={() => setOpen(o => !o)}
         title="HR 챗봇"
