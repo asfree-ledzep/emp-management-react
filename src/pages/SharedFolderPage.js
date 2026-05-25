@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   fetchFiles, fetchAdminFiles, uploadFile, downloadFile, deleteFile, fetchR2Status,
   fetchFolders, createFolder, renameFolder, deleteFolder,
