@@ -218,40 +218,24 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
   };
 
   // ── 파일 선택 (Grabbit 확장 프로그램 우회) ──
+  // 전략: 투명 <input> overlay → 사용자가 직접 클릭 (JS 클릭 없음)
+  //        + window.focus 이벤트로 el.files 직접 읽기 (change 이벤트 완전 우회)
   const nativeInputRef = useRef();
 
-  // window.focus 이벤트: 파일 다이얼로그가 닫힐 때 el.files 직접 읽기
-  // (change 이벤트 완전 우회 — Grabbit이 가로채지 못함)
   useEffect(() => {
     const el = nativeInputRef.current;
     if (!el) return;
     const onFocus = () => {
-      // 파일 다이얼로그 닫힌 직후 파일 목록을 직접 읽음
       setTimeout(() => {
         if (el.files && el.files.length > 0) {
           setPendingFiles(prev => [...prev, ...Array.from(el.files)]);
           try { el.value = ''; } catch (_) {}
         }
-      }, 200);
+      }, 150);
     };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, []);
-
-  // 1순위: File System Access API (원래 작동하던 방식, async/await 복원)
-  const handleBrowseFiles = async () => {
-    try {
-      if (typeof window.showOpenFilePicker === 'function') {
-        const handles = await window.showOpenFilePicker({ multiple: true });
-        const files   = await Promise.all(handles.map(h => h.getFile()));
-        setPendingFiles(prev => [...prev, ...files]);
-      } else {
-        nativeInputRef.current?.click();
-      }
-    } catch (e) {
-      if (e.name !== 'AbortError') alert('파일 선택 오류: ' + e.message);
-    }
-  };
 
   // ── 파일 다운로드 / 삭제 ──
   const handleDownload = async (fileId, fileName) => {
@@ -419,18 +403,31 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             <div style={{ fontSize: '0.72rem', color: C.muted, marginTop: 4 }}>최대 50MB</div>
           </div>
 
-          {/* 파일 선택 버튼 */}
+          {/* 파일 선택 버튼 — 투명 input이 버튼 위를 덮음 (Grabbit 우회) */}
           <div style={{ textAlign: 'center', marginBottom: 14 }}>
-            <button type="button" onClick={handleBrowseFiles}
-              style={{
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              {/* 눈에 보이는 버튼 텍스트 */}
+              <div style={{
                 background: '#f1f5f9', border: `1px solid ${C.border}`,
-                borderRadius: 8, padding: '9px 24px', cursor: 'pointer',
+                borderRadius: 8, padding: '9px 24px',
                 fontSize: '0.85rem', fontWeight: 600, color: '#4f46e5',
+                userSelect: 'none', pointerEvents: 'none',
               }}>
-              📁 파일 선택하기
-            </button>
-            {/* window.focus 감지용 숨김 input (UI 노출 없음) */}
-            <input ref={nativeInputRef} type="file" multiple style={{ display: 'none' }} />
+                📁 파일 선택하기
+              </div>
+              {/* 투명 input: 사용자 클릭이 직접 전달 → OS 파일 다이얼로그 오픈
+                  window.focus 이벤트로 el.files 읽기 (change 이벤트 불필요) */}
+              <input
+                ref={nativeInputRef}
+                type="file"
+                multiple
+                style={{
+                  position: 'absolute', inset: 0,
+                  opacity: 0, cursor: 'pointer',
+                  width: '100%', height: '100%',
+                }}
+              />
+            </div>
           </div>
 
           {pendingFiles.length > 0 && (
