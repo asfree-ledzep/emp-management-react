@@ -384,80 +384,68 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
           </div>
         ) : (
           <>
-            {/* 테이블 헤더 */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '2fr 80px 120px 140px 120px',
-              padding: '10px 20px',
-              background: dk ? '#0f172a' : '#f8fafc',
-              borderBottom: `1px solid ${C.border}`,
-              fontSize: '0.75rem', fontWeight: 700,
-              color: C.muted, letterSpacing: '0.05em',
-            }}>
-              <span>파일명</span>
-              <span>크기</span>
-              <span>올린 사람</span>
-              <span>날짜</span>
-              <span style={{ textAlign: 'right' }}>관리</span>
-            </div>
-
-            {/* 파일 행 */}
-            {files.map(f => (
+            {/* 파일 카드 목록 */}
+            {files.map((f, idx) => (
               <div key={f.fileId} style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 80px 120px 140px 120px',
-                padding: '12px 20px', alignItems: 'center',
-                borderBottom: `1px solid ${C.border}`,
-                fontSize: '0.85rem', color: C.text,
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '14px 20px',
+                borderBottom: idx < files.length - 1 ? `1px solid ${C.border}` : 'none',
                 transition: 'background 0.1s',
               }}
               onMouseEnter={e => e.currentTarget.style.background = (dk ? '#243347' : '#f8fafc')}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
-                {/* 파일명 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                  <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{fileIcon(f.fileName)}</span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      color: C.dark,
-                    }}>{f.fileName}</div>
-                    {isAdmin && f.scope === 'DEPT' && f.dname && (
-                      <span style={{
-                        fontSize: '0.72rem', background: '#dbeafe', color: '#1d4ed8',
-                        padding: '1px 7px', borderRadius: 10, fontWeight: 600,
-                      }}>{f.dname}</span>
-                    )}
+                {/* 파일 아이콘 */}
+                <span style={{ fontSize: '1.8rem', flexShrink: 0 }}>{fileIcon(f.fileName)}</span>
+
+                {/* 파일 정보 (남은 공간 전체 사용) */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* 파일명 — 전체 너비 사용, 긴 이름은 두 줄까지 허용 */}
+                  <div style={{
+                    fontWeight: 700, fontSize: '0.92rem', color: C.dark,
+                    wordBreak: 'break-all', lineHeight: 1.4,
+                  }}>
+                    {f.fileName}
+                  </div>
+                  {/* 부서 뱃지 (관리자 + 부서 파일) */}
+                  {isAdmin && f.scope === 'DEPT' && f.dname && (
+                    <span style={{
+                      display: 'inline-block', marginTop: 3,
+                      fontSize: '0.7rem', background: '#dbeafe', color: '#1d4ed8',
+                      padding: '1px 8px', borderRadius: 10, fontWeight: 600,
+                    }}>{f.dname}</span>
+                  )}
+                  {/* 크기 · 올린 사람 · 날짜 */}
+                  <div style={{
+                    marginTop: 4, fontSize: '0.78rem', color: C.muted,
+                    display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center',
+                  }}>
+                    <span style={{ fontWeight: 600, color: C.text }}>{fmtSize(f.fileSize)}</span>
+                    <span>·</span>
+                    <span>👤 {f.uploaderName || f.uploader}</span>
+                    <span>·</span>
+                    <span>{f.createdAt}</span>
                   </div>
                 </div>
 
-                {/* 크기 */}
-                <span style={{ color: C.muted }}>{fmtSize(f.fileSize)}</span>
-
-                {/* 올린 사람 */}
-                <span>{f.uploaderName || f.uploader}</span>
-
-                {/* 날짜 */}
-                <span style={{ color: C.muted, fontSize: '0.8rem' }}>{f.createdAt}</span>
-
-                {/* 버튼 */}
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                {/* 관리 버튼 */}
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <button
                     onClick={() => handleDownload(f.fileId, f.fileName)}
                     title="다운로드"
                     style={{
-                      padding: '5px 10px', borderRadius: 7, border: `1px solid ${C.border}`,
-                      background: C.card, cursor: 'pointer', fontSize: '0.82rem',
-                      color: '#4f46e5', fontWeight: 600,
+                      padding: '7px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
+                      background: C.card, cursor: 'pointer', fontSize: '0.85rem',
+                      color: '#4f46e5', fontWeight: 700,
                     }}>⬇</button>
                   {(isAdmin || f.uploader === String(empno)) && (
                     <button
                       onClick={() => handleDelete(f.fileId, f.uploader)}
                       title="삭제"
                       style={{
-                        padding: '5px 10px', borderRadius: 7, border: '1px solid #fca5a5',
-                        background: C.card, cursor: 'pointer', fontSize: '0.82rem',
-                        color: '#ef4444', fontWeight: 600,
+                        padding: '7px 12px', borderRadius: 8, border: '1px solid #fca5a5',
+                        background: C.card, cursor: 'pointer', fontSize: '0.85rem',
+                        color: '#ef4444', fontWeight: 700,
                       }}>🗑</button>
                   )}
                 </div>
