@@ -29,8 +29,10 @@ export default function QrDisplayPage({ onDashboard }) {
       const data = await fetchCurrentQr();
       setToken(data.token);
       setExpires(data.expiresAt);
-      const diff = Math.max(0, Math.floor((new Date(data.expiresAt) - Date.now()) / 1000));
-      setSecondsLeft(diff);
+      // Oracle SYSDATE는 UTC → ' UTC' 붙여 정확한 diff 계산
+      const expiryMs = new Date(data.expiresAt.replace(' ', 'T') + 'Z').getTime();
+      const diff = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000));
+      setSecondsLeft(diff > 0 ? diff : 300); // 파싱 실패 시 5분 기본값
       setError('');
     } catch {
       setError('QR 토큰 로드 실패');
@@ -64,13 +66,19 @@ export default function QrDisplayPage({ onDashboard }) {
     return () => clearInterval(id);
   }, [loadLists]);
 
+  // 1초마다 카운트다운 (순수하게 숫자만 감소)
   useEffect(() => {
     if (secondsLeft <= 0) return;
-    const id = setInterval(() => {
-      setSecondsLeft(s => { if (s <= 1) { loadToken(); return 0; } return s - 1; });
-    }, 1000);
-    return () => clearInterval(id);
-  }, [secondsLeft, loadToken]);
+    const id = setTimeout(() => setSecondsLeft(s => Math.max(0, s - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [secondsLeft]);
+
+  // 0초 도달 시 토큰 갱신 (별도 effect)
+  useEffect(() => {
+    if (secondsLeft === 0 && !loading) {
+      loadToken();
+    }
+  }, [secondsLeft, loading, loadToken]);
 
   const qrUrl = token ? `${VERCEL_BASE}?qr=${encodeURIComponent(token)}` : '';
 
