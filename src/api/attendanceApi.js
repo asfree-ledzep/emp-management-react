@@ -52,3 +52,12 @@ export async function fetchAbsentToday() {
   if (!res.ok) throw new Error('미출근 사원 조회 실패');
   return res.json();
 }
+
+/** 월별 직원별 근태 누계 (근태불량자 분석) */
+export async function fetchMonthlyStats(month) {
+  const params = new URLSearchParams();
+  if (month) params.append('month', month);
+  const res = await authFetch(`${BASE}/attendance/monthly-stats?${params}`);
+  if (!res.ok) throw new Error('근태 통계 조회 실패');
+  return res.json();
+}
