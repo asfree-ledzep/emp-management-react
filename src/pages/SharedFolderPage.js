@@ -135,12 +135,6 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
     e.target.value = '';
   };
 
-  const onDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    setPendingFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
-  };
-
   // ── 다운로드 ──
   const handleDownload = async (fileId, fileName) => {
     try { await downloadFile(fileId, fileName); }
