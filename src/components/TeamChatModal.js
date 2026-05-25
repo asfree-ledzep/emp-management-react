@@ -43,9 +43,9 @@ export default function TeamChatModal({ onClose, darkMode, onUnread }) {
           try {
             const msg = JSON.parse(frame.body);
             setMessages(prev => [...prev, msg]);
-            // 내 메시지가 아닐 때 unread 카운트
+            // 내 메시지가 아닐 때 unread 카운트 + 팝업 알림
             if (String(msg.senderName) !== String(username)) {
-              onUnread && onUnread();
+              onUnread && onUnread(msg);
             }
           } catch { /* ignore */ }
         });

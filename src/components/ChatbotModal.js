@@ -272,18 +272,36 @@ function ChatbotModal({ onClose, darkMode = false }) {
 
 /* ── 플로팅 버튼 + 챗봇 + 팀채팅 통합 컴포넌트 ── */
 function ChatbotButton({ darkMode = false }) {
-  const [open,      setOpen]      = useState(false);   // HR 챗봇
-  const [chatOpen,  setChatOpen]  = useState(false);   // 팀 채팅
-  const [chatUnread, setChatUnread] = useState(0);     // 읽지 않은 메시지 수
+  const [open,       setOpen]       = useState(false);  // HR 챗봇
+  const [chatOpen,   setChatOpen]   = useState(false);  // 팀 채팅
+  const [chatUnread, setChatUnread] = useState(0);      // 읽지 않은 메시지 수
+  const [toasts,     setToasts]     = useState([]);     // 팝업 알림 목록
+  const dk = darkMode;
 
   const handleChatToggle = () => {
     setChatOpen(o => !o);
     if (!chatOpen) setChatUnread(0); // 열 때 배지 초기화
   };
 
-  const handleUnread = () => {
-    // 팀 채팅이 닫혀 있을 때만 카운트
-    if (!chatOpen) setChatUnread(n => n + 1);
+  const dismissToast = (id) =>
+    setToasts(prev => prev.filter(t => t.id !== id));
+
+  const openChatFromToast = (id) => {
+    dismissToast(id);
+    setChatOpen(true);
+    setChatUnread(0);
+  };
+
+  const handleUnread = (msg) => {
+    // 팀 채팅이 닫혀 있을 때만 배지 + 토스트 표시
+    if (!chatOpen) {
+      setChatUnread(n => n + 1);
+
+      // 토스트 팝업 추가
+      const id = Date.now();
+      setToasts(prev => [...prev.slice(-2), { id, senderName: msg.senderName, content: msg.content, sentAt: msg.sentAt }]);
+      setTimeout(() => dismissToast(id), 5000); // 5초 후 자동 제거
+    }
   };
 
   return (
@@ -299,6 +317,76 @@ function ChatbotButton({ darkMode = false }) {
 
       {/* ── HR 챗봇 모달 ── */}
       {open && <ChatbotModal onClose={() => setOpen(false)} darkMode={darkMode} />}
+
+      {/* ── 토스트 팝업 알림 ── */}
+      <div style={{
+        position: 'fixed', bottom: 92, right: 16, zIndex: 2100,
+        display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end',
+        pointerEvents: 'none',
+      }}>
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            style={{
+              background: dk ? '#1e293b' : '#ffffff',
+              border: `1px solid ${dk ? '#334155' : '#e2e8f0'}`,
+              borderLeft: '4px solid #0891b2',
+              borderRadius: 12,
+              padding: '10px 12px 10px 14px',
+              boxShadow: dk
+                ? '0 4px 24px rgba(0,0,0,0.55)'
+                : '0 4px 20px rgba(0,0,0,0.14)',
+              maxWidth: 280, minWidth: 200,
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              animation: 'toastIn 0.3s ease',
+              pointerEvents: 'auto',
+              cursor: 'pointer',
+            }}
+            onClick={() => openChatFromToast(t.id)}
+          >
+            {/* 아이콘 */}
+            <div style={{
+              width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, #0369a1, #0891b2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '1rem',
+            }}>👥</div>
+
+            {/* 내용 */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                <span style={{ fontWeight: 700, fontSize: '0.78rem', color: '#0891b2' }}>
+                  {t.senderName}
+                </span>
+                <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginLeft: 8 }}>
+                  {t.sentAt}
+                </span>
+              </div>
+              <div style={{
+                fontSize: '0.78rem',
+                color: dk ? '#e2e8f0' : '#374151',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                maxWidth: 190,
+              }}>
+                {t.content.length > 45 ? t.content.slice(0, 45) + '…' : t.content}
+              </div>
+              <div style={{ fontSize: '0.67rem', color: '#94a3b8', marginTop: 4 }}>
+                클릭하면 채팅 열기
+              </div>
+            </div>
+
+            {/* 닫기 버튼 */}
+            <button
+              onClick={e => { e.stopPropagation(); dismissToast(t.id); }}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: '#94a3b8', fontSize: '0.85rem', padding: '0 2px',
+                lineHeight: 1, flexShrink: 0, marginTop: 1,
+              }}
+            >✕</button>
+          </div>
+        ))}
+      </div>
 
       {/* ── 팀 채팅 플로팅 버튼 (💬 버튼 왼쪽) ── */}
       <button
@@ -356,6 +444,13 @@ function ChatbotButton({ darkMode = false }) {
       >
         {open ? '✕' : '💬'}
       </button>
+
+      <style>{`
+        @keyframes toastIn {
+          from { opacity: 0; transform: translateX(30px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
     </>
   );
 }
