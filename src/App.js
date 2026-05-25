@@ -87,6 +87,14 @@ function App() {
     setPage('list');
   };
 
+  // authFetch가 401/만료 감지 시 발송하는 CustomEvent 수신 → React 상태로 로그아웃
+  // (window.location.reload() 대신 사용 → 1:1 채팅 등 클릭 시 강제 로그아웃 방지)
+  useEffect(() => {
+    const onAuthLogout = () => handleLogout();
+    window.addEventListener('auth:logout', onAuthLogout);
+    return () => window.removeEventListener('auth:logout', onAuthLogout);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 카카오 콜백 페이지
   if (window.location.pathname === '/kakao/callback') {
     return <KakaoCallbackPage />;

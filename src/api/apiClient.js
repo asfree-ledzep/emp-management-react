@@ -1,6 +1,7 @@
 // 인증 토큰을 포함한 fetch 래퍼
 // sessionStorage 사용: 같은 탭 내 새로고침은 유지되지만 탭 간 토큰 공유 방지
-// 401 응답 시 자동으로 로그아웃 처리
+// 401 응답 시 CustomEvent('auth:logout') 발송 → App.js에서 React 상태로 처리
+// (window.location.reload() 제거 → 불필요한 전체 새로고침/로그아웃 루프 방지)
 
 export const getToken = () => sessionStorage.getItem('token');
 
@@ -21,29 +22,32 @@ const clearSession = () => {
   sessionStorage.removeItem('empno');
 };
 
+// 세션 정리 + CustomEvent 발송 (App.js가 catch → handleLogout 호출)
+const triggerLogout = (reason = 'unknown') => {
+  clearSession();
+  window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason } }));
+};
+
 export const authFetch = async (url, options = {}) => {
   const token = getToken();
 
-  // 토큰 없음(미로그인) → reload 없이 조용히 401 반환
-  // (ChatbotButton이 마운트 상태에서 호출해도 새로고침 루프 방지)
+  // 토큰 없음(미로그인) → 조용히 401 반환 (루프 방지)
   if (!token) {
     return new Response(null, { status: 401 });
   }
 
-  // 토큰 만료 → 세션 정리 후 reload (로그인 상태였다가 만료된 경우)
+  // 클라이언트 측 만료 감지 → 로그아웃 이벤트 발송
   if (isTokenExpired(token)) {
-    clearSession();
-    window.location.reload();
+    triggerLogout('token_expired');
     return new Response(null, { status: 401 });
   }
 
   const headers = { ...(options.headers || {}), Authorization: `Bearer ${token}` };
   const response = await fetch(url, { ...options, headers });
 
-  // 서버에서 401 → 세션 정리 후 reload (서버 측 토큰 거부)
+  // 서버에서 401 → 로그아웃 이벤트 발송
   if (response.status === 401) {
-    clearSession();
-    window.location.reload();
+    triggerLogout('server_401');
   }
 
   return response;
