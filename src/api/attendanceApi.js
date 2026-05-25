@@ -1,16 +1,18 @@
 // Vercel rewrites를 통해 /api 경로를 Beanstalk으로 프록시
+import { authFetch } from './apiClient';
+
 const BASE = '/api';
 
 /** 현재 유효한 QR 토큰 조회 (관리자) */
 export async function fetchCurrentQr() {
-  const res = await fetch(`${BASE}/qr/current`);
+  const res = await authFetch(`${BASE}/qr/current`);
   if (!res.ok) throw new Error('QR 토큰 조회 실패');
   return res.json();
 }
 
 /** QR 스캔 처리 (직원) */
 export async function scanQr(token, empno) {
-  const res = await fetch(
+  const res = await authFetch(
     `${BASE}/qr/scan?token=${encodeURIComponent(token)}&empno=${empno}`,
     { method: 'POST' }
   );
@@ -22,7 +24,7 @@ export async function scanQr(token, empno) {
 export async function fetchMyAttendance(empno, month) {
   const params = new URLSearchParams({ empno });
   if (month) params.append('month', month);
-  const res = await fetch(`${BASE}/attendance/my?${params}`);
+  const res = await authFetch(`${BASE}/attendance/my?${params}`);
   if (!res.ok) throw new Error('출근 기록 조회 실패');
   return res.json();
 }
@@ -32,14 +34,21 @@ export async function fetchAdminAttendance(date, deptno) {
   const params = new URLSearchParams();
   if (date)   params.append('date',   date);
   if (deptno) params.append('deptno', deptno);
-  const res = await fetch(`${BASE}/attendance/admin?${params}`);
+  const res = await authFetch(`${BASE}/attendance/admin?${params}`);
   if (!res.ok) throw new Error('출근 기록 조회 실패');
   return res.json();
 }
 
 /** 오늘 전체 출근 현황 */
 export async function fetchTodayAttendance() {
-  const res = await fetch(`${BASE}/attendance/today`);
+  const res = await authFetch(`${BASE}/attendance/today`);
   if (!res.ok) throw new Error('오늘 출근 현황 조회 실패');
+  return res.json();
+}
+
+/** 오늘 미출근 사원 목록 */
+export async function fetchAbsentToday() {
+  const res = await authFetch(`${BASE}/attendance/absent-today`);
+  if (!res.ok) throw new Error('미출근 사원 조회 실패');
   return res.json();
 }
