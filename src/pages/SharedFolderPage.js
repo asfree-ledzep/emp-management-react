@@ -421,7 +421,6 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
 
           {/* 파일 선택 버튼 */}
           <div style={{ textAlign: 'center', marginBottom: 14 }}>
-            {/* 방법 1: File System Access API 버튼 (원래 작동하던 방식) */}
             <button type="button" onClick={handleBrowseFiles}
               style={{
                 background: '#f1f5f9', border: `1px solid ${C.border}`,
@@ -430,29 +429,8 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
               }}>
               📁 파일 선택하기
             </button>
-
-            {/* 방법 2: 네이티브 input (window.focus로 파일 감지) */}
-            <div style={{ marginTop: 10 }}>
-              <style>{`
-                .emp-file-native::file-selector-button {
-                  padding: 6px 14px; border-radius: 6px;
-                  border: 1px solid #d1d5db; background: #f9fafb;
-                  color: #6b7280; font-size: 0.8rem; cursor: pointer; margin-right: 8px;
-                }
-                .emp-file-native { font-size: 0.8rem; color: #9ca3af; cursor: pointer; }
-              `}</style>
-              <input
-                ref={nativeInputRef}
-                type="file"
-                multiple
-                className="emp-file-native"
-                onChange={e => {
-                  const files = Array.from(e.target.files || []);
-                  if (files.length > 0) setPendingFiles(prev => [...prev, ...files]);
-                  e.target.value = '';
-                }}
-              />
-            </div>
+            {/* window.focus 감지용 숨김 input (UI 노출 없음) */}
+            <input ref={nativeInputRef} type="file" multiple style={{ display: 'none' }} />
           </div>
 
           {pendingFiles.length > 0 && (
