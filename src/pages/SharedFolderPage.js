@@ -242,13 +242,14 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             )}
           </div>
 
-          {/* 드래그&드롭 영역 */}
-          <div
+          {/* 드래그&드롭 영역 — label 방식으로 파일 선택 (확장프로그램 간섭 방지) */}
+          <label
+            htmlFor="share-file-input"
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
-            onDrop={onDrop}
-            onClick={() => inputRef.current?.click()}
+            onDrop={e => { e.preventDefault(); setDragOver(false); setPendingFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); }}
             style={{
+              display: 'block',
               border: `2px dashed ${dragOver ? '#4f46e5' : C.border}`,
               borderRadius: 10, padding: '28px 20px', textAlign: 'center',
               cursor: 'pointer', background: dragOver ? '#ede9fe' : C.subBg,
@@ -260,8 +261,15 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
               클릭하거나 파일을 드래그하세요
             </div>
             <div style={{ fontSize: '0.75rem', color: C.muted, marginTop: 4 }}>최대 50MB</div>
-            <input ref={inputRef} type="file" multiple hidden onChange={onFilePick} />
-          </div>
+            <input
+              id="share-file-input"
+              ref={inputRef}
+              type="file"
+              multiple
+              style={{ display: 'none' }}
+              onChange={onFilePick}
+            />
+          </label>
 
           {/* 선택된 파일 목록 */}
           {pendingFiles.length > 0 && (
