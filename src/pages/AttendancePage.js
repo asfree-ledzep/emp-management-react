@@ -186,14 +186,21 @@ function AttendanceTable({ rows, showName, showDept }) {
 }
 
 /* ──────────────────────── 메인 페이지 ──────────────────────── */
-export default function AttendancePage({ user }) {
+export default function AttendancePage({ user, onDashboard }) {
   const isAdmin = user?.role === 'ADMIN';
   const [tab, setTab] = useState(isAdmin ? 'admin' : 'my');
 
   return (
     <div style={styles.page}>
       <div style={styles.header}>
-        <h2 style={styles.title}>출퇴근 기록</h2>
+        <div style={styles.titleRow}>
+          {onDashboard && (
+            <button style={styles.dashBtn} onClick={onDashboard}>
+              ← 대시보드
+            </button>
+          )}
+          <h2 style={styles.title}>출퇴근 기록</h2>
+        </div>
         {isAdmin && (
           <div style={styles.tabRow}>
             <button
@@ -226,7 +233,18 @@ const styles = {
     flexWrap: 'wrap',
     gap: 12,
   },
+  titleRow: { display: 'flex', alignItems: 'center', gap: 12 },
   title: { fontSize: 22, fontWeight: 700, margin: 0 },
+  dashBtn: {
+    background: 'none',
+    border: '1.5px solid #c7d2fe',
+    borderRadius: 8,
+    color: '#4f46e5',
+    fontSize: 13,
+    fontWeight: 600,
+    padding: '7px 14px',
+    cursor: 'pointer',
+  },
   tabRow: { display: 'flex', gap: 8 },
   tab: {
     background: '#f0f0f0', color: '#555',

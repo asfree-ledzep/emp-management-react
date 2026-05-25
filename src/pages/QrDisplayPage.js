@@ -15,7 +15,7 @@ const STATUS_LABEL = {
   ABSENT:       { text: '결근', color: '#95a5a6' },
 };
 
-export default function QrDisplayPage() {
+export default function QrDisplayPage({ onDashboard }) {
   const [token, setToken]       = useState(null);
   const [expiresAt, setExpires] = useState('');
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -94,6 +94,11 @@ export default function QrDisplayPage() {
     <div style={styles.page}>
       {/* 왼쪽: QR 표시 */}
       <div style={styles.qrPanel}>
+        {onDashboard && (
+          <button style={styles.dashBtn} onClick={onDashboard}>
+            ← 대시보드
+          </button>
+        )}
         <h2 style={styles.heading}>출퇴근 QR 코드</h2>
         <p style={styles.date}>{todayStr}</p>
 
@@ -230,4 +235,17 @@ const styles = {
   tr: { borderBottom: '1px solid #f0f0f0' },
   td: { padding: '10px 14px', fontSize: 14 },
   center: { textAlign: 'center', marginTop: 60, color: '#888' },
+  dashBtn: {
+    display: 'block',
+    marginBottom: 16,
+    background: 'none',
+    border: '1.5px solid #c7d2fe',
+    borderRadius: 8,
+    color: '#4f46e5',
+    fontSize: 13,
+    fontWeight: 600,
+    padding: '7px 14px',
+    cursor: 'pointer',
+    textAlign: 'left',
+  },
 };

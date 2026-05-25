@@ -206,10 +206,10 @@ function App() {
             <SharedFolderPage isAdmin={true} darkMode={darkMode} />
           )}
           {page === 'qr' && (
-            <QrDisplayPage />
+            <QrDisplayPage onDashboard={() => setPage('dashboard')} />
           )}
           {page === 'attendance' && (
-            <AttendancePage user={{ empno, role, username }} />
+            <AttendancePage user={{ empno, role, username }} onDashboard={() => setPage('dashboard')} />
           )}
           <ChatbotButton darkMode={darkMode} />
         </>
