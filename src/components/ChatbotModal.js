@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { searchFaq, fetchHolidaysByMonth } from '../api/faqApi';
 import TeamChatModal from './TeamChatModal';
 
@@ -278,13 +278,19 @@ function ChatbotButton({ darkMode = false }) {
   const [toasts,     setToasts]     = useState([]);     // 팝업 알림 목록
   const dk = darkMode;
 
+  // chatOpen 최신값을 ref로 유지 → WebSocket stale closure 방지
+  const chatOpenRef = useRef(false);
+  useEffect(() => { chatOpenRef.current = chatOpen; }, [chatOpen]);
+
   const handleChatToggle = () => {
-    setChatOpen(o => !o);
-    if (!chatOpen) setChatUnread(0); // 열 때 배지 초기화
+    setChatOpen(o => {
+      if (!o) setChatUnread(0); // 열 때 배지 초기화
+      return !o;
+    });
   };
 
-  const dismissToast = (id) =>
-    setToasts(prev => prev.filter(t => t.id !== id));
+  const dismissToast = useCallback((id) =>
+    setToasts(prev => prev.filter(t => t.id !== id)), []);
 
   const openChatFromToast = (id) => {
     dismissToast(id);
@@ -292,28 +298,30 @@ function ChatbotButton({ darkMode = false }) {
     setChatUnread(0);
   };
 
-  const handleUnread = (msg) => {
-    // 팀 채팅이 닫혀 있을 때만 배지 + 토스트 표시
-    if (!chatOpen) {
-      setChatUnread(n => n + 1);
-
-      // 토스트 팝업 추가
-      const id = Date.now();
-      setToasts(prev => [...prev.slice(-2), { id, senderName: msg.senderName, content: msg.content, sentAt: msg.sentAt }]);
-      setTimeout(() => dismissToast(id), 5000); // 5초 후 자동 제거
-    }
-  };
+  // useCallback + ref → TeamChatModal WebSocket 구독에서 항상 최신 상태 참조
+  const handleUnread = useCallback((msg) => {
+    if (chatOpenRef.current) return; // 채팅창 열려있으면 무시
+    setChatUnread(n => n + 1);
+    const id = Date.now();
+    setToasts(prev => [
+      ...prev.slice(-2),
+      { id, senderName: msg.senderName, content: msg.content, sentAt: msg.sentAt },
+    ]);
+    setTimeout(() => dismissToast(id), 5000);
+  }, [dismissToast]);
 
   return (
     <>
-      {/* ── 팀 채팅 모달 ── */}
-      {chatOpen && (
-        <TeamChatModal
-          onClose={() => setChatOpen(false)}
-          darkMode={darkMode}
-          onUnread={handleUnread}
-        />
-      )}
+      {/*
+        ── 팀 채팅 모달: 항상 마운트(WebSocket 유지), visible prop으로 UI 토글 ──
+        chatOpen && 조건으로 언마운트하면 WebSocket이 끊겨 메시지 수신 불가
+      */}
+      <TeamChatModal
+        visible={chatOpen}
+        onClose={() => setChatOpen(false)}
+        darkMode={darkMode}
+        onUnread={handleUnread}
+      />
 
       {/* ── HR 챗봇 모달 ── */}
       {open && <ChatbotModal onClose={() => setOpen(false)} darkMode={darkMode} />}

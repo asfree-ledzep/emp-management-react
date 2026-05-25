@@ -8,7 +8,7 @@ import { authFetch } from '../api/apiClient';
  * - WebSocket(STOMP/SockJS) 실시간 메시지
  * - REST /api/chat/history 로 이전 메시지 로드
  */
-export default function TeamChatModal({ onClose, darkMode, onUnread }) {
+export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) {
   const username = sessionStorage.getItem('username') || '알 수 없음';
   const empno    = sessionStorage.getItem('empno');   // 사원 null → 관리자
 
@@ -106,6 +106,9 @@ export default function TeamChatModal({ onClose, darkMode, onUnread }) {
     timeColor: '#94a3b8',
     nameColor: dk ? '#7dd3fc' : '#0369a1',
   };
+
+  // visible=false 일 때 UI는 숨기되 컴포넌트(hooks/WebSocket)는 유지
+  if (!visible) return null;
 
   return (
     <>
