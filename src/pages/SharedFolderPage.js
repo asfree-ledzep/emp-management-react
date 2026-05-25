@@ -217,23 +217,40 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
     finally { setUploading(false); }
   };
 
-  const fallbackInputRef = useRef();
-  const onFilePick = (e) => {
-    setPendingFiles(prev => [...prev, ...Array.from(e.target.files)]);
-    e.target.value = '';
-  };
+  // ── 파일 선택 (Grabbit 확장 프로그램 우회) ──
+  // capture:true 네이티브 이벤트 리스너 → 확장 프로그램보다 먼저 실행
+  const nativeInputRef = useRef();
 
-  const handleBrowseFiles = async () => {
-    try {
-      if (typeof window.showOpenFilePicker === 'function') {
-        const handles = await window.showOpenFilePicker({ multiple: true });
-        const picked  = await Promise.all(handles.map(h => h.getFile()));
+  useEffect(() => {
+    const el = nativeInputRef.current;
+    if (!el) return;
+    const handler = (ev) => {
+      const picked = Array.from(ev.target.files || []);
+      if (picked.length > 0) {
         setPendingFiles(prev => [...prev, ...picked]);
-      } else {
-        fallbackInputRef.current?.click();
       }
-    } catch (e) {
-      if (e.name !== 'AbortError') alert('파일 선택 오류: ' + e.message);
+      setTimeout(() => { if (el) el.value = ''; }, 100);
+    };
+    // capture: true → 버블 단계에서 확장 프로그램이 가로채기 전에 실행
+    el.addEventListener('change', handler, true);
+    return () => el.removeEventListener('change', handler, true);
+  }, []);
+
+  const handleBrowseFiles = () => {
+    // 1순위: File System Access API (완전 네이티브 브라우저 API)
+    if (typeof window.showOpenFilePicker === 'function') {
+      window.showOpenFilePicker({ multiple: true })
+        .then(handles => Promise.all(handles.map(h => h.getFile())))
+        .then(picked => {
+          if (picked.length > 0) setPendingFiles(prev => [...prev, ...picked]);
+        })
+        .catch(e => {
+          if (e.name === 'AbortError') return;
+          // showOpenFilePicker 실패 → 네이티브 input 트리거
+          nativeInputRef.current?.click();
+        });
+    } else {
+      nativeInputRef.current?.click();
     }
   };
 
@@ -390,7 +407,9 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             <div style={{ fontSize: '0.72rem', color: C.muted, marginTop: 4 }}>최대 50MB</div>
           </div>
 
+          {/* 파일 선택 버튼 + 네이티브 input 동시 제공 */}
           <div style={{ textAlign: 'center', marginBottom: 14 }}>
+            {/* 방법 1: File System Access API 버튼 */}
             <button type="button" onClick={handleBrowseFiles}
               style={{
                 background: '#f1f5f9', border: `1px solid ${C.border}`,
@@ -399,7 +418,24 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
               }}>
               📁 파일 선택하기
             </button>
-            <input ref={fallbackInputRef} type="file" multiple onChange={onFilePick} style={{ display: 'none' }} />
+
+            {/* 방법 2: 네이티브 파일 input 직접 노출 (확장 프로그램 우회 최후 수단) */}
+            <div style={{ marginTop: 8 }}>
+              <style>{`
+                .emp-file-pick::file-selector-button {
+                  padding: 6px 14px; border-radius: 6px;
+                  border: 1px solid #d1d5db; background: #f9fafb;
+                  color: #6b7280; font-size: 0.8rem; cursor: pointer; margin-right: 8px;
+                }
+                .emp-file-pick { font-size: 0.8rem; color: #9ca3af; cursor: pointer; }
+              `}</style>
+              <input
+                ref={nativeInputRef}
+                type="file"
+                multiple
+                className="emp-file-pick"
+              />
+            </div>
           </div>
 
           {pendingFiles.length > 0 && (
