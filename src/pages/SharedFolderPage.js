@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { fetchFiles, fetchAdminFiles, uploadFile, downloadFile, deleteFile, fetchR2Status } from '../api/fileApi';
 import { fetchDepts } from '../api/deptApi';
 
@@ -62,7 +62,6 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
   // R2 상태
   const [r2Ready,    setR2Ready]    = useState(true);
 
-  const inputRef = useRef();
 
   // ── R2 준비 여부 확인 ──
   useEffect(() => {
@@ -236,34 +235,39 @@ export default function SharedFolderPage({ isAdmin = false, empno = null, darkMo
             )}
           </div>
 
-          {/* 드래그&드롭 영역 — label 방식으로 파일 선택 (확장프로그램 간섭 방지) */}
-          <label
-            htmlFor="share-file-input"
+          {/* 드래그&드롭 영역 — input을 투명하게 전체 덮기 (확장프로그램 완전 우회) */}
+          <div
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
-            onDrop={e => { e.preventDefault(); setDragOver(false); setPendingFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); }}
+            onDrop={e => {
+              e.preventDefault(); setDragOver(false);
+              setPendingFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+            }}
             style={{
-              display: 'block',
+              position: 'relative',
               border: `2px dashed ${dragOver ? '#4f46e5' : C.border}`,
               borderRadius: 10, padding: '28px 20px', textAlign: 'center',
-              cursor: 'pointer', background: dragOver ? '#ede9fe' : C.subBg,
-              transition: 'all 0.2s', marginBottom: 14,
+              background: dragOver ? '#ede9fe' : C.subBg,
+              transition: 'all 0.2s', marginBottom: 14, overflow: 'hidden',
             }}
           >
+            {/* 투명 input이 전체 영역을 덮음 → 클릭 즉시 파일 선택창 오픈 */}
+            <input
+              type="file"
+              multiple
+              onChange={onFilePick}
+              style={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
+                opacity: 0, cursor: 'pointer', zIndex: 10,
+              }}
+            />
             <div style={{ fontSize: '2rem', marginBottom: 8 }}>📂</div>
             <div style={{ fontSize: '0.88rem', color: C.muted }}>
               클릭하거나 파일을 드래그하세요
             </div>
             <div style={{ fontSize: '0.75rem', color: C.muted, marginTop: 4 }}>최대 50MB</div>
-            <input
-              id="share-file-input"
-              ref={inputRef}
-              type="file"
-              multiple
-              style={{ display: 'none' }}
-              onChange={onFilePick}
-            />
-          </label>
+          </div>
 
           {/* 선택된 파일 목록 */}
           {pendingFiles.length > 0 && (
