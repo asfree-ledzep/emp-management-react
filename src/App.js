@@ -23,6 +23,7 @@ import ChatbotButton from './components/ChatbotModal';
 import EmployeeLayout from './components/EmployeeLayout';
 import BoardAdminPage from './pages/BoardAdminPage';
 import AdminProfileModal from './components/AdminProfileModal';
+import DustWidget from './components/DustWidget';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -194,6 +195,13 @@ function App() {
         <>
           {page === 'dashboard' && (
             <DashboardPage username={username} onNavigate={setPage} darkMode={darkMode} />
+          )}
+
+          {/* 대시보드 외 페이지: 상단에 미세먼지 위젯 표시 */}
+          {page !== 'dashboard' && page !== 'qr-scan' && (
+            <div style={{ padding: '12px 20px 0' }}>
+              <DustWidget darkMode={darkMode} compact={true} />
+            </div>
           )}
           {page === 'list' && (
             <EmpListPage

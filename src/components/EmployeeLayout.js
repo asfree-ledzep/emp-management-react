@@ -13,6 +13,14 @@ import MessagePage from '../pages/MessagePage';
 import { fetchMgrPending, fetchMyBalance } from '../api/leaveApi';
 import { authFetch } from '../api/apiClient';
 
+// 등급 → 색상 (사이드바 다크 테마용)
+const DUST_COLORS = {
+  1: { text: '#93c5fd', badge: '#3b82f6', label: '좋음',   emoji: '😊' },
+  2: { text: '#86efac', badge: '#22c55e', label: '보통',   emoji: '🙂' },
+  3: { text: '#fdba74', badge: '#f97316', label: '나쁨',   emoji: '😷' },
+  4: { text: '#fca5a5', badge: '#ef4444', label: '매우나쁨', emoji: '🚨' },
+};
+
 const MENU = [
   { key: 'profile',        icon: '👤', label: '내 프로필' },
   { key: 'attendance',     icon: '🕐', label: '출근 기록' },
@@ -33,6 +41,8 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [balance, setBalance] = useState(null);
   const [unreadMsg, setUnreadMsg] = useState(0);
+  const [dust, setDust] = useState(null);
+  const [dustSido, setDustSido] = useState('서울');
 
   // 잔여 연차 조회
   useEffect(() => {
@@ -65,6 +75,19 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
     const timer = setInterval(check, 60000);
     return () => clearInterval(timer);
   }, []);
+
+  // 미세먼지 조회 (30분 갱신)
+  useEffect(() => {
+    const fetchDust = () => {
+      authFetch(`/api/dust?sido=${encodeURIComponent(dustSido)}`)
+        .then(r => r.json())
+        .then(d => { if (!d.error) setDust(d); })
+        .catch(() => {});
+    };
+    fetchDust();
+    const t = setInterval(fetchDust, 30 * 60 * 1000);
+    return () => clearInterval(t);
+  }, [dustSido]);
 
   const navigate = (key) => {
     setPage(key);
@@ -140,6 +163,84 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
             </>
           ) : (
             <div style={{ fontSize: '0.8rem', color: 'rgba(196,181,253,0.6)' }}>불러오는 중...</div>
+          )}
+        </div>
+
+        {/* ── 미세먼지 미니 카드 ── */}
+        <div style={{
+          margin: '6px 14px 2px',
+          background: 'rgba(30,27,75,0.6)',
+          border: '1px solid rgba(165,180,252,0.2)',
+          borderRadius: 10, padding: '10px 12px',
+        }}>
+          {/* 헤더 + 시도 선택 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+            <div style={{ fontSize: '0.65rem', color: '#a5b4fc', fontWeight: 600, letterSpacing: '0.04em' }}>
+              🌬️ 실시간 대기질
+            </div>
+            <select
+              value={dustSido}
+              onChange={e => setDustSido(e.target.value)}
+              style={{
+                background: 'rgba(99,102,241,0.3)', border: '1px solid rgba(165,180,252,0.3)',
+                color: '#c4b5fd', fontSize: '0.62rem', borderRadius: 4,
+                padding: '1px 4px', cursor: 'pointer', outline: 'none',
+              }}
+            >
+              {['서울','부산','대구','인천','광주','대전','울산','경기','강원',
+                '충북','충남','전북','전남','경북','경남','제주','세종'].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          {dust ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {/* PM10 */}
+              {[
+                { key: 'pm10',  label: 'PM₁₀',   grade: dust.pm10Grade,  val: dust.pm10  },
+                { key: 'pm25',  label: 'PM₂.₅',  grade: dust.pm25Grade,  val: dust.pm25  },
+              ].map(item => {
+                const c = DUST_COLORS[item.grade] || DUST_COLORS[2];
+                return (
+                  <div key={item.key} style={{
+                    flex: 1, textAlign: 'center',
+                    background: 'rgba(255,255,255,0.04)',
+                    borderRadius: 6, padding: '5px 4px',
+                  }}>
+                    <div style={{ fontSize: '0.6rem', color: 'rgba(196,181,253,0.7)', marginBottom: 2 }}>
+                      {item.label}
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: c.text, lineHeight: 1 }}>
+                      {item.val >= 0 ? item.val : '-'}
+                    </div>
+                    <div style={{
+                      display: 'inline-block', marginTop: 3,
+                      background: c.badge, color: '#fff',
+                      fontSize: '0.58rem', fontWeight: 700,
+                      borderRadius: 9999, padding: '1px 5px',
+                    }}>
+                      {c.emoji} {c.label}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.72rem', color: 'rgba(196,181,253,0.5)', textAlign: 'center', padding: '4px 0' }}>
+              조회 중...
+            </div>
+          )}
+
+          {/* 나쁨 이상 경고 */}
+          {dust && (dust.pm10Grade >= 3 || dust.pm25Grade >= 3) && (
+            <div style={{
+              marginTop: 6, fontSize: '0.62rem', color: '#fdba74',
+              background: 'rgba(249,115,22,0.15)', borderRadius: 5,
+              padding: '3px 6px', textAlign: 'center', fontWeight: 600,
+            }}>
+              😷 마스크 착용 권장
+            </div>
           )}
         </div>
 
