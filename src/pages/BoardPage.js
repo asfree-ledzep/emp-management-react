@@ -475,13 +475,27 @@ export default function BoardPage({ empno, darkMode }) {
                     padding: '8px 0', borderBottom: `1px solid ${C.border}`,
                     display: 'flex', gap: 10, alignItems: 'flex-start',
                   }}>
-                    {/* 아바타 */}
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                      background: `linear-gradient(135deg, ${accentColor}, ${accentColor}99)`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontSize: '0.72rem', fontWeight: 700,
-                    }}>{c.authorName?.charAt(0)}</div>
+                    {/* 아바타 — 클릭 시 @멘션 답글 */}
+                    <div
+                      onClick={() => handleReply(c.authorName)}
+                      title={`@${c.authorName}에게 답글`}
+                      style={{
+                        width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                        background: `linear-gradient(135deg, ${accentColor}, ${accentColor}99)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontSize: '0.72rem', fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'transform 0.15s, box-shadow 0.15s',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'scale(1.15)';
+                        e.currentTarget.style.boxShadow = `0 0 0 3px ${accentColor}44`;
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >{c.authorName?.charAt(0)}</div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
