@@ -115,8 +115,9 @@ export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) 
   const renderContent = (msg) => {
     if (isFileMsg(msg.content)) {
       const { name, url } = parseFile(msg.content);
+      const downloadUrl = `/api/chat/download?url=${encodeURIComponent(url)}`;
       return (
-        <a href={url} target="_blank" rel="noopener noreferrer"
+        <a href={downloadUrl} rel="noopener noreferrer"
           style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: '1.1rem' }}>📎</span>
           <span style={{ textDecoration: 'underline', fontSize: '0.8rem', wordBreak: 'break-all' }}>{name}</span>
