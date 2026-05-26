@@ -5,6 +5,7 @@ import SalarySlipModal from '../components/SalarySlipModal';
 import { fetchEmpById, updateEmp, uploadPhoto } from '../api/empApi';
 import { getKakaoAuthUrl } from '../api/noticeApi';
 import { authFetch } from '../api/apiClient';
+import DustWidget from '../components/DustWidget';
 import '../styles/MyProfilePage.css';
 import '../styles/Button.css';
 
@@ -162,6 +163,9 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
           </div>
         </div>
       )}
+
+      {/* ── 미세먼지 위젯 ── */}
+      <DustWidget darkMode={false} compact={true} />
 
       <div className="my-profile-card">
         {/* 상단 배너: 사진 + 이름 */}

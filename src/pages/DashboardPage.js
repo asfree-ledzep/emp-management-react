@@ -9,6 +9,7 @@ import { fetchSurveys } from '../api/surveyApi';
 import { fetchNotices, fetchKakaoConnectedCount, fetchKakaoStatus, sendKakaoTestMessage, sendKakaoNudge } from '../api/noticeApi';
 import { sendPushNudgeKakao } from '../api/pushApi';
 import { authFetch } from '../api/apiClient';
+import DustWidget from '../components/DustWidget';
 import '../styles/DashboardPage.css';
 
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '0 원';
@@ -372,6 +373,9 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
           </div>
         </div>
       )}
+
+      {/* ── 미세먼지 위젯 ── */}
+      <DustWidget darkMode={darkMode} />
 
       {/* ── 요약 카드 ── */}
       <div className="db-cards" style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
