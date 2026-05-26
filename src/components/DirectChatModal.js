@@ -83,48 +83,40 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
     return () => client.deactivate();
   }, []); // eslint-disable-line
 
-  /* ── 직원 검색 + 대화 파트너 조회 (병렬) ── */
+  /* ── 직원 검색 + 대화 파트너 조회 (단일 요청) ── */
   const doSearch = useCallback(async (name) => {
     if (!myEmpno) return;
     setSearching(true);
     setSessionErr(false);
     try {
-      // 직원 검색 + 파트너 목록 동시 요청
-      const [empRes, partnerRes] = await Promise.all([
-        authFetch(
-          `/api/employees/search?name=${encodeURIComponent(name ?? query)}`,
-          { noAutoLogout: true },
-        ),
-        authFetch(`/api/dm/partners?myEmpno=${myEmpno}`, { noAutoLogout: true }),
-      ]);
+      // 직원 검색 + 파트너 정보를 한 번에 요청 (myEmpno 포함)
+      const res = await authFetch(
+        `/api/employees/search?name=${encodeURIComponent(name ?? query)}&myEmpno=${myEmpno}`,
+        { noAutoLogout: true },
+      );
 
-      if (empRes.status === 401) {
+      if (res.status === 401) {
         setSessionErr(true);
         setResults([]);
         setSearching(false);
         return;
       }
 
-      const empData     = await empRes.json();
-      let partnerData = [];
-      if (partnerRes.ok) {
-        try { partnerData = await partnerRes.json(); } catch { partnerData = []; }
-      } else {
-        console.warn('[DM] /api/dm/partners 실패:', partnerRes.status);
-      }
-      const partners    = Array.isArray(partnerData) ? partnerData.map(Number) : [];
-      console.log('[DM] partners:', partners);
+      const data = await res.json();
+      // 응답: { employees: [...], partnerEmpnos: [...] }
+      const empData     = Array.isArray(data.employees)    ? data.employees    : [];
+      const partners    = Array.isArray(data.partnerEmpnos) ? data.partnerEmpnos.map(Number) : [];
+
       setPartnerEmpnos(partners);
 
-      const emps = Array.isArray(empData)
-        ? empData.filter(e => e.empno !== Number(myEmpno))
-        : [];
+      // 나 자신 제외
+      const emps = empData.filter(e => Number(e.empno) !== Number(myEmpno));
 
-      // 대화 이력 있는 사원 → 상단 (최근 순 유지), 나머지 → 이름 가나다순
+      // 대화 이력 있는 사원 → 상단 (최근 순), 나머지 → 그대로
       const withHistory    = partners
-        .map(pno => emps.find(e => e.empno === pno))
+        .map(pno => emps.find(e => Number(e.empno) === pno))
         .filter(Boolean);
-      const withoutHistory = emps.filter(e => !partners.includes(e.empno));
+      const withoutHistory = emps.filter(e => !partners.includes(Number(e.empno)));
       setResults([...withHistory, ...withoutHistory]);
     } catch { setResults([]); }
     setSearching(false);
