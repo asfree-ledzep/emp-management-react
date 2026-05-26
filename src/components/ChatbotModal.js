@@ -279,10 +279,11 @@ function ChatbotButton({ darkMode = false }) {
   const [chatOpen,     setChatOpen]     = useState(false); // 부서 채팅
   const [dmOpen,       setDmOpen]       = useState(false); // 1:1 DM
   const [menuOpen,     setMenuOpen]     = useState(false); // 채팅 선택 메뉴
-  const [globalUnread, setGlobalUnread] = useState(0);
-  const [chatUnread,   setChatUnread]   = useState(0);
-  const [dmUnread,     setDmUnread]     = useState(0);
-  const [dmSenders,    setDmSenders]    = useState([]); // 미확인 DM 발신자 목록 [{ empno, ename }]
+  const [globalUnread,  setGlobalUnread]  = useState(0);
+  const [chatUnread,    setChatUnread]    = useState(0);
+  const [dmUnread,      setDmUnread]      = useState(0);
+  const [globalSenders, setGlobalSenders] = useState([]); // 미확인 전체채팅 발신자 목록 [{ name }]
+  const [dmSenders,     setDmSenders]     = useState([]); // 미확인 DM 발신자 목록 [{ empno, ename }]
   const [dmTarget,     setDmTarget]     = useState(null); // 채팅방 바로이동 대상 peer
   const [toasts,       setToasts]       = useState([]);
   const dk = darkMode;
@@ -311,6 +312,12 @@ function ChatbotButton({ darkMode = false }) {
   const handleGlobalUnread = useCallback((msg) => {
     if (globalOpenRef.current) return;
     setGlobalUnread(n => n + 1);
+    // 발신자 이름 중복 없이 누적 (최대 3명)
+    setGlobalSenders(prev =>
+      prev.some(s => s.name === msg.senderName)
+        ? prev
+        : [...prev, { name: msg.senderName }].slice(-3)
+    );
     addToast({ senderName: msg.senderName, content: msg.content, sentAt: msg.sentAt }, 'global');
   }, [addToast]);
 
@@ -344,7 +351,7 @@ function ChatbotButton({ darkMode = false }) {
   const openFromToast = (id, type, senderEmpno) => {
     dismissToast(id);
     if (type === 'global') {
-      setGlobalOpen(true); setGlobalUnread(0); setMenuOpen(false);
+      setGlobalOpen(true); setGlobalUnread(0); setGlobalSenders([]); setMenuOpen(false);
     } else if (type === 'team') {
       setChatOpen(true); setChatUnread(0); setMenuOpen(false);
     } else {
@@ -364,7 +371,7 @@ function ChatbotButton({ darkMode = false }) {
     setMenuOpen(o => !o);
   };
 
-  const openGlobalChat = () => { setMenuOpen(false); setGlobalOpen(true); setGlobalUnread(0); };
+  const openGlobalChat = () => { setMenuOpen(false); setGlobalOpen(true); setGlobalUnread(0); setGlobalSenders([]); };
   const openTeamChat   = () => { setMenuOpen(false); setChatOpen(true);   setChatUnread(0);   };
 
   // 검색 화면으로 DM 열기
@@ -574,6 +581,40 @@ function ChatbotButton({ darkMode = false }) {
           );
         })}
       </div>
+
+      {/* ── 전체채팅 발신자 플로팅 pill (👥 버튼 위) ── */}
+      {!anyOpen && !menuOpen && globalUnread > 0 && globalSenders.length > 0 && (() => {
+        const latest = globalSenders[globalSenders.length - 1];
+        const dmHasPill = dmUnread > 0 && dmSenders.length > 0;
+        return (
+          <div
+            onClick={openGlobalChat}
+            style={{
+              position: 'fixed',
+              bottom: dmHasPill ? 114 : 84,
+              right: 88,
+              background: 'linear-gradient(135deg, #047857, #059669)',
+              color: '#fff', borderRadius: 14,
+              padding: '5px 11px',
+              fontSize: '0.72rem', fontWeight: 700,
+              zIndex: 1997, whiteSpace: 'nowrap',
+              boxShadow: '0 3px 12px rgba(5,150,105,0.45)',
+              animation: 'senderPop 0.25s ease',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}
+          >
+            <span>🌐</span>
+            <span>{latest.name}</span>
+            {globalUnread > 1 && (
+              <span style={{
+                background: '#ef4444', borderRadius: 8,
+                padding: '0px 5px', fontSize: '0.65rem',
+              }}>+{globalUnread - 1}</span>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── DM 발신자 이름 플로팅 pill (👥 버튼 위) — 클릭 시 채팅방 바로이동 ── */}
       {!anyOpen && !menuOpen && dmUnread > 0 && dmSenders.length > 0 && (() => {
