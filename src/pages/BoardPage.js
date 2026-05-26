@@ -39,6 +39,12 @@ export default function BoardPage({ empno, darkMode }) {
   const [showWrite, setShowWrite] = useState(false);  // 글쓰기 모달
   const [dragOver,  setDragOver]  = useState(false);
 
+  // 댓글 상태
+  const [comments,     setComments]     = useState([]);
+  const [commentInput, setCommentInput] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+
   // 글쓰기 폼 상태
   const [wTitle,    setWTitle]    = useState('');
   const [wContent,  setWContent]  = useState('');
@@ -47,7 +53,8 @@ export default function BoardPage({ empno, darkMode }) {
   const [submitting, setSubmitting] = useState(false);
   const [error,     setError]     = useState('');
 
-  const fileInputRef = useRef(null);
+  const fileInputRef   = useRef(null);
+  const commentBotRef  = useRef(null);
   const accentColor = tab === 'global' ? C.globalColor : C.deptColor;
 
   /* ── 목록 로드 ── */
@@ -65,6 +72,55 @@ export default function BoardPage({ empno, darkMode }) {
   }, [tab, deptno]);
 
   useEffect(() => { loadPosts(); }, [loadPosts]);
+
+  /* ── 댓글 로드 ── */
+  const loadComments = useCallback(async (postId) => {
+    setCommentLoading(true);
+    try {
+      const res  = await authFetch(`/api/board/comments?postId=${postId}`);
+      const data = await res.json();
+      setComments(Array.isArray(data) ? data : []);
+    } catch { setComments([]); }
+    finally  { setCommentLoading(false); }
+  }, []);
+
+  /* ── 게시글 클릭 → 상세보기 + 댓글 로드 ── */
+  const openDetail = (post) => {
+    setSelected(post);
+    setCommentInput('');
+    setComments([]);
+    loadComments(post.postId);
+  };
+
+  /* ── 댓글 등록 ── */
+  const submitComment = async () => {
+    if (!commentInput.trim()) return;
+    setCommentSubmitting(true);
+    try {
+      await authFetch('/api/board/comments', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId:     String(selected.postId),
+          authorName: username,
+          content:    commentInput.trim(),
+        }),
+      });
+      setCommentInput('');
+      await loadComments(selected.postId);
+      setTimeout(() => commentBotRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } catch { /* ignore */ }
+    finally { setCommentSubmitting(false); }
+  };
+
+  /* ── 댓글 삭제 ── */
+  const deleteComment = async (commentId) => {
+    try {
+      const res = await authFetch(`/api/board/comments/${commentId}`, { method: 'DELETE' });
+      if (!res.ok) { alert('삭제 권한이 없습니다.'); return; }
+      await loadComments(selected.postId);
+    } catch { /* ignore */ }
+  };
 
   /* ── 글쓰기 모달 열기/초기화 ── */
   const openWrite = () => {
@@ -202,7 +258,7 @@ export default function BoardPage({ empno, darkMode }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {posts.map((post, idx) => (
             <div key={post.postId}
-              onClick={() => setSelected(post)}
+              onClick={() => openDetail(post)}
               style={{
                 background: C.card, borderRadius: 10,
                 border: `1px solid ${C.border}`,
@@ -336,6 +392,102 @@ export default function BoardPage({ empno, darkMode }) {
                 </a>
               </div>
             )}
+
+            {/* ── 댓글 섹션 ── */}
+            <div style={{
+              borderTop: `1px solid ${C.border}`,
+              background: dk ? '#0f172a' : '#f8fafc',
+              flexShrink: 0, maxHeight: 320, display: 'flex', flexDirection: 'column',
+            }}>
+              {/* 댓글 헤더 */}
+              <div style={{
+                padding: '10px 20px 6px', fontSize: '0.8rem',
+                fontWeight: 700, color: C.sub, flexShrink: 0,
+              }}>
+                💬 댓글 {comments.length > 0 ? `(${comments.length})` : ''}
+              </div>
+
+              {/* 댓글 목록 */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 8px' }}>
+                {commentLoading && (
+                  <div style={{ fontSize: '0.78rem', color: C.sub, padding: '8px 0' }}>불러오는 중...</div>
+                )}
+                {!commentLoading && comments.length === 0 && (
+                  <div style={{ fontSize: '0.78rem', color: C.sub, padding: '8px 0' }}>
+                    첫 번째 댓글을 남겨보세요.
+                  </div>
+                )}
+                {comments.map(c => (
+                  <div key={c.commentId} style={{
+                    padding: '8px 0', borderBottom: `1px solid ${C.border}`,
+                    display: 'flex', gap: 10, alignItems: 'flex-start',
+                  }}>
+                    {/* 아바타 */}
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: `linear-gradient(135deg, ${accentColor}, ${accentColor}99)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#fff', fontSize: '0.72rem', fontWeight: 700,
+                    }}>{c.authorName?.charAt(0)}</div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.78rem', color: C.text }}>
+                          {c.authorName}
+                        </span>
+                        <span style={{ fontSize: '0.68rem', color: C.sub }}>{c.createdAt}</span>
+                        {c.empno === myEmpno && (
+                          <button onClick={() => deleteComment(c.commentId)} style={{
+                            marginLeft: 'auto', padding: '1px 7px', borderRadius: 6,
+                            border: 'none', background: '#fef2f2', color: '#ef4444',
+                            fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer',
+                          }}>삭제</button>
+                        )}
+                      </div>
+                      <div style={{
+                        fontSize: '0.82rem', color: C.text, lineHeight: 1.5,
+                        whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                      }}>{c.content}</div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={commentBotRef} />
+              </div>
+
+              {/* 댓글 입력창 */}
+              <div style={{
+                padding: '10px 20px', borderTop: `1px solid ${C.border}`,
+                display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0,
+              }}>
+                <textarea
+                  value={commentInput}
+                  onChange={e => setCommentInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); }
+                  }}
+                  placeholder="댓글을 입력하세요 (Enter 등록, Shift+Enter 줄바꿈)"
+                  rows={1}
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 20,
+                    border: `1.5px solid ${C.inputBord}`, outline: 'none',
+                    background: C.inputBg, color: C.text, fontSize: '0.82rem',
+                    resize: 'none', lineHeight: 1.4, maxHeight: 72,
+                    overflowY: 'auto', fontFamily: 'inherit',
+                  }}
+                />
+                <button
+                  onClick={submitComment}
+                  disabled={!commentInput.trim() || commentSubmitting}
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%', border: 'none',
+                    background: commentInput.trim() && !commentSubmitting ? accentColor : '#e2e8f0',
+                    color: commentInput.trim() && !commentSubmitting ? '#fff' : '#9ca3af',
+                    cursor: commentInput.trim() && !commentSubmitting ? 'pointer' : 'default',
+                    fontSize: '0.9rem', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', flexShrink: 0,
+                  }}>▶</button>
+              </div>
+            </div>
           </div>
         </>
       )}
