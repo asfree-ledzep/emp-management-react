@@ -53,9 +53,29 @@ export default function BoardPage({ empno, darkMode }) {
   const [submitting, setSubmitting] = useState(false);
   const [error,     setError]     = useState('');
 
-  const fileInputRef   = useRef(null);
-  const commentBotRef  = useRef(null);
+  const fileInputRef    = useRef(null);
+  const commentBotRef   = useRef(null);
+  const commentInputRef = useRef(null);
   const accentColor = tab === 'global' ? C.globalColor : C.deptColor;
+
+  /* ── @멘션 하이라이트 렌더 ── */
+  const renderCommentContent = (text) => {
+    const parts = text.split(/(@\S+)/g);
+    return parts.map((part, i) =>
+      /^@\S+/.test(part)
+        ? <span key={i} style={{ color: accentColor, fontWeight: 700 }}>{part}</span>
+        : part
+    );
+  };
+
+  /* ── 답글 버튼 클릭 → @이름 삽입 + 포커스 ── */
+  const handleReply = (authorName) => {
+    const mention = `@${authorName} `;
+    setCommentInput(prev =>
+      prev.startsWith('@') ? mention : mention + prev
+    );
+    commentInputRef.current?.focus();
+  };
 
   /* ── 목록 로드 ── */
   const loadPosts = useCallback(async () => {
@@ -431,11 +451,18 @@ export default function BoardPage({ empno, darkMode }) {
                     }}>{c.authorName?.charAt(0)}</div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 700, fontSize: '0.78rem', color: C.text }}>
                           {c.authorName}
                         </span>
                         <span style={{ fontSize: '0.68rem', color: C.sub }}>{c.createdAt}</span>
+                        {/* 답글 버튼 */}
+                        <button onClick={() => handleReply(c.authorName)} style={{
+                          padding: '1px 7px', borderRadius: 6, border: 'none',
+                          background: dk ? '#1e3a2c' : '#ecfdf5',
+                          color: accentColor, fontSize: '0.65rem', fontWeight: 700,
+                          cursor: 'pointer',
+                        }}>↩ 답글</button>
                         {c.empno === myEmpno && (
                           <button onClick={() => deleteComment(c.commentId)} style={{
                             marginLeft: 'auto', padding: '1px 7px', borderRadius: 6,
@@ -447,7 +474,7 @@ export default function BoardPage({ empno, darkMode }) {
                       <div style={{
                         fontSize: '0.82rem', color: C.text, lineHeight: 1.5,
                         whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                      }}>{c.content}</div>
+                      }}>{renderCommentContent(c.content)}</div>
                     </div>
                   </div>
                 ))}
@@ -460,12 +487,13 @@ export default function BoardPage({ empno, darkMode }) {
                 display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0,
               }}>
                 <textarea
+                  ref={commentInputRef}
                   value={commentInput}
                   onChange={e => setCommentInput(e.target.value)}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); }
                   }}
-                  placeholder="댓글을 입력하세요 (Enter 등록, Shift+Enter 줄바꿈)"
+                  placeholder="댓글 입력 (Enter 등록 · Shift+Enter 줄바꿈) — 답글 버튼으로 @멘션"
                   rows={1}
                   style={{
                     flex: 1, padding: '8px 12px', borderRadius: 20,
