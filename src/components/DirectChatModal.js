@@ -8,7 +8,10 @@ import { authFetch, triggerLogout } from '../api/apiClient';
  * - visible=false 시 UI 숨김 (컴포넌트·WebSocket 유지)
  * - screen: 'search' → 직원 검색 / 'chat' → DM 대화
  */
-export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible }) {
+/**
+ * targetPeer: { empno, ename } — 외부에서 특정 사람의 채팅방으로 바로 이동 시 전달
+ */
+export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible, targetPeer }) {
   const myEmpno = sessionStorage.getItem('empno');   // null → 관리자
   const myName  = sessionStorage.getItem('username') || '알 수 없음';
 
@@ -23,12 +26,16 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
   const [connected,   setConnected]   = useState(false);
   const [connecting,  setConnecting]  = useState(true);
 
-  const clientRef = useRef(null);
-  const peerRef   = useRef(null);
-  const bottomRef = useRef(null);
+  const clientRef    = useRef(null);
+  const peerRef      = useRef(null);
+  const visibleRef   = useRef(false);   // 알림 stale 클로저 방지용
+  const onUnreadRef  = useRef(onDmUnread); // onDmUnread stale 클로저 방지
+  const bottomRef    = useRef(null);
 
-  // stale closure 방지
-  useEffect(() => { peerRef.current = peer; }, [peer]);
+  // ref 동기화
+  useEffect(() => { peerRef.current    = peer;       }, [peer]);
+  useEffect(() => { visibleRef.current = visible;    }, [visible]);
+  useEffect(() => { onUnreadRef.current = onDmUnread; }, [onDmUnread]);
 
   /* ── WebSocket 연결 (항상 마운트 유지) ── */
   useEffect(() => {
@@ -45,20 +52,22 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
         // 내 사번 토픽 구독 → 나에게 오는 모든 DM 수신
         client.subscribe(`/topic/dm/${myEmpno}`, (frame) => {
           try {
-            const msg = JSON.parse(frame.body);
+            const msg  = JSON.parse(frame.body);
+            const me   = Number(myEmpno);
             const currentPeer = peerRef.current;
-            const me = Number(myEmpno);
 
-            const inCurrentChat = currentPeer && (
-              (msg.senderEmpno   === currentPeer.empno && msg.receiverEmpno === me) ||
-              (msg.senderEmpno   === me                && msg.receiverEmpno === currentPeer.empno)
+            // 모달이 열려있고 현재 대화 중인 상대의 메시지만 채팅창에 표시
+            // visible=false이면 항상 알림 처리 (stale 방지: ref 사용)
+            const inCurrentChat = visibleRef.current && currentPeer && (
+              (msg.senderEmpno === currentPeer.empno && msg.receiverEmpno === me) ||
+              (msg.senderEmpno === me && msg.receiverEmpno === currentPeer.empno)
             );
 
             if (inCurrentChat) {
               setMessages(prev => [...prev, msg]);
             } else if (msg.senderEmpno !== me) {
-              // 다른 사람의 DM → 상위 컴포넌트에 알림
-              onDmUnread && onDmUnread(msg);
+              // 상대방 DM → 상위 컴포넌트에 알림 (ref로 최신 함수 사용)
+              onUnreadRef.current && onUnreadRef.current(msg);
             }
           } catch { /* ignore */ }
         });
@@ -149,9 +158,17 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
     }
   }, [visible, screen]);
 
+  /* ── targetPeer 변경 시 해당 채팅방으로 바로 이동 ── */
+  useEffect(() => {
+    if (visible && targetPeer && targetPeer.empno) {
+      selectPeer(targetPeer);
+    }
+  }, [targetPeer, visible]); // eslint-disable-line
+
   /* ── 검색화면 열릴 때 전체 목록 로드 ── */
   useEffect(() => {
-    if (visible && screen === 'search' && myEmpno) doSearch('');
+    // targetPeer가 없을 때만 전체 검색 실행 (채팅방 직접 이동 시 검색 스킵)
+    if (visible && screen === 'search' && myEmpno && !targetPeer) doSearch('');
   }, [visible]); // eslint-disable-line
 
   /* ── UI 숨김 (WebSocket 유지) ── */

@@ -279,7 +279,8 @@ function ChatbotButton({ darkMode = false }) {
   const [menuOpen,     setMenuOpen]     = useState(false); // 채팅 선택 메뉴
   const [chatUnread,   setChatUnread]   = useState(0);
   const [dmUnread,     setDmUnread]     = useState(0);
-  const [dmSenders,    setDmSenders]    = useState([]); // 미확인 DM 발신자 이름 목록
+  const [dmSenders,    setDmSenders]    = useState([]); // 미확인 DM 발신자 목록 [{ empno, ename }]
+  const [dmTarget,     setDmTarget]     = useState(null); // 채팅방 바로이동 대상 peer
   const [toasts,       setToasts]       = useState([]);
   const dk = darkMode;
 
@@ -296,6 +297,7 @@ function ChatbotButton({ darkMode = false }) {
 
   const addToast = useCallback((msg, type) => {
     const id = Date.now() + Math.random();
+    // senderEmpno 포함해서 저장 → 토스트 클릭 시 채팅방 바로이동에 사용
     setToasts(prev => [...prev.slice(-2), { id, type, ...msg }]);
     setTimeout(() => dismissToast(id), 5000);
   }, [dismissToast]);
@@ -311,20 +313,33 @@ function ChatbotButton({ darkMode = false }) {
   const handleDmUnread = useCallback((msg) => {
     if (dmOpenRef.current) return;
     setDmUnread(n => n + 1);
-    // 발신자 이름 중복 없이 누적 (최대 3명)
+    // 발신자 객체 { empno, ename } 중복 없이 누적 (최대 3명)
     setDmSenders(prev =>
-      prev.includes(msg.senderName)
+      prev.some(s => s.empno === msg.senderEmpno)
         ? prev
-        : [...prev, msg.senderName].slice(-3)
+        : [...prev, { empno: msg.senderEmpno, ename: msg.senderName }].slice(-3)
     );
-    addToast({ senderName: msg.senderName, content: msg.content, sentAt: msg.sentAt }, 'dm');
+    // senderEmpno 포함하여 토스트 저장 → 클릭 시 채팅방 바로이동
+    addToast({
+      senderName: msg.senderName,
+      senderEmpno: msg.senderEmpno,
+      content: msg.content,
+      sentAt: msg.sentAt,
+    }, 'dm');
   }, [addToast]);
 
   /* ── 토스트 클릭 → 해당 채팅 열기 ── */
-  const openFromToast = (id, type) => {
+  const openFromToast = (id, type, senderEmpno) => {
     dismissToast(id);
-    if (type === 'team') { setChatOpen(true); setChatUnread(0); setMenuOpen(false); }
-    else                 { setDmOpen(true); setDmUnread(0); setDmSenders([]); setMenuOpen(false); }
+    if (type === 'team') {
+      setChatOpen(true); setChatUnread(0); setMenuOpen(false);
+    } else {
+      // 토스트의 발신자 정보로 채팅방 바로 이동
+      const sender = dmSenders.find(s => s.empno === senderEmpno);
+      if (sender) setDmTarget(sender);
+      else        setDmTarget(null);
+      setDmOpen(true); setDmUnread(0); setDmSenders([]); setMenuOpen(false);
+    }
   };
 
   /* ── 👥 버튼 클릭 ── */
@@ -335,7 +350,18 @@ function ChatbotButton({ darkMode = false }) {
   };
 
   const openTeamChat = () => { setMenuOpen(false); setChatOpen(true); setChatUnread(0); };
-  const openDmChat   = () => { setMenuOpen(false); setDmOpen(true); setDmUnread(0); setDmSenders([]); };
+
+  // 검색 화면으로 DM 열기
+  const openDmChat = () => {
+    setDmTarget(null);
+    setMenuOpen(false); setDmOpen(true); setDmUnread(0); setDmSenders([]);
+  };
+
+  // 특정 발신자 채팅방으로 바로 이동
+  const openDmChatWithPeer = (sender) => {
+    setDmTarget(sender);
+    setMenuOpen(false); setDmOpen(true); setDmUnread(0); setDmSenders([]);
+  };
 
   const anyOpen = chatOpen || dmOpen;
 
@@ -355,6 +381,7 @@ function ChatbotButton({ darkMode = false }) {
         onClose={() => setDmOpen(false)}
         darkMode={darkMode}
         onDmUnread={handleDmUnread}
+        targetPeer={dmTarget}
       />
 
       {/* ── HR 챗봇 ── */}
@@ -393,36 +420,46 @@ function ChatbotButton({ darkMode = false }) {
               }}>{chatUnread}</span>
             )}
           </button>
+          {/* 1:1 채팅 버튼 */}
           <button onClick={openDmChat} style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '10px 14px', borderRadius: 10, border: 'none',
             background: dk ? '#0f172a' : '#faf5ff',
             color: '#7c3aed', cursor: 'pointer', fontWeight: 700,
-            fontSize: '0.85rem', textAlign: 'left',
+            fontSize: '0.85rem', textAlign: 'left', width: '100%',
           }}>
             <span style={{ fontSize: '1.1rem' }}>💌</span>
-            <div style={{ flex: 1 }}>
-              <div>1:1 채팅</div>
-              {/* 발신자 이름 표시 */}
-              {dmSenders.length > 0 && (
-                <div style={{
-                  fontSize: '0.7rem', fontWeight: 600,
-                  color: dk ? '#c4b5fd' : '#7c3aed',
-                  marginTop: 1, opacity: 0.85,
-                }}>
-                  {dmSenders.join(', ')}
-                  {dmUnread > dmSenders.length ? ` 외 ${dmUnread - dmSenders.length}건` : ''}
-                </div>
-              )}
-            </div>
+            <span style={{ flex: 1 }}>1:1 채팅</span>
             {dmUnread > 0 && (
               <span style={{
-                marginLeft: 'auto', background: '#ef4444', color: '#fff',
+                background: '#ef4444', color: '#fff',
                 borderRadius: 10, padding: '1px 7px', fontSize: '0.7rem', fontWeight: 700,
                 flexShrink: 0,
               }}>{dmUnread}</span>
             )}
           </button>
+
+          {/* 발신자별 채팅방 바로가기 */}
+          {dmSenders.map(sender => (
+            <button key={sender.empno} onClick={() => openDmChatWithPeer(sender)} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '7px 14px 7px 32px', borderRadius: 8, border: 'none',
+              background: dk ? '#1a0a3d' : '#f5f3ff',
+              color: '#7c3aed', cursor: 'pointer', fontSize: '0.8rem',
+              textAlign: 'left', width: '100%',
+            }}>
+              <div style={{
+                width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: '0.7rem', fontWeight: 700,
+              }}>
+                {sender.ename?.charAt(0)}
+              </div>
+              <span style={{ flex: 1, fontWeight: 600 }}>{sender.ename}</span>
+              <span style={{ fontSize: '0.7rem', color: dk ? '#94a3b8' : '#a78bfa' }}>채팅방 →</span>
+            </button>
+          ))}
         </div>
       )}
 
@@ -447,7 +484,7 @@ function ChatbotButton({ darkMode = false }) {
                 animation: 'toastIn 0.3s ease',
                 pointerEvents: 'auto', cursor: 'pointer',
               }}
-              onClick={() => openFromToast(t.id, t.type)}
+              onClick={() => openFromToast(t.id, t.type, t.senderEmpno)}
             >
               <div style={{
                 width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
@@ -486,30 +523,36 @@ function ChatbotButton({ darkMode = false }) {
         })}
       </div>
 
-      {/* ── DM 발신자 이름 플로팅 pill (👥 버튼 위) ── */}
-      {!anyOpen && !menuOpen && dmUnread > 0 && dmSenders.length > 0 && (
-        <div style={{
-          position: 'fixed', bottom: 84, right: 88,
-          background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-          color: '#fff', borderRadius: 14,
-          padding: '5px 11px',
-          fontSize: '0.72rem', fontWeight: 700,
-          zIndex: 1997, whiteSpace: 'nowrap',
-          boxShadow: '0 3px 12px rgba(124,58,237,0.45)',
-          animation: 'senderPop 0.25s ease',
-          pointerEvents: 'none',
-          display: 'flex', alignItems: 'center', gap: 5,
-        }}>
-          <span>💌</span>
-          <span>{dmSenders[dmSenders.length - 1]}</span>
-          {dmUnread > 1 && (
-            <span style={{
-              background: '#ef4444', borderRadius: 8,
-              padding: '0px 5px', fontSize: '0.65rem',
-            }}>+{dmUnread - 1}</span>
-          )}
-        </div>
-      )}
+      {/* ── DM 발신자 이름 플로팅 pill (👥 버튼 위) — 클릭 시 채팅방 바로이동 ── */}
+      {!anyOpen && !menuOpen && dmUnread > 0 && dmSenders.length > 0 && (() => {
+        const latestSender = dmSenders[dmSenders.length - 1];
+        return (
+          <div
+            onClick={() => openDmChatWithPeer(latestSender)}
+            style={{
+              position: 'fixed', bottom: 84, right: 88,
+              background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+              color: '#fff', borderRadius: 14,
+              padding: '5px 11px',
+              fontSize: '0.72rem', fontWeight: 700,
+              zIndex: 1997, whiteSpace: 'nowrap',
+              boxShadow: '0 3px 12px rgba(124,58,237,0.45)',
+              animation: 'senderPop 0.25s ease',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}
+          >
+            <span>💌</span>
+            <span>{latestSender.ename}</span>
+            {dmUnread > 1 && (
+              <span style={{
+                background: '#ef4444', borderRadius: 8,
+                padding: '0px 5px', fontSize: '0.65rem',
+              }}>+{dmUnread - 1}</span>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── 👥 채팅 플로팅 버튼 ── */}
       <button
