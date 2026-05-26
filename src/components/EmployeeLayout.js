@@ -8,6 +8,7 @@ import LeaveRequestPage from '../pages/LeaveRequestPage';
 import LeaveMgrPage from '../pages/LeaveMgrPage';
 import SharedFolderPage from '../pages/SharedFolderPage';
 import AttendancePage from '../pages/AttendancePage';
+import BoardPage from '../pages/BoardPage';
 import { fetchMgrPending, fetchMyBalance } from '../api/leaveApi';
 
 const MENU = [
@@ -16,6 +17,7 @@ const MENU = [
   { key: 'leave',          icon: '🏖️', label: '연차 신청' },
   { key: 'mgr',            icon: '✅', label: '연차 승인', mgrOnly: true },
   { key: 'leave-approved', icon: '📋', label: '결제 완료 연차' },
+  { key: 'board',          icon: '📌', label: '게시판' },
   { key: 'folder',         icon: '📁', label: '공유 폴더' },
   { key: 'notice',         icon: '📢', label: '공지사항' },
   { key: 'survey',         icon: '📊', label: '설문' },
@@ -192,6 +194,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
           {page === 'mgr'            && <LeaveMgrPage />}
           {page === 'folder'         && <SharedFolderPage isAdmin={false} empno={empno} />}
           {page === 'attendance'     && <AttendancePage user={{ empno, role: role || 'USER', username }} />}
+          {page === 'board'   && <BoardPage empno={empno} darkMode={darkMode} />}
           {page === 'notice'  && <NoticePage isAdmin={false} empno={empno} onNavigateToList={() => navigate('profile')} />}
           {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => navigate('profile')} />}
           {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => navigate('profile')} />}
