@@ -73,3 +73,31 @@
     padding: 12px 10px !important;
   }
 }
+
+/* ── 날씨 위젯 반응형 ── */
+@media (max-width: 480px) {
+  /* 날씨 카드 내부 수치 그리드: 2열 */
+  .db-page-wrap > div:first-of-type div[style*="gap: 20px"],
+  .db-page-wrap > div:first-of-type div[style*="gap: 16px"] {
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+  }
+}
+
+/* ── 출근현황 차트 반응형 ── */
+@media (max-width: 600px) {
+  /* ResponsiveContainer 가 flex item 이 될 때 shrink 방지 */
+  .recharts-responsive-container { min-width: 0 !important; }
+}
+
+/* ── 바로가기 메뉴 버튼 높이 보정 ── */
+@media (max-width: 480px) {
+  .db-menu > * { min-height: 70px !important; font-size: 0.78rem !important; }
+}
+
+/* ── 도넛 차트 2개 가로 → 세로 ── */
+@media (max-width: 600px) {
+  .db-page-wrap > div > div[style*="display: flex"][style*="gap: 20px"] {
+    flex-direction: column !important;
+  }
+}

@@ -4,6 +4,7 @@ import CertificateModal from '../components/CertificateModal';
 import SalarySlipModal from '../components/SalarySlipModal';
 import { fetchEmpById, updateEmp, uploadPhoto } from '../api/empApi';
 import { getKakaoAuthUrl } from '../api/noticeApi';
+import { authFetch } from '../api/apiClient';
 import '../styles/MyProfilePage.css';
 import '../styles/Button.css';
 
@@ -50,6 +51,7 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
   const [saving,   setSaving]   = useState(false);
   const [showCert, setShowCert] = useState(false);  // 재직증명서
   const [showSlip, setShowSlip] = useState(false);  // 급여명세서
+  const [weather,  setWeather]  = useState(null);   // 날씨
 
   const load = useCallback(() => {
     setLoading(true);
@@ -60,6 +62,14 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
   }, [empno]);
 
   useEffect(() => { load(); }, [load]);
+
+  // 날씨 조회
+  useEffect(() => {
+    authFetch('/api/weather/today?nx=60&ny=127')
+      .then(r => r.json())
+      .then(data => { if (!data.error) setWeather(data); })
+      .catch(() => {});
+  }, []);
 
   const handleSave = async (formData) => {
     const { _photoFile, ...empData } = formData;
@@ -91,6 +101,67 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
       <div className="my-profile-header">
         <h1>내 프로필</h1>
       </div>
+
+      {/* ── 날씨 위젯 ── */}
+      {weather && (
+        <div style={{ marginBottom: 16 }}>
+
+          {/* 재택 추천 배너 */}
+          {weather.wfh && (
+            <div style={{
+              background: 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)',
+              border: '1.5px solid #f59e0b',
+              borderRadius: 12, padding: '11px 18px', marginBottom: 10,
+              display: 'flex', alignItems: 'center', gap: 12,
+              boxShadow: '0 2px 12px rgba(245,158,11,0.18)',
+            }}>
+              <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>🏠</span>
+              <div>
+                <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.92rem' }}>
+                  ☔ 오늘은 재택근무를 추천합니다!
+                </div>
+                <div style={{ fontSize: '0.76rem', color: '#b45309', marginTop: 2 }}>
+                  {weather.wfhReasons?.join(' · ')} 로 인한 악천후
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 날씨 카드 */}
+          <div style={{
+            background: 'linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%)',
+            border: '1.5px solid #bfdbfe',
+            borderRadius: 12, padding: '12px 20px',
+            display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+          }}>
+            <span style={{ fontSize: '2.2rem', lineHeight: 1, flexShrink: 0 }}>{weather.icon}</span>
+            <div style={{ flexShrink: 0 }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>
+                {weather.tmp}°C
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 3 }}>
+                {weather.skyText}{weather.pty > 0 ? ` · ${weather.ptyText}` : ''}
+              </div>
+            </div>
+            <div style={{ width: 1, height: 36, background: '#c7d2fe', flexShrink: 0 }} />
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', flex: 1 }}>
+              {[
+                { label: '강수확률', value: `${weather.maxPop}%`, color: '#2563eb' },
+                { label: '습도',     value: `${weather.reh}%`,    color: '#0891b2' },
+                { label: '풍속',     value: `${weather.wsd}m/s`,  color: '#0f766e' },
+              ].map(item => (
+                <div key={item.label} style={{ textAlign: 'center', minWidth: 48 }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: item.color }}>{item.value}</div>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: 1 }}>{item.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginLeft: 'auto', fontSize: '0.68rem', color: '#94a3b8', textAlign: 'right', flexShrink: 0 }}>
+              📡 기상청 단기예보
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="my-profile-card">
         {/* 상단 배너: 사진 + 이름 */}

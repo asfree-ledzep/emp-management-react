@@ -1,0 +1,761 @@
+/* ═══════════════════════════════════════════════
+   사내 쪽지함 스타일
+   ═══════════════════════════════════════════════ */
+
+.msg-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 44px);
+  background: var(--bg, #f3f4f6);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── 헤더 ── */
+.msg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.dark .msg-header { background: #1f2937; border-color: #374151; }
+
+.msg-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+.dark .msg-header-title { color: #f9fafb; }
+
+.msg-unread-badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.msg-compose-btn {
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.msg-compose-btn:hover { background: #4338ca; }
+
+/* ── 본문 3-패널 ── */
+.msg-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── 사이드바 ── */
+.msg-sidebar {
+  width: 160px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dark .msg-sidebar { background: #1f2937; border-color: #374151; }
+
+.msg-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  border-left: 3px solid transparent;
+  transition: all 0.15s;
+  position: relative;
+}
+.dark .msg-tab-btn { color: #d1d5db; }
+.msg-tab-btn:hover { background: #f3f4f6; }
+.dark .msg-tab-btn:hover { background: #374151; }
+.msg-tab-btn.active {
+  background: #ede9fe;
+  color: #4f46e5;
+  font-weight: 700;
+  border-left-color: #4f46e5;
+}
+.dark .msg-tab-btn.active { background: #1e1b4b; color: #a5b4fc; border-left-color: #a5b4fc; }
+
+.msg-tab-badge {
+  margin-left: auto;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 1px 6px;
+}
+
+/* ── 목록 패널 ── */
+.msg-list-panel {
+  width: 340px;
+  flex-shrink: 0;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  overflow: hidden;
+}
+.dark .msg-list-panel { background: #1f2937; border-color: #374151; }
+
+.msg-search-wrap {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.dark .msg-search-wrap { border-color: #374151; }
+
+.msg-search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+  background: #f9fafb;
+  color: #111827;
+}
+.dark .msg-search-input {
+  background: #374151; border-color: #4b5563; color: #f9fafb;
+}
+.msg-search-input:focus { outline: none; border-color: #4f46e5; }
+
+.msg-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 20px;
+}
+
+.msg-detail-empty {
+  height: 100%;
+}
+
+.msg-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.msg-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
+}
+.dark .msg-item { border-color: #374151; }
+.msg-item:hover { background: #f9fafb; }
+.dark .msg-item:hover { background: #374151; }
+.msg-item.selected { background: #ede9fe; }
+.dark .msg-item.selected { background: #2e1d6e; }
+.msg-item.unread { background: #faf5ff; }
+.dark .msg-item.unread { background: #1e1b4b; }
+
+/* 아바타 */
+.msg-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.msg-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.msg-item-body { flex: 1; min-width: 0; }
+
+.msg-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 3px;
+}
+
+.msg-item-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111827;
+}
+.dark .msg-item-name { color: #f9fafb; }
+
+.msg-item-date {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.msg-item-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dark .msg-item-title { color: #d1d5db; }
+
+.msg-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4f46e5;
+  flex-shrink: 0;
+}
+
+.msg-item-preview {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.msg-item-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+
+.msg-attach-icon { color: #6b7280; }
+.msg-read-mark   { color: #10b981; font-size: 0.85rem; }
+
+.msg-item-del {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #d1d5db;
+  font-size: 0.8rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.msg-item:hover .msg-item-del { opacity: 1; }
+.msg-item-del:hover { color: #ef4444; background: #fef2f2; }
+
+/* ── 상세 패널 ── */
+.msg-detail-panel {
+  flex: 1;
+  overflow-y: auto;
+  background: #fff;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dark .msg-detail-panel { background: #111827; }
+
+.msg-back-btn {
+  display: none; /* 데스크톱 숨김 */
+  padding: 10px 16px;
+  border: none;
+  background: #f3f4f6;
+  color: #4f46e5;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+.dark .msg-back-btn { background: #1f2937; color: #a5b4fc; border-color: #374151; }
+
+.msg-detail {
+  padding: 28px 32px;
+  flex: 1;
+}
+
+.msg-detail-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 20px;
+  line-height: 1.4;
+  border-bottom: 2px solid #ede9fe;
+  padding-bottom: 14px;
+}
+.dark .msg-detail-title { color: #f9fafb; border-color: #374151; }
+
+.msg-detail-meta {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dark .msg-detail-meta { background: #1f2937; }
+
+.msg-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.88rem;
+}
+
+.msg-meta-label {
+  color: #6b7280;
+  font-weight: 600;
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.msg-meta-val {
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dark .msg-meta-val { color: #d1d5db; }
+
+.msg-meta-sub { color: #9ca3af; font-size: 0.8rem; }
+.msg-meta-photo {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.msg-read-time { color: #10b981; }
+
+.msg-detail-content {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 20px 22px;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #374151;
+  min-height: 120px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.dark .msg-detail-content { background: #1f2937; border-color: #374151; color: #d1d5db; }
+
+/* ── 첨부파일 ── */
+.msg-attachments {
+  margin-top: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.dark .msg-attachments { border-color: #374151; }
+
+.msg-attach-title {
+  padding: 10px 14px;
+  background: #f3f4f6;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+.dark .msg-attach-title { background: #1f2937; color: #d1d5db; border-color: #374151; }
+
+.msg-attach-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.msg-attach-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.dark .msg-attach-item { border-color: #374151; }
+.msg-attach-item:last-child { border-bottom: none; }
+
+.msg-attach-icon-lg { font-size: 1.4rem; }
+
+.msg-attach-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.msg-attach-name {
+  font-size: 0.88rem;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dark .msg-attach-name { color: #f9fafb; }
+
+.msg-attach-size { font-size: 0.75rem; color: #9ca3af; }
+
+.msg-download-btn {
+  padding: 5px 12px;
+  background: #4f46e5;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.msg-download-btn:hover { background: #4338ca; }
+
+/* ── 액션 버튼 ── */
+.msg-detail-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.msg-action-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.msg-action-btn.primary { background: #4f46e5; color: #fff; }
+.msg-action-btn.primary:hover { background: #4338ca; }
+.msg-action-btn.danger  { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+.msg-action-btn.danger:hover { background: #fee2e2; }
+
+/* ══ 쪽지 쓰기 모달 ══════════════════════════════════════ */
+.msg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.msg-compose {
+  background: #fff;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+}
+.dark .msg-compose { background: #1f2937; }
+
+.msg-compose-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+.dark .msg-compose-header { border-color: #374151; color: #f9fafb; }
+
+.msg-compose-close {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.msg-compose-close:hover { background: #f3f4f6; }
+
+.msg-field {
+  padding: 14px 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.msg-field-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.msg-input, .msg-textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  color: #111827;
+  background: #f9fafb;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.dark .msg-input, .dark .msg-textarea {
+  background: #374151; border-color: #4b5563; color: #f9fafb;
+}
+.msg-input:focus, .msg-textarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+  background: #fff;
+}
+.dark .msg-input:focus, .dark .msg-textarea:focus { background: #1f2937; }
+.msg-textarea { resize: vertical; min-height: 120px; }
+
+/* 받는 사람 선택 */
+.msg-receiver-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 0.92rem;
+  color: #111827;
+  min-height: 42px;
+}
+.dark .msg-receiver-input { background: #374151; border-color: #4b5563; color: #f9fafb; }
+
+.msg-emp-drop {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  z-index: 200;
+  overflow: hidden;
+}
+.dark .msg-emp-drop { background: #1f2937; border-color: #374151; }
+
+.msg-emp-search {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.88rem;
+  box-sizing: border-box;
+  background: #f9fafb;
+  color: #111827;
+}
+.dark .msg-emp-search { background: #374151; border-color: #4b5563; color: #f9fafb; }
+.msg-emp-search:focus { outline: none; }
+
+.msg-emp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.msg-emp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 0.88rem;
+  color: #111827;
+}
+.dark .msg-emp-item { color: #d1d5db; }
+.msg-emp-item:hover { background: #f3f4f6; }
+.dark .msg-emp-item:hover { background: #374151; }
+
+.msg-emp-photo {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.msg-emp-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* 첨부파일 선택 */
+.msg-file-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.msg-file-btn {
+  align-self: flex-start;
+  padding: 8px 14px;
+  background: #f3f4f6;
+  border: 1px dashed #9ca3af;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.15s;
+}
+.dark .msg-file-btn { background: #374151; color: #d1d5db; border-color: #6b7280; }
+.msg-file-btn:hover { background: #e5e7eb; }
+
+.msg-selected-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.msg-selected-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  color: #374151;
+}
+.dark .msg-selected-file { background: #374151; color: #d1d5db; }
+.msg-selected-file span:first-child { flex: 1; }
+
+.msg-file-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 0.8rem;
+  padding: 2px 4px;
+}
+
+.msg-compose-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 22px 20px;
+  border-top: 1px solid #f3f4f6;
+  margin-top: 16px;
+}
+.dark .msg-compose-footer { border-color: #374151; }
+
+.msg-cancel-btn {
+  padding: 10px 20px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #374151;
+}
+.dark .msg-cancel-btn { background: #374151; color: #d1d5db; }
+
+.msg-send-btn {
+  padding: 10px 24px;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.msg-send-btn:hover:not(:disabled) { background: #4338ca; }
+.msg-send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ═══ 반응형 ═════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .msg-sidebar { width: 120px; }
+  .msg-list-panel { width: 280px; }
+  .msg-detail { padding: 16px; }
+}
+
+@media (max-width: 600px) {
+  .msg-sidebar { display: none; } /* 사이드바 숨기고 탭 헤더로 대체 */
+  .msg-list-panel {
+    width: 100%;
+    border-right: none;
+  }
+  .msg-list-panel.mobile-hidden,
+  .msg-detail-panel.mobile-hidden { display: none; }
+  .msg-back-btn { display: block; }
+  .msg-detail-panel { width: 100%; }
+  .msg-detail { padding: 14px 16px; }
+  .msg-header { padding: 12px 16px; }
+  .msg-compose { max-height: 100vh; border-radius: 0; }
+  .msg-compose-btn { padding: 7px 12px; font-size: 0.82rem; }
+  .msg-header-title { font-size: 1rem; }
+}

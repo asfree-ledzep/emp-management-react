@@ -11,3 +11,33 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* ── 전역 반응형 헬퍼 ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* 이미지·미디어 최대 너비 */
+img, video { max-width: 100%; height: auto; }
+
+/* 테이블 가로 스크롤 전역 보장 */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* 모바일에서 긴 단어 줄바꿈 */
+@media (max-width: 768px) {
+  body { word-break: keep-all; overflow-wrap: break-word; }
+
+  /* 인라인 스타일로 고정 padding 을 쓰는 어드민 페이지 공통 보정 */
+  .App > div:not(.app-topbar) {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* 버튼 최소 터치 영역 보장 */
+  button { min-height: 36px; }
+
+  /* 인풋 줌 방지 (iOS Safari) */
+  input, select, textarea { font-size: 16px !important; }
+}
+
+@media (max-width: 480px) {
+  input, select, textarea { font-size: 16px !important; }
+}

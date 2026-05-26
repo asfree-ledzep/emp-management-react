@@ -9,7 +9,9 @@ import LeaveMgrPage from '../pages/LeaveMgrPage';
 import SharedFolderPage from '../pages/SharedFolderPage';
 import AttendancePage from '../pages/AttendancePage';
 import BoardPage from '../pages/BoardPage';
+import MessagePage from '../pages/MessagePage';
 import { fetchMgrPending, fetchMyBalance } from '../api/leaveApi';
+import { authFetch } from '../api/apiClient';
 
 const MENU = [
   { key: 'profile',        icon: '👤', label: '내 프로필' },
@@ -18,6 +20,7 @@ const MENU = [
   { key: 'mgr',            icon: '✅', label: '연차 승인', mgrOnly: true },
   { key: 'leave-approved', icon: '📋', label: '결제 완료 연차' },
   { key: 'board',          icon: '📌', label: '게시판' },
+  { key: 'message',        icon: '✉️', label: '쪽지함' },
   { key: 'folder',         icon: '📁', label: '공유 폴더' },
   { key: 'notice',         icon: '📢', label: '공지사항' },
   { key: 'survey',         icon: '📊', label: '설문' },
@@ -29,12 +32,26 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
   const [mgrPendingCount, setMgrPendingCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [balance, setBalance] = useState(null);
+  const [unreadMsg, setUnreadMsg] = useState(0);
 
   // 잔여 연차 조회
   useEffect(() => {
     fetchMyBalance()
       .then(setBalance)
       .catch(() => {});
+  }, []);
+
+  // 미읽음 쪽지 수 폴링
+  useEffect(() => {
+    const checkUnread = () => {
+      authFetch('/api/msg/unread-count')
+        .then(r => r.ok ? r.json() : { count: 0 })
+        .then(d => setUnreadMsg(d.count || 0))
+        .catch(() => {});
+    };
+    checkUnread();
+    const t = setInterval(checkUnread, 30000);
+    return () => clearInterval(t);
   }, []);
 
   // MGR 승인 대기 건수 주기적으로 체크
@@ -156,6 +173,15 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>{mgrPendingCount > 9 ? '9+' : mgrPendingCount}</span>
                 )}
+                {item.key === 'message' && unreadMsg > 0 && (
+                  <span style={{
+                    position: 'absolute', right: 14,
+                    background: '#ef4444', color: '#fff',
+                    fontSize: '0.7rem', fontWeight: 700,
+                    borderRadius: '9999px', padding: '1px 5px', minWidth: 18, height: 18,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{unreadMsg > 99 ? '99+' : unreadMsg}</span>
+                )}
               </button>
             );
           })}
@@ -195,8 +221,9 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
           {page === 'mgr'            && <LeaveMgrPage />}
           {page === 'folder'         && <SharedFolderPage isAdmin={false} empno={empno} />}
           {page === 'attendance'     && <AttendancePage user={{ empno, role: role || 'USER', username }} />}
-          {page === 'board'   && <BoardPage empno={empno} darkMode={darkMode} />}
-          {page === 'notice'  && <NoticePage isAdmin={false} empno={empno} onNavigateToList={() => navigate('profile')} />}
+          {page === 'board'    && <BoardPage empno={empno} darkMode={darkMode} />}
+          {page === 'message'  && <MessagePage empno={empno} darkMode={darkMode} />}
+          {page === 'notice'   && <NoticePage isAdmin={false} empno={empno} onNavigateToList={() => navigate('profile')} />}
           {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => navigate('profile')} />}
           {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => navigate('profile')} />}
         </div>

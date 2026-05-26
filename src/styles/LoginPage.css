@@ -125,3 +125,19 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── 반응형: 태블릿 (≤ 480px) ── */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 32px 22px;
+    border-radius: 12px;
+  }
+  .login-logo h1 { font-size: 1.2rem; }
+  .login-logo-icon { font-size: 2.2rem; }
+}
+
+@media (max-width: 360px) {
+  .login-card {
+    padding: 24px 16px;
+  }
+}

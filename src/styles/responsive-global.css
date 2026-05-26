@@ -1,0 +1,176 @@
+/*
+ * ─────────────────────────────────────────
+ *  전역 반응형 보정 (모든 페이지 공통 적용)
+ *  인라인 스타일로 작성된 페이지들의 모바일 대응
+ * ─────────────────────────────────────────
+ */
+
+/* ── 1. 테이블: 항상 가로 스크롤 가능하게 ── */
+table {
+  min-width: 0;
+}
+div:has(> table),
+div > table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+  max-width: 100%;
+}
+
+/* ── 2. 태블릿 공통 (≤ 768px) ── */
+@media (max-width: 768px) {
+  /* 어드민 페이지 래퍼 패딩 통일 */
+  .emp-list-page,
+  .chart-page {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  /* 모달 너비 100% */
+  .modal-container {
+    width: 95vw !important;
+    max-width: 95vw !important;
+  }
+}
+
+/* ── 3. 모바일 공통 (≤ 480px) ── */
+@media (max-width: 480px) {
+
+  /* 상단바: 사용자 이름 숨김 최소화 */
+  .app-topbar { height: 48px; }
+
+  /* 모달: 하단 시트 */
+  .modal-overlay  { align-items: flex-end !important; padding: 0 !important; }
+  .modal-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 92vh !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* 폼 행: 수직 스택 */
+  .form-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+  .form-row label { width: auto !important; }
+  .form-row input,
+  .form-row select { width: 100% !important; }
+
+  /* 상세보기 2열 → 1열 */
+  .detail-grid { grid-template-columns: 1fr !important; }
+
+  /* 버튼 그룹: 전체 너비 */
+  .modal-footer {
+    flex-direction: column-reverse !important;
+  }
+  .modal-footer .btn { width: 100% !important; }
+
+  /* 테이블 폰트 축소 */
+  table th,
+  table td {
+    padding: 8px 8px !important;
+    font-size: 0.78rem !important;
+    white-space: nowrap;
+  }
+
+  /* 페이지 제목 */
+  h1 { font-size: 1.25rem !important; }
+  h2 { font-size: 1.05rem !important; }
+  h3 { font-size: 0.95rem !important; }
+}
+
+/* ── 4. 초소형 (≤ 360px) ── */
+@media (max-width: 360px) {
+  table th,
+  table td {
+    font-size: 0.7rem !important;
+    padding: 6px 6px !important;
+  }
+}
+
+/* ─────────────────────────────────────────
+   인라인-스타일 페이지별 보정
+   (padding/gap/flex-direction)
+   ───────────────────────────────────────── */
+
+/* ── 공지사항 / 설문 / FAQ / 공휴일 등 공통 래퍼 ── */
+@media (max-width: 768px) {
+  /* 인라인 padding: 32px 등을 탭 헤더, 리스트 공통으로 줄임 */
+  [style*="padding: 24px"],
+  [style*="padding: 28px"],
+  [style*="padding: 32px"] {
+    padding: 16px !important;
+  }
+
+  [style*="padding: '24px'"],
+  [style*="padding: '28px'"],
+  [style*="padding: '32px'"] {
+    padding: 16px !important;
+  }
+
+  /* 컬럼 flex → wrap */
+  [style*="display: flex"][style*="gap: 20px"],
+  [style*="display: flex"][style*="gap: 24px"] {
+    flex-wrap: wrap !important;
+  }
+}
+
+@media (max-width: 480px) {
+  [style*="padding: 16px"],
+  [style*="padding: 20px"] {
+    padding: 12px !important;
+  }
+
+  /* 버튼 행: wrap */
+  [style*="display: flex"][style*="gap: 8px"],
+  [style*="display: flex"][style*="gap: 10px"],
+  [style*="display: flex"][style*="gap: 12px"] {
+    flex-wrap: wrap !important;
+  }
+}
+
+/* ── 출근 기록 / 연차 관리 테이블 래퍼 ── */
+@media (max-width: 768px) {
+  /* 인라인 overflowX 없는 테이블 래퍼에 스크롤 강제 */
+  div > table {
+    min-width: 540px;
+  }
+}
+
+/* ── QR 코드 표시 ── */
+@media (max-width: 480px) {
+  /* QR 캔버스/이미지 최대 너비 */
+  canvas, svg[style*="width"] {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}
+
+/* ── 조직도: 가로 스크롤 ── */
+.oc-viewport {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── 게시판 ── */
+@media (max-width: 480px) {
+  /* 탭 버튼 wrap */
+  [style*="display: flex"][style*="borderBottom"] {
+    flex-wrap: wrap;
+  }
+}
+
+/* ─── 사원 프로필 날씨 위젯 반응형 ─── */
+@media (max-width: 480px) {
+  .my-profile-page [style*="display: flex"][style*="alignItems: center"] {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+}

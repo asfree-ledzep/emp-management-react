@@ -65,6 +65,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const [trendData,      setTrendData]      = useState([]);
   const [kakaoCount,     setKakaoCount]     = useState(0);
   const [todayAttend,    setTodayAttend]    = useState([]);  // 당일 출근 현황
+  const [weather,        setWeather]        = useState(null); // 날씨 정보
   const [loading,        setLoading]        = useState(true);
 
   // 카카오 연동 현황 모달
@@ -100,7 +101,8 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
       ),
       fetchKakaoConnectedCount().catch(() => ({ count: 0 })),
       authFetch('/api/attendance/today').then(r => r.json()).catch(() => []),
-    ]).then(([e, ex, lv, s, n, trend, kakao, todayArr]) => {
+      authFetch('/api/weather/today?nx=60&ny=127').then(r => r.json()).then(d => { if(d.error) console.warn('[날씨]', d); return d; }).catch(err => { console.warn('[날씨 fetch 실패]', err); return null; }),
+    ]).then(([e, ex, lv, s, n, trend, kakao, todayArr, wx]) => {
       setEmps(e);
       setExpenses(ex);
       setAllLeaves(Array.isArray(lv) ? lv : []);
@@ -109,6 +111,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
       setTrendData(trend);
       setKakaoCount(kakao.count ?? 0);
       setTodayAttend(Array.isArray(todayArr) ? todayArr : []);
+      if (wx && !wx.error) setWeather(wx);
       setLoading(false);
     });
   }, []);
@@ -291,6 +294,84 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
         </h2>
         <p style={{ margin: '6px 0 0', color: C.textMuted, fontSize: '0.9rem' }}>{todayStr}</p>
       </div>
+
+      {/* ── 날씨 위젯 ── */}
+      {weather && (
+        <div style={{ marginBottom: 20 }}>
+
+          {/* 재택 추천 배너 */}
+          {weather.wfh && (
+            <div style={{
+              background: 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)',
+              border: '1.5px solid #f59e0b',
+              borderRadius: 12, padding: '12px 20px', marginBottom: 10,
+              display: 'flex', alignItems: 'center', gap: 12,
+              boxShadow: '0 2px 12px rgba(245,158,11,0.18)',
+            }}>
+              <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>🏠</span>
+              <div>
+                <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.95rem' }}>
+                  ☔ 오늘은 재택근무를 추천합니다!
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#b45309', marginTop: 3 }}>
+                  {weather.wfhReasons?.join(' · ')} 로 인한 악천후
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 날씨 정보 카드 */}
+          <div style={{
+            background: dk
+              ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
+              : 'linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%)',
+            border: `1.5px solid ${dk ? '#334155' : '#bfdbfe'}`,
+            borderRadius: 12, padding: '12px 16px',
+            display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+          }}>
+            {/* 아이콘 + 기온 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <span style={{ fontSize: '2.2rem', lineHeight: 1 }}>{weather.icon}</span>
+              <div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 800, color: C.textDark, lineHeight: 1 }}>
+                  {weather.tmp}°C
+                </div>
+                <div style={{ fontSize: '0.75rem', color: C.textMuted, marginTop: 3 }}>
+                  {weather.skyText}{weather.pty > 0 ? ` · ${weather.ptyText}` : ''}
+                </div>
+              </div>
+            </div>
+
+            {/* 구분선 (모바일에서 숨김) */}
+            <div style={{ width: 1, height: 36, background: dk ? '#334155' : '#c7d2fe', flexShrink: 0 }} />
+
+            {/* 수치 항목 */}
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', flex: 1 }}>
+              {[
+                { label: '강수확률', value: `${weather.maxPop}%`, color: '#2563eb' },
+                { label: '현재 강수', value: `${weather.pop}%`,   color: '#3b82f6' },
+                { label: '습도',     value: `${weather.reh}%`,    color: '#0891b2' },
+                { label: '풍속',     value: `${weather.wsd}m/s`,  color: '#0f766e' },
+              ].map(item => (
+                <div key={item.label} style={{ textAlign: 'center', minWidth: 48 }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: item.color }}>
+                    {item.value}
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: C.textMuted, marginTop: 2 }}>
+                    {item.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 기준 시각 */}
+            <div style={{ marginLeft: 'auto', fontSize: '0.7rem', color: C.textMuted, textAlign: 'right', flexShrink: 0 }}>
+              <div>📡 기상청 단기예보</div>
+              <div style={{ marginTop: 2 }}>{weather.baseTime} 기준</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── 요약 카드 ── */}
       <div className="db-cards" style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>

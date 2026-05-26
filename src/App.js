@@ -1,5 +1,6 @@
 import './App.css';
 import './styles/dark.css';
+import './styles/responsive-global.css';
 import { useState, useEffect } from 'react';
 import EmpListPage    from './pages/EmpListPage';
 import SalaryChartPage from './pages/SalaryChartPage';
