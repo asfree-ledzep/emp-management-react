@@ -279,6 +279,7 @@ function ChatbotButton({ darkMode = false }) {
   const [menuOpen,     setMenuOpen]     = useState(false); // 채팅 선택 메뉴
   const [chatUnread,   setChatUnread]   = useState(0);
   const [dmUnread,     setDmUnread]     = useState(0);
+  const [dmSenders,    setDmSenders]    = useState([]); // 미확인 DM 발신자 이름 목록
   const [toasts,       setToasts]       = useState([]);
   const dk = darkMode;
 
@@ -310,6 +311,12 @@ function ChatbotButton({ darkMode = false }) {
   const handleDmUnread = useCallback((msg) => {
     if (dmOpenRef.current) return;
     setDmUnread(n => n + 1);
+    // 발신자 이름 중복 없이 누적 (최대 3명)
+    setDmSenders(prev =>
+      prev.includes(msg.senderName)
+        ? prev
+        : [...prev, msg.senderName].slice(-3)
+    );
     addToast({ senderName: msg.senderName, content: msg.content, sentAt: msg.sentAt }, 'dm');
   }, [addToast]);
 
@@ -317,7 +324,7 @@ function ChatbotButton({ darkMode = false }) {
   const openFromToast = (id, type) => {
     dismissToast(id);
     if (type === 'team') { setChatOpen(true); setChatUnread(0); setMenuOpen(false); }
-    else                 { setDmOpen(true);   setDmUnread(0);   setMenuOpen(false); }
+    else                 { setDmOpen(true); setDmUnread(0); setDmSenders([]); setMenuOpen(false); }
   };
 
   /* ── 👥 버튼 클릭 ── */
@@ -328,7 +335,7 @@ function ChatbotButton({ darkMode = false }) {
   };
 
   const openTeamChat = () => { setMenuOpen(false); setChatOpen(true); setChatUnread(0); };
-  const openDmChat   = () => { setMenuOpen(false); setDmOpen(true);   setDmUnread(0);  };
+  const openDmChat   = () => { setMenuOpen(false); setDmOpen(true); setDmUnread(0); setDmSenders([]); };
 
   const anyOpen = chatOpen || dmOpen;
 
@@ -393,11 +400,26 @@ function ChatbotButton({ darkMode = false }) {
             color: '#7c3aed', cursor: 'pointer', fontWeight: 700,
             fontSize: '0.85rem', textAlign: 'left',
           }}>
-            <span style={{ fontSize: '1.1rem' }}>💌</span> 1:1 채팅
+            <span style={{ fontSize: '1.1rem' }}>💌</span>
+            <div style={{ flex: 1 }}>
+              <div>1:1 채팅</div>
+              {/* 발신자 이름 표시 */}
+              {dmSenders.length > 0 && (
+                <div style={{
+                  fontSize: '0.7rem', fontWeight: 600,
+                  color: dk ? '#c4b5fd' : '#7c3aed',
+                  marginTop: 1, opacity: 0.85,
+                }}>
+                  {dmSenders.join(', ')}
+                  {dmUnread > dmSenders.length ? ` 외 ${dmUnread - dmSenders.length}건` : ''}
+                </div>
+              )}
+            </div>
             {dmUnread > 0 && (
               <span style={{
                 marginLeft: 'auto', background: '#ef4444', color: '#fff',
                 borderRadius: 10, padding: '1px 7px', fontSize: '0.7rem', fontWeight: 700,
+                flexShrink: 0,
               }}>{dmUnread}</span>
             )}
           </button>
@@ -464,6 +486,31 @@ function ChatbotButton({ darkMode = false }) {
         })}
       </div>
 
+      {/* ── DM 발신자 이름 플로팅 pill (👥 버튼 위) ── */}
+      {!anyOpen && !menuOpen && dmUnread > 0 && dmSenders.length > 0 && (
+        <div style={{
+          position: 'fixed', bottom: 84, right: 88,
+          background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+          color: '#fff', borderRadius: 14,
+          padding: '5px 11px',
+          fontSize: '0.72rem', fontWeight: 700,
+          zIndex: 1997, whiteSpace: 'nowrap',
+          boxShadow: '0 3px 12px rgba(124,58,237,0.45)',
+          animation: 'senderPop 0.25s ease',
+          pointerEvents: 'none',
+          display: 'flex', alignItems: 'center', gap: 5,
+        }}>
+          <span>💌</span>
+          <span>{dmSenders[dmSenders.length - 1]}</span>
+          {dmUnread > 1 && (
+            <span style={{
+              background: '#ef4444', borderRadius: 8,
+              padding: '0px 5px', fontSize: '0.65rem',
+            }}>+{dmUnread - 1}</span>
+          )}
+        </div>
+      )}
+
       {/* ── 👥 채팅 플로팅 버튼 ── */}
       <button
         onClick={handleGroupClick}
@@ -528,6 +575,10 @@ function ChatbotButton({ darkMode = false }) {
         }
         @keyframes menuPop {
           from { opacity: 0; transform: translateY(8px) scale(0.96); }
+          to   { opacity: 1; transform: translateY(0)  scale(1); }
+        }
+        @keyframes senderPop {
+          from { opacity: 0; transform: translateY(6px) scale(0.92); }
           to   { opacity: 1; transform: translateY(0)  scale(1); }
         }
       `}</style>
