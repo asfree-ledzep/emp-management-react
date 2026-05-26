@@ -15,11 +15,12 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
   const myEmpno = sessionStorage.getItem('empno');   // null → 관리자
   const myName  = sessionStorage.getItem('username') || '알 수 없음';
 
-  const [screen,      setScreen]      = useState('search');
-  const [query,       setQuery]       = useState('');
-  const [results,     setResults]     = useState([]);
-  const [searching,   setSearching]   = useState(false);
-  const [sessionErr,  setSessionErr]  = useState(false); // 401 세션 만료
+  const [screen,        setScreen]        = useState('search');
+  const [query,         setQuery]         = useState('');
+  const [results,       setResults]       = useState([]);
+  const [partnerEmpnos, setPartnerEmpnos] = useState([]); // 대화 이력 있는 상대 사번 (최근 순)
+  const [searching,     setSearching]     = useState(false);
+  const [sessionErr,    setSessionErr]    = useState(false); // 401 세션 만료
   const [peer,        setPeer]        = useState(null);  // { empno, ename, job, photoUrl }
   const [messages,    setMessages]    = useState([]);
   const [input,       setInput]       = useState('');
@@ -82,28 +83,43 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
     return () => client.deactivate();
   }, []); // eslint-disable-line
 
-  /* ── 직원 검색 ── */
+  /* ── 직원 검색 + 대화 파트너 조회 (병렬) ── */
   const doSearch = useCallback(async (name) => {
     if (!myEmpno) return;
     setSearching(true);
     setSessionErr(false);
     try {
-      // noAutoLogout: true → 서버 401 수신 시 전역 로그아웃 안 함; 여기서 직접 처리
-      const res = await authFetch(
-        `/api/employees/search?name=${encodeURIComponent(name ?? query)}`,
-        { noAutoLogout: true },
-      );
-      if (res.status === 401) {
-        // 세션 만료 UI 표시 (강제 로그아웃 안 함 → 사용자가 확인 후 재로그인 선택)
+      // 직원 검색 + 파트너 목록 동시 요청
+      const [empRes, partnerRes] = await Promise.all([
+        authFetch(
+          `/api/employees/search?name=${encodeURIComponent(name ?? query)}`,
+          { noAutoLogout: true },
+        ),
+        authFetch(`/api/dm/partners?myEmpno=${myEmpno}`, { noAutoLogout: true }),
+      ]);
+
+      if (empRes.status === 401) {
         setSessionErr(true);
         setResults([]);
         setSearching(false);
         return;
       }
-      const data = await res.json();
-      setResults(Array.isArray(data)
-        ? data.filter(e => e.empno !== Number(myEmpno))
-        : []);
+
+      const empData     = await empRes.json();
+      const partnerData = partnerRes.ok ? await partnerRes.json() : [];
+      const partners    = Array.isArray(partnerData) ? partnerData.map(Number) : [];
+      setPartnerEmpnos(partners);
+
+      const emps = Array.isArray(empData)
+        ? empData.filter(e => e.empno !== Number(myEmpno))
+        : [];
+
+      // 대화 이력 있는 사원 → 상단 (최근 순 유지), 나머지 → 이름 가나다순
+      const withHistory    = partners
+        .map(pno => emps.find(e => e.empno === pno))
+        .filter(Boolean);
+      const withoutHistory = emps.filter(e => !partners.includes(e.empno));
+      setResults([...withHistory, ...withoutHistory]);
     } catch { setResults([]); }
     setSearching(false);
   }, [query, myEmpno]);
@@ -339,18 +355,23 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
                   검색 결과가 없습니다.
                 </div>
               )}
-              {myEmpno && !sessionErr && !searching && results.map(emp => (
+              {myEmpno && !sessionErr && !searching && results.map(emp => {
+                const isPartner = partnerEmpnos.includes(emp.empno);
+                return (
                 <div
                   key={emp.empno}
                   onClick={() => selectPeer(emp)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '10px 12px', borderRadius: 12,
-                    background: C.cardBg, border: `1px solid ${C.cardBrd}`,
+                    background: isPartner
+                      ? (dk ? '#1a1040' : '#faf5ff')
+                      : C.cardBg,
+                    border: `1px solid ${isPartner ? '#7c3aed44' : C.cardBrd}`,
                     cursor: 'pointer', marginBottom: 6,
                     transition: 'box-shadow 0.15s, transform 0.15s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.15)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.2)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   {/* 프로필 이미지 */}
@@ -360,7 +381,9 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
                   ) : (
                     <div style={{
                       width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
-                      background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                      background: isPartner
+                        ? 'linear-gradient(135deg, #7c3aed, #4f46e5)'
+                        : 'linear-gradient(135deg, #94a3b8, #64748b)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: '#fff', fontWeight: 700, fontSize: '1rem',
                     }}>
@@ -368,8 +391,19 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: C.txtMain }}>
-                      {emp.ename}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.88rem', color: C.txtMain }}>
+                        {emp.ename}
+                      </span>
+                      {/* 대화중 pill */}
+                      {isPartner && (
+                        <span style={{
+                          background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                          color: '#fff', borderRadius: 10,
+                          padding: '1px 7px', fontSize: '0.65rem', fontWeight: 700,
+                          letterSpacing: 0.3, flexShrink: 0,
+                        }}>대화중</span>
+                      )}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: C.txtSub, marginTop: 2 }}>
                       {emp.job || '직책 없음'} · 사번 {emp.empno}
@@ -377,7 +411,8 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
                   </div>
                   <span style={{ color: '#7c3aed', fontSize: '1.1rem', flexShrink: 0 }}>→</span>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
