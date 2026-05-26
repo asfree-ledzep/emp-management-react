@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { searchFaq, fetchHolidaysByMonth } from '../api/faqApi';
+import GlobalChatModal  from './GlobalChatModal';
 import TeamChatModal    from './TeamChatModal';
 import DirectChatModal  from './DirectChatModal';
 
@@ -271,12 +272,14 @@ function ChatbotModal({ onClose, darkMode = false }) {
   );
 }
 
-/* ── 플로팅 버튼 + 챗봇 + 팀채팅 + 1:1 DM 통합 컴포넌트 ── */
+/* ── 플로팅 버튼 + 챗봇 + 전체채팅 + 부서채팅 + 1:1 DM 통합 컴포넌트 ── */
 function ChatbotButton({ darkMode = false }) {
   const [open,         setOpen]         = useState(false); // HR 챗봇
-  const [chatOpen,     setChatOpen]     = useState(false); // 팀 채팅
+  const [globalOpen,   setGlobalOpen]   = useState(false); // 전체 채팅
+  const [chatOpen,     setChatOpen]     = useState(false); // 부서 채팅
   const [dmOpen,       setDmOpen]       = useState(false); // 1:1 DM
   const [menuOpen,     setMenuOpen]     = useState(false); // 채팅 선택 메뉴
+  const [globalUnread, setGlobalUnread] = useState(0);
   const [chatUnread,   setChatUnread]   = useState(0);
   const [dmUnread,     setDmUnread]     = useState(0);
   const [dmSenders,    setDmSenders]    = useState([]); // 미확인 DM 발신자 목록 [{ empno, ename }]
@@ -284,12 +287,14 @@ function ChatbotButton({ darkMode = false }) {
   const [toasts,       setToasts]       = useState([]);
   const dk = darkMode;
 
-  const chatOpenRef = useRef(false);
-  const dmOpenRef   = useRef(false);
-  useEffect(() => { chatOpenRef.current = chatOpen; }, [chatOpen]);
-  useEffect(() => { dmOpenRef.current   = dmOpen;   }, [dmOpen]);
+  const globalOpenRef = useRef(false);
+  const chatOpenRef   = useRef(false);
+  const dmOpenRef     = useRef(false);
+  useEffect(() => { globalOpenRef.current = globalOpen; }, [globalOpen]);
+  useEffect(() => { chatOpenRef.current   = chatOpen;   }, [chatOpen]);
+  useEffect(() => { dmOpenRef.current     = dmOpen;     }, [dmOpen]);
 
-  const totalUnread = chatUnread + dmUnread;
+  const totalUnread = globalUnread + chatUnread + dmUnread;
 
   /* ── 토스트 관리 ── */
   const dismissToast = useCallback((id) =>
@@ -302,7 +307,14 @@ function ChatbotButton({ darkMode = false }) {
     setTimeout(() => dismissToast(id), 5000);
   }, [dismissToast]);
 
-  /* ── 팀채팅 unread ── */
+  /* ── 전체채팅 unread ── */
+  const handleGlobalUnread = useCallback((msg) => {
+    if (globalOpenRef.current) return;
+    setGlobalUnread(n => n + 1);
+    addToast({ senderName: msg.senderName, content: msg.content, sentAt: msg.sentAt }, 'global');
+  }, [addToast]);
+
+  /* ── 부서채팅 unread ── */
   const handleUnread = useCallback((msg) => {
     if (chatOpenRef.current) return;
     setChatUnread(n => n + 1);
@@ -331,7 +343,9 @@ function ChatbotButton({ darkMode = false }) {
   /* ── 토스트 클릭 → 해당 채팅 열기 ── */
   const openFromToast = (id, type, senderEmpno) => {
     dismissToast(id);
-    if (type === 'team') {
+    if (type === 'global') {
+      setGlobalOpen(true); setGlobalUnread(0); setMenuOpen(false);
+    } else if (type === 'team') {
       setChatOpen(true); setChatUnread(0); setMenuOpen(false);
     } else {
       // 토스트의 발신자 정보로 채팅방 바로 이동
@@ -344,12 +358,14 @@ function ChatbotButton({ darkMode = false }) {
 
   /* ── 👥 버튼 클릭 ── */
   const handleGroupClick = () => {
-    if (chatOpen) { setChatOpen(false); return; }
-    if (dmOpen)   { setDmOpen(false);   return; }
+    if (globalOpen) { setGlobalOpen(false); return; }
+    if (chatOpen)   { setChatOpen(false);   return; }
+    if (dmOpen)     { setDmOpen(false);     return; }
     setMenuOpen(o => !o);
   };
 
-  const openTeamChat = () => { setMenuOpen(false); setChatOpen(true); setChatUnread(0); };
+  const openGlobalChat = () => { setMenuOpen(false); setGlobalOpen(true); setGlobalUnread(0); };
+  const openTeamChat   = () => { setMenuOpen(false); setChatOpen(true);   setChatUnread(0);   };
 
   // 검색 화면으로 DM 열기
   const openDmChat = () => {
@@ -363,11 +379,19 @@ function ChatbotButton({ darkMode = false }) {
     setMenuOpen(false); setDmOpen(true); setDmUnread(0); setDmSenders([]);
   };
 
-  const anyOpen = chatOpen || dmOpen;
+  const anyOpen = globalOpen || chatOpen || dmOpen;
 
   return (
     <>
-      {/* ── 팀 채팅 (항상 마운트) ── */}
+      {/* ── 전체 채팅 (항상 마운트) ── */}
+      <GlobalChatModal
+        visible={globalOpen}
+        onClose={() => setGlobalOpen(false)}
+        darkMode={darkMode}
+        onUnread={handleGlobalUnread}
+      />
+
+      {/* ── 부서 채팅 (항상 마운트) ── */}
       <TeamChatModal
         visible={chatOpen}
         onClose={() => setChatOpen(false)}
@@ -405,18 +429,39 @@ function ChatbotButton({ darkMode = false }) {
           animation: 'menuPop 0.15s ease',
           minWidth: 150,
         }}>
+          {/* 전체 채팅 버튼 */}
+          <button onClick={openGlobalChat} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 14px', borderRadius: 10, border: 'none',
+            background: dk ? '#0f172a' : '#ecfdf5',
+            color: '#059669', cursor: 'pointer', fontWeight: 700,
+            fontSize: '0.85rem', textAlign: 'left', width: '100%',
+          }}>
+            <span style={{ fontSize: '1.1rem' }}>🌐</span>
+            <span style={{ flex: 1 }}>전체 채팅</span>
+            {globalUnread > 0 && (
+              <span style={{
+                background: '#ef4444', color: '#fff',
+                borderRadius: 10, padding: '1px 7px', fontSize: '0.7rem', fontWeight: 700,
+                flexShrink: 0,
+              }}>{globalUnread}</span>
+            )}
+          </button>
+          {/* 부서 채팅 버튼 */}
           <button onClick={openTeamChat} style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '10px 14px', borderRadius: 10, border: 'none',
             background: dk ? '#0f172a' : '#f0f9ff',
             color: '#0891b2', cursor: 'pointer', fontWeight: 700,
-            fontSize: '0.85rem', textAlign: 'left',
+            fontSize: '0.85rem', textAlign: 'left', width: '100%',
           }}>
-            <span style={{ fontSize: '1.1rem' }}>👥</span> 팀 채팅
+            <span style={{ fontSize: '1.1rem' }}>🏢</span>
+            <span style={{ flex: 1 }}>부서 채팅</span>
             {chatUnread > 0 && (
               <span style={{
-                marginLeft: 'auto', background: '#ef4444', color: '#fff',
+                background: '#ef4444', color: '#fff',
                 borderRadius: 10, padding: '1px 7px', fontSize: '0.7rem', fontWeight: 700,
+                flexShrink: 0,
               }}>{chatUnread}</span>
             )}
           </button>
@@ -470,13 +515,22 @@ function ChatbotButton({ darkMode = false }) {
         pointerEvents: 'none',
       }}>
         {toasts.map(t => {
-          const isTeam = t.type === 'team';
+          const isGlobal = t.type === 'global';
+          const isTeam   = t.type === 'team';
+          const accentColor = isGlobal ? '#059669' : isTeam ? '#0891b2' : '#7c3aed';
+          const gradientBg  = isGlobal
+            ? 'linear-gradient(135deg, #047857, #059669)'
+            : isTeam
+              ? 'linear-gradient(135deg, #0369a1, #0891b2)'
+              : 'linear-gradient(135deg, #7c3aed, #4f46e5)';
+          const label = isGlobal ? '전체 채팅' : isTeam ? '부서 채팅' : '1:1 메시지';
+          const icon  = isGlobal ? '🌐' : isTeam ? '🏢' : '💌';
           return (
             <div key={t.id}
               style={{
                 background: dk ? '#1e293b' : '#ffffff',
                 border: `1px solid ${dk ? '#334155' : '#e2e8f0'}`,
-                borderLeft: `4px solid ${isTeam ? '#0891b2' : '#7c3aed'}`,
+                borderLeft: `4px solid ${accentColor}`,
                 borderRadius: 12, padding: '10px 12px 10px 14px',
                 boxShadow: dk ? '0 4px 24px rgba(0,0,0,0.55)' : '0 4px 20px rgba(0,0,0,0.14)',
                 maxWidth: 280, minWidth: 200,
@@ -488,21 +542,19 @@ function ChatbotButton({ darkMode = false }) {
             >
               <div style={{
                 width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-                background: isTeam
-                  ? 'linear-gradient(135deg, #0369a1, #0891b2)'
-                  : 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                background: gradientBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '1rem',
-              }}>{isTeam ? '👥' : '💌'}</div>
+              }}>{icon}</div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
                   <span style={{ fontWeight: 700, fontSize: '0.75rem', color: dk ? '#94a3b8' : '#6b7280' }}>
-                    {isTeam ? '팀 채팅' : '1:1 메시지'}
+                    {label}
                   </span>
                   <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginLeft: 8 }}>{t.sentAt}</span>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: isTeam ? '#0891b2' : '#7c3aed', marginBottom: 2 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: accentColor, marginBottom: 2 }}>
                   {t.senderName}
                 </div>
                 <div style={{
@@ -557,7 +609,7 @@ function ChatbotButton({ darkMode = false }) {
       {/* ── 👥 채팅 플로팅 버튼 ── */}
       <button
         onClick={handleGroupClick}
-        title={chatOpen ? '팀 채팅 닫기' : dmOpen ? '1:1 채팅 닫기' : '채팅 선택'}
+        title={globalOpen ? '전체 채팅 닫기' : chatOpen ? '부서 채팅 닫기' : dmOpen ? '1:1 채팅 닫기' : '채팅 선택'}
         style={{
           position: 'fixed', bottom: 24, right: 92, zIndex: 1998,
           width: 56, height: 56, borderRadius: '50%',

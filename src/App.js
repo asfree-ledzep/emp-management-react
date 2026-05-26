@@ -56,7 +56,8 @@ function App() {
     sessionStorage.setItem('token',    data.token);
     sessionStorage.setItem('username', data.username);
     sessionStorage.setItem('role',     data.role);
-    if (data.empno) sessionStorage.setItem('empno', String(data.empno));
+    if (data.empno)  sessionStorage.setItem('empno',  String(data.empno));
+    if (data.deptno) sessionStorage.setItem('deptno', String(data.deptno));
     setToken(data.token);
     setUsername(data.username);
     setRole(data.role);
@@ -80,6 +81,7 @@ function App() {
     sessionStorage.removeItem('username');
     sessionStorage.removeItem('role');
     sessionStorage.removeItem('empno');
+    sessionStorage.removeItem('deptno');
     setToken(null);
     setUsername(null);
     setRole(null);

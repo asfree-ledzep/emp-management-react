@@ -16,14 +16,14 @@ async function uploadChatFile(file) {
 }
 
 /**
- * 부서 채팅 모달
- * - 같은 부서(DEPTNO) 사원끼리만 수신 (/topic/dept/{deptno})
+ * 전체 채팅 모달
+ * - 모든 사원·관리자가 참여하는 공개 채팅방
+ * - /topic/chat 구독, /app/chat.send 발행
  * - 파일 드래그앤드롭 → S3 업로드 → 다운로드 링크 전송
  */
-export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) {
+export default function GlobalChatModal({ onClose, darkMode, onUnread, visible }) {
   const username = sessionStorage.getItem('username') || '알 수 없음';
   const empno    = sessionStorage.getItem('empno');
-  const deptno   = sessionStorage.getItem('deptno');
 
   const [messages,   setMessages]   = useState([]);
   const [input,      setInput]      = useState('');
@@ -37,22 +37,20 @@ export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) 
 
   /* ── 이전 메시지 로드 ── */
   useEffect(() => {
-    if (!deptno) return;
-    authFetch(`/api/chat/dept/history?deptno=${deptno}`)
+    authFetch('/api/chat/history')
       .then(r => r.json())
       .then(data => setMessages(Array.isArray(data) ? data : []))
       .catch(() => {});
-  }, []); // eslint-disable-line
+  }, []);
 
   /* ── WebSocket 연결 ── */
   useEffect(() => {
-    if (!deptno) { setConnecting(false); return; }
     const client = new Client({
       webSocketFactory: () => new SockJS('/ws'),
       reconnectDelay: 5000,
       onConnect: () => {
         setConnected(true); setConnecting(false);
-        client.subscribe(`/topic/dept/${deptno}`, (frame) => {
+        client.subscribe('/topic/chat', (frame) => {
           try {
             const msg = JSON.parse(frame.body);
             setMessages(prev => [...prev, msg]);
@@ -76,18 +74,18 @@ export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) 
   /* ── 메시지 전송 ── */
   const send = useCallback((content) => {
     const text = (content ?? input).trim();
-    if (!text || !connected || !clientRef.current || !deptno) return;
+    if (!text || !connected || !clientRef.current) return;
     clientRef.current.publish({
-      destination: '/app/dept.send',
-      body: JSON.stringify({ empno: empno ? Number(empno) : null, deptno: Number(deptno), senderName: username, content: text }),
+      destination: '/app/chat.send',
+      body: JSON.stringify({ empno: empno ? Number(empno) : null, senderName: username, content: text }),
     });
     if (!content) setInput('');
-  }, [input, connected, empno, deptno, username]);
+  }, [input, connected, empno, username]);
 
   /* ── 파일 드래그앤드롭 ── */
   const handleDrop = useCallback(async (e) => {
     e.preventDefault(); setDragOver(false);
-    if (!connected || !deptno) return;
+    if (!connected) return;
     const files = Array.from(e.dataTransfer.files);
     if (!files.length) return;
     setUploading(true);
@@ -98,7 +96,7 @@ export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) 
       } catch { /* ignore */ }
     }
     setUploading(false);
-  }, [connected, deptno, send]);
+  }, [connected, send]);
 
   const handleKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
 
@@ -106,9 +104,9 @@ export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) 
   const dk = darkMode;
   const C = {
     bg: dk ? '#1e293b' : '#ffffff', msgBg: dk ? '#0f172a' : '#f0f4f8',
-    myBubble: '#0891b2', otherBg: dk ? '#1e3a4c' : '#ffffff', otherText: dk ? '#e2e8f0' : '#111827',
+    myBubble: '#059669', otherBg: dk ? '#1a3a2c' : '#ffffff', otherText: dk ? '#e2e8f0' : '#111827',
     inputBg: dk ? '#0f172a' : '#ffffff', inputBord: dk ? '#334155' : '#e5e7eb',
-    footBg: dk ? '#1e293b' : '#fafafa', timeColor: '#94a3b8', nameColor: dk ? '#7dd3fc' : '#0369a1',
+    footBg: dk ? '#1e293b' : '#fafafa', timeColor: '#94a3b8', nameColor: dk ? '#6ee7b7' : '#047857',
   };
 
   /* ── 메시지 렌더 ── */
@@ -142,30 +140,30 @@ export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) 
           boxShadow: dk ? '0 8px 40px rgba(0,0,0,0.6)' : '0 8px 40px rgba(0,0,0,0.16)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
           animation: 'tcSlideUp 0.2s ease',
-          outline: dragOver ? '3px dashed #0891b2' : 'none', transition: 'outline 0.15s',
+          outline: dragOver ? '3px dashed #059669' : 'none', transition: 'outline 0.15s',
         }}>
 
         {/* 드래그 오버레이 */}
         {dragOver && (
           <div style={{
-            position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(8,145,178,0.15)',
+            position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(5,150,105,0.15)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             borderRadius: 18, pointerEvents: 'none',
           }}>
             <span style={{ fontSize: '2.5rem' }}>📎</span>
-            <span style={{ color: '#0891b2', fontWeight: 700, fontSize: '0.9rem', marginTop: 8 }}>파일을 여기에 놓으세요</span>
+            <span style={{ color: '#059669', fontWeight: 700, fontSize: '0.9rem', marginTop: 8 }}>파일을 여기에 놓으세요</span>
           </div>
         )}
 
         {/* 헤더 */}
         <div style={{
-          background: 'linear-gradient(135deg, #0369a1, #0891b2)',
+          background: 'linear-gradient(135deg, #047857, #059669)',
           padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: '1.2rem' }}>🏢</span>
+            <span style={{ fontSize: '1.2rem' }}>🌐</span>
             <div>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.2 }}>부서 채팅</div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.2 }}>전체 채팅</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                 <div style={{
                   width: 7, height: 7, borderRadius: '50%',
@@ -181,86 +179,75 @@ export default function TeamChatModal({ onClose, darkMode, onUnread, visible }) 
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', lineHeight: 1, padding: '4px 6px' }}>✕</button>
         </div>
 
-        {/* deptno 없을 때 안내 */}
-        {!deptno && (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: 20 }}>
-            ⚠️ 부서 정보가 없습니다.<br />다시 로그인 후 이용해주세요.
-          </div>
-        )}
-
         {/* 업로드 중 배너 */}
         {uploading && (
-          <div style={{ padding: '6px 12px', background: '#0891b222', fontSize: '0.75rem', color: '#0891b2', textAlign: 'center', flexShrink: 0 }}>
+          <div style={{ padding: '6px 12px', background: '#05966922', fontSize: '0.75rem', color: '#059669', textAlign: 'center', flexShrink: 0 }}>
             📤 파일 업로드 중...
           </div>
         )}
 
         {/* 메시지 영역 */}
-        {deptno && (
-          <div style={{
-            flex: 1, overflowY: 'auto', padding: '12px 10px',
-            display: 'flex', flexDirection: 'column', gap: 4, background: C.msgBg,
-          }}>
-            {messages.length === 0 && !connecting && (
-              <div style={{ textAlign: 'center', color: '#94a3b8', marginTop: 80, fontSize: 13 }}>
-                🏢 부서원들과 대화를 시작해보세요!<br />
-                <span style={{ fontSize: 11, marginTop: 4, display: 'block' }}>파일을 드래그&드롭으로 공유할 수 있습니다</span>
-              </div>
-            )}
-            {messages.map((msg, i) => {
-              const isMe      = String(msg.senderName) === String(username);
-              const showName  = !isMe && (i === 0 || messages[i - 1]?.senderName !== msg.senderName);
-              const sameGroup = i > 0 && messages[i - 1]?.senderName === msg.senderName;
-              return (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', marginTop: sameGroup ? 2 : 10 }}>
-                  {showName && (
-                    <div style={{ fontSize: 11, color: C.nameColor, marginBottom: 3, marginLeft: 4, fontWeight: 600 }}>{msg.senderName}</div>
-                  )}
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                    <div style={{
-                      maxWidth: '72%', padding: '8px 12px',
-                      background: isMe ? C.myBubble : C.otherBg, color: isMe ? '#ffffff' : C.otherText,
-                      borderRadius: isMe ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
-                      fontSize: '0.83rem', lineHeight: 1.5,
-                      boxShadow: isMe ? '0 2px 8px rgba(8,145,178,0.35)' : dk ? 'none' : '0 1px 4px rgba(0,0,0,0.08)',
-                      wordBreak: 'break-word',
-                    }}>{renderContent(msg)}</div>
-                    <div style={{ fontSize: 10, color: C.timeColor, flexShrink: 0, marginBottom: 2 }}>{msg.sentAt}</div>
-                  </div>
+        <div style={{
+          flex: 1, overflowY: 'auto', padding: '12px 10px',
+          display: 'flex', flexDirection: 'column', gap: 4, background: C.msgBg,
+        }}>
+          {messages.length === 0 && !connecting && (
+            <div style={{ textAlign: 'center', color: '#94a3b8', marginTop: 80, fontSize: 13 }}>
+              🌐 전체 채팅방에 오신 것을 환영합니다!<br />
+              <span style={{ fontSize: 11, marginTop: 4, display: 'block' }}>파일을 드래그&드롭으로 공유할 수 있습니다</span>
+            </div>
+          )}
+          {messages.map((msg, i) => {
+            const isMe      = String(msg.senderName) === String(username);
+            const showName  = !isMe && (i === 0 || messages[i - 1]?.senderName !== msg.senderName);
+            const sameGroup = i > 0 && messages[i - 1]?.senderName === msg.senderName;
+            return (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', marginTop: sameGroup ? 2 : 10 }}>
+                {showName && (
+                  <div style={{ fontSize: 11, color: C.nameColor, marginBottom: 3, marginLeft: 4, fontWeight: 600 }}>{msg.senderName}</div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                  <div style={{
+                    maxWidth: '72%', padding: '8px 12px',
+                    background: isMe ? C.myBubble : C.otherBg, color: isMe ? '#ffffff' : C.otherText,
+                    borderRadius: isMe ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
+                    fontSize: '0.83rem', lineHeight: 1.5,
+                    boxShadow: isMe ? '0 2px 8px rgba(5,150,105,0.35)' : dk ? 'none' : '0 1px 4px rgba(0,0,0,0.08)',
+                    wordBreak: 'break-word',
+                  }}>{renderContent(msg)}</div>
+                  <div style={{ fontSize: 10, color: C.timeColor, flexShrink: 0, marginBottom: 2 }}>{msg.sentAt}</div>
                 </div>
-              );
-            })}
-            <div ref={bottomRef} />
-          </div>
-        )}
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
 
         {/* 입력창 */}
-        {deptno && (
-          <div style={{
-            padding: '10px 12px', borderTop: `1px solid ${C.inputBord}`,
-            display: 'flex', gap: 8, alignItems: 'flex-end', background: C.footBg, flexShrink: 0,
-          }}>
-            <textarea
-              value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
-              placeholder={connected ? '메시지 입력... (Enter 전송, 파일은 드래그&드롭)' : '연결 중...'}
-              disabled={!connected} rows={1}
-              style={{
-                flex: 1, padding: '9px 13px', border: `1.5px solid ${connected ? C.inputBord : '#fbbf24'}`,
-                borderRadius: 20, fontSize: '0.82rem', outline: 'none',
-                background: C.inputBg, color: dk ? '#e2e8f0' : '#111827',
-                resize: 'none', lineHeight: 1.4, maxHeight: 80, overflowY: 'auto', fontFamily: 'inherit',
-              }}
-            />
-            <button onClick={() => send()} disabled={!input.trim() || !connected} title="전송 (Enter)"
-              style={{
-                width: 38, height: 38, borderRadius: '50%',
-                background: input.trim() && connected ? '#0891b2' : '#e2e8f0',
-                color: input.trim() && connected ? '#fff' : '#9ca3af',
-                border: 'none', cursor: input.trim() && connected ? 'pointer' : 'default',
-                fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>▶</button>
-          </div>
-        )}
+        <div style={{
+          padding: '10px 12px', borderTop: `1px solid ${C.inputBord}`,
+          display: 'flex', gap: 8, alignItems: 'flex-end', background: C.footBg, flexShrink: 0,
+        }}>
+          <textarea
+            value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
+            placeholder={connected ? '메시지 입력... (Enter 전송, 파일은 드래그&드롭)' : '연결 중...'}
+            disabled={!connected} rows={1}
+            style={{
+              flex: 1, padding: '9px 13px', border: `1.5px solid ${connected ? C.inputBord : '#fbbf24'}`,
+              borderRadius: 20, fontSize: '0.82rem', outline: 'none',
+              background: C.inputBg, color: dk ? '#e2e8f0' : '#111827',
+              resize: 'none', lineHeight: 1.4, maxHeight: 80, overflowY: 'auto', fontFamily: 'inherit',
+            }}
+          />
+          <button onClick={() => send()} disabled={!input.trim() || !connected} title="전송 (Enter)"
+            style={{
+              width: 38, height: 38, borderRadius: '50%',
+              background: input.trim() && connected ? '#059669' : '#e2e8f0',
+              color: input.trim() && connected ? '#fff' : '#9ca3af',
+              border: 'none', cursor: input.trim() && connected ? 'pointer' : 'default',
+              fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>▶</button>
+        </div>
       </div>
 
       <style>{`
