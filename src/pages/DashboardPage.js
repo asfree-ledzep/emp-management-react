@@ -8,6 +8,7 @@ import { fetchAllLeaves } from '../api/leaveApi';
 import { fetchSurveys } from '../api/surveyApi';
 import { fetchNotices, fetchKakaoConnectedCount, fetchKakaoStatus, sendKakaoTestMessage, sendKakaoNudge } from '../api/noticeApi';
 import { sendPushNudgeKakao } from '../api/pushApi';
+import { authFetch } from '../api/apiClient';
 import '../styles/DashboardPage.css';
 
 const fmt = (v) => v != null ? Number(v).toLocaleString('ko-KR') + ' 원' : '0 원';
@@ -63,6 +64,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const [notices,        setNotices]        = useState([]);
   const [trendData,      setTrendData]      = useState([]);
   const [kakaoCount,     setKakaoCount]     = useState(0);
+  const [todayAttend,    setTodayAttend]    = useState([]);  // 당일 출근 현황
   const [loading,        setLoading]        = useState(true);
 
   // 카카오 연동 현황 모달
@@ -97,7 +99,8 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
         )
       ),
       fetchKakaoConnectedCount().catch(() => ({ count: 0 })),
-    ]).then(([e, ex, lv, s, n, trend, kakao]) => {
+      authFetch('/api/attendance/today').then(r => r.json()).catch(() => []),
+    ]).then(([e, ex, lv, s, n, trend, kakao, todayArr]) => {
       setEmps(e);
       setExpenses(ex);
       setAllLeaves(Array.isArray(lv) ? lv : []);
@@ -105,6 +108,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
       setNotices(n);
       setTrendData(trend);
       setKakaoCount(kakao.count ?? 0);
+      setTodayAttend(Array.isArray(todayArr) ? todayArr : []);
       setLoading(false);
     });
   }, []);
@@ -166,6 +170,9 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
 
   // 요약 계산
   const totalEmp         = emps.length;
+  const todayCheckedIn   = todayAttend.filter(a => a.checkIn).length;
+  const todayLate        = todayAttend.filter(a => a.status === 'LATE').length;
+  const todayAbsent      = totalEmp > 0 ? Math.max(0, totalEmp - todayCheckedIn) : 0;
   const totalExpense     = expenses.reduce((s, e) => s + (e.amount || 0), 0);
   const pendingExpense   = expenses.filter(e => e.status !== 'CONFIRMED').length;
   const pendingLeaveCount = allLeaves.filter(l => l.status === 'PENDING' || l.status === 'MGR_APPROVED').length;
@@ -287,6 +294,44 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
 
       {/* ── 요약 카드 ── */}
       <div className="db-cards" style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+
+        {/* 당일 출근현황 → 출근 기록 */}
+        <div
+          className="db-card-link"
+          style={{ ...card('#f0fdf4', '#bbf7d0'), cursor: 'pointer', minWidth: 180 }}
+          onClick={() => onNavigate('attendance')}
+          title="출근 기록으로 이동"
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: '2rem', fontWeight: 700, color: '#15803d', lineHeight: 1 }}>
+              {todayCheckedIn}
+            </span>
+            <span style={{ fontSize: '1rem', fontWeight: 600, color: '#15803d' }}>명</span>
+            <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>/ {totalEmp}명</span>
+          </div>
+          <div style={{ ...cardLabel, marginBottom: 8 }}>
+            🕐 오늘 출근 현황 <span style={{ fontSize: '0.72rem', color: '#16a34a' }}>▶ 상세</span>
+          </div>
+          {/* 출근률 바 */}
+          <div style={{ background: '#d1fae5', borderRadius: 4, height: 5, overflow: 'hidden', marginBottom: 6 }}>
+            <div style={{
+              height: '100%', borderRadius: 4, background: '#16a34a',
+              width: totalEmp > 0 ? `${Math.round((todayCheckedIn / totalEmp) * 100)}%` : '0%',
+              transition: 'width 0.5s ease',
+            }} />
+          </div>
+          <div style={{ display: 'flex', gap: 10, fontSize: '0.72rem' }}>
+            {todayLate > 0 && (
+              <span style={{ color: '#d97706', fontWeight: 600 }}>⚠ 지각 {todayLate}명</span>
+            )}
+            {todayAbsent > 0 && (
+              <span style={{ color: '#dc2626', fontWeight: 600 }}>✗ 미출근 {todayAbsent}명</span>
+            )}
+            {todayAbsent === 0 && todayLate === 0 && todayCheckedIn > 0 && (
+              <span style={{ color: '#15803d', fontWeight: 600 }}>✓ 전원 정상 출근</span>
+            )}
+          </div>
+        </div>
 
         {/* 전체 직원 → 직원 관리 */}
         <div

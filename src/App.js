@@ -21,6 +21,7 @@ import AttendancePage from './pages/AttendancePage';
 import ChatbotButton from './components/ChatbotModal';
 import EmployeeLayout from './components/EmployeeLayout';
 import BoardAdminPage from './pages/BoardAdminPage';
+import AdminProfileModal from './components/AdminProfileModal';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
   const [username, setUsername] = useState(sessionStorage.getItem('username'));
   const [role,     setRole]     = useState(sessionStorage.getItem('role'));
   const [empno,    setEmpno]    = useState(Number(sessionStorage.getItem('empno')) || null);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   // URL 쿼리 파라미터로 초기 페이지 결정 (?page=notice, ?page=survey, ?qr=TOKEN)
   const [page, setPage] = useState(() => {
@@ -134,7 +136,12 @@ function App() {
     <div className="App">
       {/* 상단 바 */}
       <div className="app-topbar">
-        <span className="app-topbar-user">
+        <span
+          className="app-topbar-user"
+          onClick={role === 'ADMIN' ? () => setShowAdminModal(true) : undefined}
+          title={role === 'ADMIN' ? '관리자 설정' : undefined}
+          style={{ cursor: role === 'ADMIN' ? 'pointer' : 'default' }}
+        >
           {role === 'ADMIN' ? '🛡️' : '👤'} {username}
           <span className="app-topbar-role">
             {role === 'ADMIN' ? '관리자' : '사원'}
@@ -229,6 +236,15 @@ function App() {
           )}
           <ChatbotButton darkMode={darkMode} />
         </>
+      )}
+
+      {/* 관리자 설정 모달 (전역) */}
+      {showAdminModal && (
+        <AdminProfileModal
+          darkMode={darkMode}
+          onClose={() => setShowAdminModal(false)}
+          onNameChange={(name) => setUsername(name)}
+        />
       )}
     </div>
   );
