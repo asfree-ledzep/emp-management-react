@@ -136,17 +136,24 @@ function App() {
     <div className="App">
       {/* 상단 바 */}
       <div className="app-topbar">
-        <span
-          className="app-topbar-user"
-          onClick={role === 'ADMIN' ? () => setShowAdminModal(true) : undefined}
-          title={role === 'ADMIN' ? '관리자 설정' : undefined}
-          style={{ cursor: role === 'ADMIN' ? 'pointer' : 'default' }}
-        >
+        <span className="app-topbar-user">
           {role === 'ADMIN' ? '🛡️' : '👤'} {username}
           <span className="app-topbar-role">
             {role === 'ADMIN' ? '관리자' : '사원'}
           </span>
         </span>
+
+        {/* 관리자 설정 버튼 (관리자만) */}
+        {role === 'ADMIN' && (
+          <button
+            className="app-topbar-dark"
+            onClick={() => setShowAdminModal(true)}
+            title="관리자 설정"
+            style={{ fontSize: '0.9rem' }}
+          >
+            ⚙️
+          </button>
+        )}
 
         {/* 다크 모드 토글 */}
         <button className="app-topbar-dark" onClick={toggleDark}

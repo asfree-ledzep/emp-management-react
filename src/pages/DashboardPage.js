@@ -295,44 +295,6 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
       {/* ── 요약 카드 ── */}
       <div className="db-cards" style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
 
-        {/* 당일 출근현황 → 출근 기록 */}
-        <div
-          className="db-card-link"
-          style={{ ...card('#f0fdf4', '#bbf7d0'), cursor: 'pointer', minWidth: 180 }}
-          onClick={() => onNavigate('attendance')}
-          title="출근 기록으로 이동"
-        >
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: '2rem', fontWeight: 700, color: '#15803d', lineHeight: 1 }}>
-              {todayCheckedIn}
-            </span>
-            <span style={{ fontSize: '1rem', fontWeight: 600, color: '#15803d' }}>명</span>
-            <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>/ {totalEmp}명</span>
-          </div>
-          <div style={{ ...cardLabel, marginBottom: 8 }}>
-            🕐 오늘 출근 현황 <span style={{ fontSize: '0.72rem', color: '#16a34a' }}>▶ 상세</span>
-          </div>
-          {/* 출근률 바 */}
-          <div style={{ background: '#d1fae5', borderRadius: 4, height: 5, overflow: 'hidden', marginBottom: 6 }}>
-            <div style={{
-              height: '100%', borderRadius: 4, background: '#16a34a',
-              width: totalEmp > 0 ? `${Math.round((todayCheckedIn / totalEmp) * 100)}%` : '0%',
-              transition: 'width 0.5s ease',
-            }} />
-          </div>
-          <div style={{ display: 'flex', gap: 10, fontSize: '0.72rem' }}>
-            {todayLate > 0 && (
-              <span style={{ color: '#d97706', fontWeight: 600 }}>⚠ 지각 {todayLate}명</span>
-            )}
-            {todayAbsent > 0 && (
-              <span style={{ color: '#dc2626', fontWeight: 600 }}>✗ 미출근 {todayAbsent}명</span>
-            )}
-            {todayAbsent === 0 && todayLate === 0 && todayCheckedIn > 0 && (
-              <span style={{ color: '#15803d', fontWeight: 600 }}>✓ 전원 정상 출근</span>
-            )}
-          </div>
-        </div>
-
         {/* 전체 직원 → 직원 관리 */}
         <div
           className="db-card-link"
@@ -414,6 +376,98 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
           <button style={menuBtn('#0f766e')} onClick={() => onNavigate('qr')}>📷<br />QR 출퇴근</button>
           <button style={menuBtn('#1d4ed8')} onClick={() => onNavigate('attendance')}>🕐<br />출근 기록</button>
           <button style={menuBtn('#be185d')} onClick={() => onNavigate('board-admin')}>📌<br />게시판 관리</button>
+        </div>
+      </div>
+
+      {/* ── 당일 출근현황 차트 ── */}
+      <div style={{ ...chartBox, marginBottom: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: C.text }}>🕐 오늘 출근현황 ({todayStr})</h3>
+          <button onClick={() => onNavigate('attendance')}
+            style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '0.83rem' }}>
+            상세보기 →
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+
+          {/* 도넛 차트 */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <ResponsiveContainer width={180} height={180}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: '정상 출근', value: todayAttend.filter(a => a.status === 'NORMAL').length, color: '#16a34a' },
+                    { name: '지각',     value: todayLate,   color: '#f59e0b' },
+                    { name: '미출근',   value: todayAbsent, color: '#e5e7eb' },
+                  ].filter(d => d.value > 0)}
+                  cx="50%" cy="50%"
+                  innerRadius={52} outerRadius={82}
+                  paddingAngle={3} dataKey="value"
+                >
+                  {[
+                    { name: '정상 출근', value: todayAttend.filter(a => a.status === 'NORMAL').length, color: '#16a34a' },
+                    { name: '지각',     value: todayLate,   color: '#f59e0b' },
+                    { name: '미출근',   value: todayAbsent, color: '#e5e7eb' },
+                  ].filter(d => d.value > 0).map((d, i) => (
+                    <Cell key={i} fill={d.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={({ active, payload }) =>
+                  active && payload?.length ? (
+                    <div style={{ background: '#1e293b', color: '#f1f5f9', padding: '6px 10px', borderRadius: 8, fontSize: '0.8rem' }}>
+                      <div style={{ fontWeight: 700 }}>{payload[0].name}</div>
+                      <div>{payload[0].value}명</div>
+                    </div>
+                  ) : null
+                } />
+              </PieChart>
+            </ResponsiveContainer>
+            {/* 중앙 텍스트 */}
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none',
+            }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: C.textDark, lineHeight: 1 }}>
+                {totalEmp > 0 ? Math.round((todayCheckedIn / totalEmp) * 100) : 0}%
+              </div>
+              <div style={{ fontSize: '0.65rem', color: C.textMuted, marginTop: 2 }}>출근률</div>
+            </div>
+          </div>
+
+          {/* 수치 요약 */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, minWidth: 160 }}>
+            {[
+              { label: '정상 출근', value: todayAttend.filter(a => a.status === 'NORMAL').length, color: '#16a34a', bg: '#dcfce7', icon: '✅' },
+              { label: '지각',     value: todayLate,   color: '#d97706', bg: '#fef3c7', icon: '⚠️' },
+              { label: '미출근',   value: todayAbsent, color: '#6b7280', bg: dk ? '#1e293b' : '#f3f4f6', icon: '⬜' },
+            ].map(item => (
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* 바 */}
+                <div style={{ flex: 1, background: dk ? '#334155' : '#e5e7eb', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 4,
+                    background: item.color,
+                    width: totalEmp > 0 ? `${Math.min(100, Math.round((item.value / totalEmp) * 100))}%` : '0%',
+                    transition: 'width 0.5s ease',
+                  }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 90 }}>
+                  <span style={{ fontSize: '0.85rem' }}>{item.icon}</span>
+                  <span style={{ fontSize: '0.82rem', color: C.textMuted }}>{item.label}</span>
+                  <span style={{
+                    marginLeft: 'auto', fontWeight: 700, fontSize: '0.9rem', color: item.color,
+                  }}>{item.value}명</span>
+                </div>
+              </div>
+            ))}
+            <div style={{
+              marginTop: 4, fontSize: '0.75rem', color: C.textMuted,
+              borderTop: `1px solid ${C.border}`, paddingTop: 10,
+            }}>
+              전체 {totalEmp}명 기준 · {todayCheckedIn}명 출근 완료
+            </div>
+          </div>
         </div>
       </div>
 
