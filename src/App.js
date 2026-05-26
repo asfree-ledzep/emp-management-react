@@ -20,6 +20,7 @@ import QrScanPage from './pages/QrScanPage';
 import AttendancePage from './pages/AttendancePage';
 import ChatbotButton from './components/ChatbotModal';
 import EmployeeLayout from './components/EmployeeLayout';
+import BoardAdminPage from './pages/BoardAdminPage';
 import { registerPush, unregisterPush } from './utils/pushNotification';
 
 function App() {
@@ -56,8 +57,9 @@ function App() {
     sessionStorage.setItem('token',    data.token);
     sessionStorage.setItem('username', data.username);
     sessionStorage.setItem('role',     data.role);
-    if (data.empno)  sessionStorage.setItem('empno',  String(data.empno));
-    if (data.deptno) sessionStorage.setItem('deptno', String(data.deptno));
+    if (data.empno)    sessionStorage.setItem('empno',    String(data.empno));
+    if (data.deptno)   sessionStorage.setItem('deptno',   String(data.deptno));
+    if (data.deptname) sessionStorage.setItem('deptname', data.deptname);
     setToken(data.token);
     setUsername(data.username);
     setRole(data.role);
@@ -82,6 +84,7 @@ function App() {
     sessionStorage.removeItem('role');
     sessionStorage.removeItem('empno');
     sessionStorage.removeItem('deptno');
+    sessionStorage.removeItem('deptname');
     setToken(null);
     setUsername(null);
     setRole(null);
@@ -220,6 +223,9 @@ function App() {
           )}
           {page === 'attendance' && (
             <AttendancePage user={{ empno, role, username }} onDashboard={() => setPage('dashboard')} />
+          )}
+          {page === 'board-admin' && (
+            <BoardAdminPage darkMode={darkMode} onDashboard={() => setPage('dashboard')} />
           )}
           <ChatbotButton darkMode={darkMode} />
         </>

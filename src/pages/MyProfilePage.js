@@ -43,7 +43,7 @@ const calcYearsOfService = (hiredate) => {
 // 사원 본인 프로필 페이지
 // props:
 //   empno - 로그인된 사원 번호
-const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavigateToNotice }) => {
+const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavigateToNotice, onNavigateToBoard }) => {
   const [emp,      setEmp]      = useState(null);
   const [loading,  setLoading]  = useState(true);
   const [editing,  setEditing]  = useState(false);
@@ -145,6 +145,7 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
           <button className="btn btn-gray"  onClick={onNavigateToNotice}>📢 공지사항</button>
           <button className="btn btn-gray"  onClick={() => setShowCert(true)}>📄 재직증명서</button>
           <button className="btn btn-green" onClick={() => setShowSlip(true)}>💵 급여명세서</button>
+          <button className="btn btn-blue"  onClick={onNavigateToBoard}>📌 게시판</button>
           <button
             className="btn btn-kakao"
             onClick={() => getKakaoAuthUrl().then(data => { window.location.href = data.url; })}

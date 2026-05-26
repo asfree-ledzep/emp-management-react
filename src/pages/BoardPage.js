@@ -11,9 +11,10 @@ async function uploadBoardFile(file) {
 }
 
 export default function BoardPage({ empno, darkMode }) {
-  const username = sessionStorage.getItem('username') || '알 수 없음';
-  const deptno   = sessionStorage.getItem('deptno');
-  const myEmpno  = Number(empno);
+  const username  = sessionStorage.getItem('username') || '알 수 없음';
+  const deptno    = sessionStorage.getItem('deptno');
+  const deptname  = sessionStorage.getItem('deptname') || '부서';
+  const myEmpno   = Number(empno);
 
   const dk = darkMode;
   const C = {
@@ -45,10 +46,12 @@ export default function BoardPage({ empno, darkMode }) {
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
 
-  // 글쓰기 폼 상태
+  // 글쓰기/수정 폼 상태
+  const [editingPost, setEditingPost] = useState(null); // null=쓰기, post=수정
   const [wTitle,    setWTitle]    = useState('');
   const [wContent,  setWContent]  = useState('');
-  const [wFile,     setWFile]     = useState(null);   // File 객체
+  const [wFile,     setWFile]     = useState(null);   // File 객체 (새로 첨부)
+  const [wKeepFile, setWKeepFile] = useState(true);   // 기존 파일 유지 여부
   const [wFileUploading, setWFileUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error,     setError]     = useState('');
@@ -144,7 +147,19 @@ export default function BoardPage({ empno, darkMode }) {
 
   /* ── 글쓰기 모달 열기/초기화 ── */
   const openWrite = () => {
-    setWTitle(''); setWContent(''); setWFile(null);
+    setEditingPost(null);
+    setWTitle(''); setWContent(''); setWFile(null); setWKeepFile(true);
+    setError(''); setShowWrite(true);
+  };
+
+  /* ── 수정 모달 열기 ── */
+  const openEdit = (post, e) => {
+    e?.stopPropagation();
+    setEditingPost(post);
+    setWTitle(post.title || '');
+    setWContent(post.content || '');
+    setWFile(null);
+    setWKeepFile(true);   // 기존 파일 유지
     setError(''); setShowWrite(true);
   };
 
@@ -155,14 +170,15 @@ export default function BoardPage({ empno, darkMode }) {
     if (f) setWFile(f);
   }, []);
 
-  /* ── 글 작성 제출 ── */
+  /* ── 글 작성/수정 제출 ── */
   const handleSubmit = async () => {
     if (!wTitle.trim())   { setError('제목을 입력해 주세요.'); return; }
     if (!wContent.trim()) { setError('내용을 입력해 주세요.'); return; }
     setSubmitting(true); setError('');
     try {
-      let fileUrl  = null;
-      let fileName = null;
+      // 파일 처리: 새 파일 있으면 업로드, 없으면 기존 유지 or 제거
+      let fileUrl  = wKeepFile ? (editingPost?.fileUrl  || null) : null;
+      let fileName = wKeepFile ? (editingPost?.fileName || null) : null;
       if (wFile) {
         setWFileUploading(true);
         const uploaded = await uploadBoardFile(wFile);
@@ -170,22 +186,30 @@ export default function BoardPage({ empno, darkMode }) {
         fileName = uploaded.fileName;
         setWFileUploading(false);
       }
-      const endpoint = tab === 'global' ? '/api/board/global' : '/api/board/dept';
+
+      const isEdit = !!editingPost;
+      const endpoint = isEdit
+        ? (tab === 'global' ? `/api/board/global/${editingPost.postId}` : `/api/board/dept/${editingPost.postId}`)
+        : (tab === 'global' ? '/api/board/global' : '/api/board/dept');
       const body = {
         authorName: username,
         title:      wTitle.trim(),
         content:    wContent.trim(),
         fileUrl,
         fileName,
-        ...(tab === 'dept' && { deptno: String(deptno) }),
+        ...(tab === 'dept' && !isEdit && { deptno: String(deptno) }),
       };
       const res = await authFetch(endpoint, {
-        method:  'POST',
+        method:  isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
       });
       if (!res.ok) throw new Error('저장 실패');
       setShowWrite(false);
+      // 상세보기 중이었으면 업데이트 반영
+      if (isEdit && selected?.postId === editingPost.postId) {
+        setSelected(prev => ({ ...prev, title: wTitle.trim(), content: wContent.trim(), fileUrl, fileName }));
+      }
       loadPosts();
     } catch (e) {
       setError('저장 중 오류가 발생했습니다.');
@@ -221,8 +245,8 @@ export default function BoardPage({ empno, darkMode }) {
       {/* 탭 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
         {[
-          { key: 'global', label: '🌐 전체 게시판', color: C.globalColor },
-          { key: 'dept',   label: '🏢 부서 게시판', color: C.deptColor   },
+          { key: 'global', label: '🌐 전체 게시판',          color: C.globalColor },
+          { key: 'dept',   label: `🏢 ${deptname} 게시판`, color: C.deptColor   },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: '8px 20px', borderRadius: 20, fontWeight: 700,
@@ -316,15 +340,24 @@ export default function BoardPage({ empno, darkMode }) {
                 </div>
               </div>
 
-              {/* 작성자 본인 삭제 */}
+              {/* 작성자 본인 수정/삭제 */}
               {post.empno === myEmpno && (
-                <button
-                  onClick={e => { e.stopPropagation(); handleDelete(post.postId); }}
-                  style={{
-                    padding: '4px 10px', borderRadius: 8, border: 'none',
-                    background: '#fef2f2', color: '#ef4444',
-                    fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0,
-                  }}>삭제</button>
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                  <button
+                    onClick={e => openEdit(post, e)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 8, border: 'none',
+                      background: '#eff6ff', color: '#2563eb',
+                      fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
+                    }}>수정</button>
+                  <button
+                    onClick={e => { e.stopPropagation(); handleDelete(post.postId); }}
+                    style={{
+                      padding: '4px 10px', borderRadius: 8, border: 'none',
+                      background: '#fef2f2', color: '#ef4444',
+                      fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
+                    }}>삭제</button>
+                </div>
               )}
             </div>
           ))}
@@ -540,7 +573,9 @@ export default function BoardPage({ empno, darkMode }) {
               background: dk ? '#1e293b' : '#f8fafc',
             }}>
               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: accentColor }}>
-                {tab === 'global' ? '🌐 전체 게시글 작성' : '🏢 부서 게시글 작성'}
+                {editingPost
+                  ? '✏️ 게시글 수정'
+                  : (tab === 'global' ? '🌐 전체 게시글 작성' : `🏢 ${deptname} 게시글 작성`)}
               </span>
               <button onClick={() => setShowWrite(false)} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
@@ -610,21 +645,32 @@ export default function BoardPage({ empno, darkMode }) {
                   }}
                 >
                   {wFile
-                    ? <span style={{ color: accentColor, fontWeight: 600 }}>📎 {wFile.name}</span>
-                    : <span>파일을 여기에 드래그하거나 클릭하여 선택<br />
-                        <span style={{ fontSize: '0.72rem' }}>모든 파일 형식 지원</span>
-                      </span>
+                    ? <span style={{ color: accentColor, fontWeight: 600 }}>📎 {wFile.name} (새 파일)</span>
+                    : editingPost?.fileUrl && wKeepFile
+                      ? <span style={{ color: C.sub }}>📎 {editingPost.fileName} <span style={{ fontSize: '0.7rem' }}>(기존 파일 유지)</span></span>
+                      : <span>파일을 여기에 드래그하거나 클릭하여 선택<br />
+                          <span style={{ fontSize: '0.72rem' }}>모든 파일 형식 지원</span>
+                        </span>
                   }
                 </div>
                 <input ref={fileInputRef} type="file" style={{ display: 'none' }}
-                  onChange={e => setWFile(e.target.files?.[0] || null)} />
-                {wFile && (
-                  <button onClick={() => setWFile(null)}
-                    style={{ marginTop: 6, fontSize: '0.72rem', color: '#ef4444',
-                      background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    ✕ 파일 제거
-                  </button>
-                )}
+                  onChange={e => { setWFile(e.target.files?.[0] || null); setWKeepFile(false); }} />
+                <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+                  {wFile && (
+                    <button onClick={() => { setWFile(null); setWKeepFile(!!editingPost?.fileUrl); }}
+                      style={{ fontSize: '0.72rem', color: '#ef4444',
+                        background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      ✕ 새 파일 제거
+                    </button>
+                  )}
+                  {editingPost?.fileUrl && wKeepFile && !wFile && (
+                    <button onClick={() => setWKeepFile(false)}
+                      style={{ fontSize: '0.72rem', color: '#ef4444',
+                        background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      ✕ 기존 파일 삭제
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* 오류 메시지 */}

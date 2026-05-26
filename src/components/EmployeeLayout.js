@@ -187,6 +187,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
               onNavigateToSurvey={() => navigate('survey')}
               onNavigateToExpense={() => navigate('expense')}
               onNavigateToNotice={() => navigate('notice')}
+              onNavigateToBoard={() => navigate('board')}
             />
           )}
           {page === 'leave'          && <LeaveRequestPage />}
