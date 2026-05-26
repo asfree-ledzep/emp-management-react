@@ -77,11 +77,15 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
   }, []);
 
   // 미세먼지 조회 (30분 갱신)
+  const [dustError, setDustError] = useState(null);
   useEffect(() => {
     const fetchDust = () => {
       authFetch(`/api/dust?sido=${encodeURIComponent(dustSido)}`)
         .then(r => r.json())
-        .then(d => { if (!d.error) setDust(d); })
+        .then(d => {
+          if (d.error === 'API_FORBIDDEN') { setDustError('forbidden'); return; }
+          if (!d.error) { setDust(d); setDustError(null); }
+        })
         .catch(() => {});
     };
     fetchDust();
@@ -194,7 +198,12 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
             </select>
           </div>
 
-          {dust ? (
+          {dustError === 'forbidden' ? (
+            <div style={{ fontSize: '0.65rem', color: '#fdba74', textAlign: 'center', padding: '4px 0', lineHeight: 1.6 }}>
+              🔑 API 키 등록 필요<br/>
+              <span style={{ color: 'rgba(196,181,253,0.6)' }}>에어코리아 신청 후<br/>DUST_API_KEY 설정</span>
+            </div>
+          ) : dust ? (
             <div style={{ display: 'flex', gap: 8 }}>
               {/* PM10 */}
               {[
@@ -230,7 +239,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
             <div style={{ fontSize: '0.72rem', color: 'rgba(196,181,253,0.5)', textAlign: 'center', padding: '4px 0' }}>
               조회 중...
             </div>
-          )}
+          ) /* dust */}
 
           {/* 나쁨 이상 경고 */}
           {dust && (dust.pm10Grade >= 3 || dust.pm25Grade >= 3) && (

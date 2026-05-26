@@ -29,7 +29,10 @@ export default function DustWidget({ darkMode = false, compact = false, defaultS
     authFetch(`/api/dust?sido=${encodeURIComponent(sido)}`)
       .then(r => r.json())
       .then(d => {
-        if (d.error) throw new Error(d.error);
+        if (d.error === 'API_FORBIDDEN') {
+          throw new Error('API_FORBIDDEN');
+        }
+        if (d.error) throw new Error(d.message || d.error);
         setDust(d);
         setLastAt(new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
       })
@@ -128,8 +131,15 @@ export default function DustWidget({ darkMode = false, compact = false, defaultS
         {/* PM10 */}
         {loading ? (
           <div style={{ color: textMuted, fontSize: '0.82rem' }}>조회 중...</div>
+        ) : error === 'API_FORBIDDEN' ? (
+          <div style={{ fontSize: '0.78rem', color: textMuted, lineHeight: 1.5 }}>
+            <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: 3 }}>🔑 API 미인증</div>
+            <div>공공데이터포털에서</div>
+            <div style={{ fontWeight: 600, color: textDark }}>에어코리아 대기오염정보</div>
+            <div>API 신청 후 키 등록 필요</div>
+          </div>
         ) : error ? (
-          <div style={{ color: '#ef4444', fontSize: '0.8rem' }}>⚠ {error}</div>
+          <div style={{ color: '#ef4444', fontSize: '0.78rem' }}>⚠ {error}</div>
         ) : dust && (
           <>
             <DustItem
