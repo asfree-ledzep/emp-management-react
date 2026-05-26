@@ -146,10 +146,15 @@ function App() {
         {/* 관리자 설정 버튼 (관리자만) */}
         {role === 'ADMIN' && (
           <button
-            className="app-topbar-dark"
-            onClick={() => setShowAdminModal(true)}
+            onClick={(e) => { e.stopPropagation(); setShowAdminModal(true); }}
             title="관리자 설정"
-            style={{ fontSize: '0.9rem' }}
+            style={{
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.25)',
+              borderRadius: 20, padding: '4px 10px',
+              fontSize: '0.95rem', cursor: 'pointer', lineHeight: 1,
+              color: '#fff',
+            }}
           >
             ⚙️
           </button>

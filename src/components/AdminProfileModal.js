@@ -37,7 +37,8 @@ export default function AdminProfileModal({ darkMode, onClose, onNameChange }) {
   /* ── 프로필 로드 ── */
   const loadProfile = useCallback(async () => {
     try {
-      const res = await authFetch('/api/admin/profile');
+      const res = await authFetch('/api/admin/profile', { noAutoLogout: true });
+      if (!res.ok) return;
       const data = await res.json();
       setProfile({
         displayName:  data.displayName  || '',
@@ -50,7 +51,8 @@ export default function AdminProfileModal({ darkMode, onClose, onNameChange }) {
   /* ── 대리 관리자 목록 로드 ── */
   const loadProxies = useCallback(async () => {
     try {
-      const res = await authFetch('/api/admin/proxy');
+      const res = await authFetch('/api/admin/proxy', { noAutoLogout: true });
+      if (!res.ok) return;
       const data = await res.json();
       setProxies(Array.isArray(data) ? data : []);
     } catch {}
@@ -59,7 +61,8 @@ export default function AdminProfileModal({ darkMode, onClose, onNameChange }) {
   /* ── 직원 목록 로드 ── */
   const loadEmps = useCallback(async () => {
     try {
-      const res = await authFetch('/api/emp');
+      const res = await authFetch('/api/emp', { noAutoLogout: true });
+      if (!res.ok) return;
       const data = await res.json();
       setEmps(Array.isArray(data) ? data : []);
     } catch {}
@@ -91,6 +94,7 @@ export default function AdminProfileModal({ darkMode, onClose, onNameChange }) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        noAutoLogout: true,
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -110,7 +114,7 @@ export default function AdminProfileModal({ darkMode, onClose, onNameChange }) {
     if (!empno || isNaN(empno)) { setProxyMsg('❌ 유효한 사번을 입력하세요.'); return; }
     setProxyLoading(true); setProxyMsg('');
     try {
-      const res = await authFetch(`/api/admin/proxy/${empno}`, { method: 'POST' });
+      const res = await authFetch(`/api/admin/proxy/${empno}`, { method: 'POST', noAutoLogout: true });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         setProxyMsg('❌ ' + (err.message || '추가 실패'));
@@ -128,7 +132,7 @@ export default function AdminProfileModal({ darkMode, onClose, onNameChange }) {
   const removeProxy = async (empno, ename) => {
     if (!window.confirm(`${ename}(${empno})의 대리 관리자 권한을 해제하시겠습니까?`)) return;
     try {
-      await authFetch(`/api/admin/proxy/${empno}`, { method: 'DELETE' });
+      await authFetch(`/api/admin/proxy/${empno}`, { method: 'DELETE', noAutoLogout: true });
       await loadProxies();
       setProxyMsg(`✅ ${ename} 권한 해제 완료`);
     } catch { setProxyMsg('❌ 해제 실패'); }
