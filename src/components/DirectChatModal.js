@@ -106,8 +106,14 @@ export default function DirectChatModal({ onClose, darkMode, onDmUnread, visible
       }
 
       const empData     = await empRes.json();
-      const partnerData = partnerRes.ok ? await partnerRes.json() : [];
+      let partnerData = [];
+      if (partnerRes.ok) {
+        try { partnerData = await partnerRes.json(); } catch { partnerData = []; }
+      } else {
+        console.warn('[DM] /api/dm/partners 실패:', partnerRes.status);
+      }
       const partners    = Array.isArray(partnerData) ? partnerData.map(Number) : [];
+      console.log('[DM] partners:', partners);
       setPartnerEmpnos(partners);
 
       const emps = Array.isArray(empData)
