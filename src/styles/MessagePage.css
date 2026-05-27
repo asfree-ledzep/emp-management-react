@@ -277,6 +277,21 @@
 .msg-attach-icon { color: #6b7280; }
 .msg-read-mark   { color: #10b981; font-size: 0.85rem; }
 
+/* 수신확인 배지 */
+.msg-receipt {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.msg-receipt.confirmed   { background: #dcfce7; color: #16a34a; }
+.msg-receipt.unconfirmed { background: #f3f4f6; color: #9ca3af; }
+.dark .msg-receipt.confirmed   { background: rgba(22,163,74,0.2); color: #4ade80; }
+.dark .msg-receipt.unconfirmed { background: rgba(255,255,255,0.06); color: #64748b; }
+
 .msg-item-del {
   position: absolute;
   top: 8px;

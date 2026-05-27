@@ -246,7 +246,7 @@ export default function BoardPage({ empno, darkMode }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
         {[
           { key: 'global', label: '🌐 전체 게시판',          color: C.globalColor },
-          { key: 'dept',   label: `🏢 ${deptname} 게시판`, color: C.deptColor   },
+          { key: 'dept',   label: `🏢 ${deptname} 부서 전용 게시판`, color: C.deptColor   },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: '8px 20px', borderRadius: 20, fontWeight: 700,

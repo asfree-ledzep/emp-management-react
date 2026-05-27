@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { authFetch } from '../api/apiClient';
+import { showConfirm, showAlert } from '../utils/confirmDialog';
 import '../styles/MessagePage.css';
 
 /* ── 파일 크기 포맷 ── */
@@ -70,6 +71,30 @@ export default function MessagePage({ empno, darkMode }) {
     return () => clearInterval(t);
   }, [messages]);
 
+  /* ── 플로팅 버튼에서 특정 쪽지 열기 요청 수신 ── */
+  useEffect(() => {
+    const handler = async (e) => {
+      const { msgId } = e.detail || {};
+      if (!msgId) return;
+      // 받은쪽지함 탭으로 전환
+      setTab('inbox');
+      // 목록에서 해당 메시지 찾아서 열기 (목록이 로드된 후)
+      try {
+        const r = await authFetch(`/api/msg/${msgId}`);
+        if (r.ok) {
+          const data = await r.json();
+          setSelected(data);
+          setView('detail');
+          setMessages(prev => prev.map(m =>
+            m.msgId === msgId ? { ...m, readAt: m.readAt || '방금' } : m
+          ));
+        }
+      } catch {}
+    };
+    window.addEventListener('msg:open', handler);
+    return () => window.removeEventListener('msg:open', handler);
+  }, []);
+
   /* ── 직원 목록 ── */
   useEffect(() => {
     if (!showCompose) return;
@@ -98,7 +123,8 @@ export default function MessagePage({ empno, darkMode }) {
 
   /* ── 삭제 ── */
   const deleteMsg = async (msgId) => {
-    if (!window.confirm('이 쪽지를 삭제하시겠습니까?')) return;
+    const ok = await showConfirm('이 쪽지를 삭제하시겠습니까?', { title: '쪽지 삭제', confirmText: '삭제', danger: true });
+    if (!ok) return;
     const r = await authFetch(`/api/msg/${msgId}`, { method: 'DELETE' });
     if (r.ok) {
       setMessages(prev => prev.filter(m => m.msgId !== msgId));
@@ -109,9 +135,9 @@ export default function MessagePage({ empno, darkMode }) {
 
   /* ── 발송 ── */
   const handleSend = async () => {
-    if (!form.receiverEmpno) { alert('받는 사람을 선택하세요.'); return; }
-    if (!form.title.trim())  { alert('제목을 입력하세요.'); return; }
-    if (!form.content.trim()){ alert('내용을 입력하세요.'); return; }
+    if (!form.receiverEmpno) { await showAlert('받는 사람을 선택하세요.', { title: '입력 오류' }); return; }
+    if (!form.title.trim())  { await showAlert('제목을 입력하세요.', { title: '입력 오류' }); return; }
+    if (!form.content.trim()){ await showAlert('내용을 입력하세요.', { title: '입력 오류' }); return; }
     setSending(true);
     try {
       const fd = new FormData();
@@ -124,14 +150,14 @@ export default function MessagePage({ empno, darkMode }) {
       const r = await authFetch('/api/msg/send', { method: 'POST', body: fd });
       const data = await r.json();
       if (r.ok) {
-        alert('쪽지를 발송했습니다.');
+        await showAlert('쪽지를 발송했습니다.', { title: '발송 완료' });
         setCompose(false);
         setForm({ receiverEmpno: '', receiverName: '', title: '', content: '', parentMsgId: null, files: [] });
         if (tab === 'sent') loadList();
       } else {
-        alert(data.error || '발송 실패');
+        await showAlert(data.error || '발송 실패', { title: '오류' });
       }
-    } catch (e) { alert('발송 중 오류가 발생했습니다.'); }
+    } catch (e) { await showAlert('발송 중 오류가 발생했습니다.', { title: '오류' }); }
     finally { setSending(false); }
   };
 
@@ -261,6 +287,11 @@ export default function MessagePage({ empno, darkMode }) {
                       {tab === 'inbox' && m.readAt && (
                         <span className="msg-read-mark" title={`읽음: ${m.readAt}`}>✓</span>
                       )}
+                      {tab === 'sent' && (
+                        m.readAt
+                          ? <span className="msg-receipt confirmed" title={`수신확인: ${m.readAt}`}>✅ 수신확인</span>
+                          : <span className="msg-receipt unconfirmed">⏳ 미확인</span>
+                      )}
                     </div>
 
                     {/* 삭제 버튼 */}
@@ -320,12 +351,24 @@ export default function MessagePage({ empno, darkMode }) {
                   <span className="msg-meta-label">보낸 시각</span>
                   <span className="msg-meta-val">{selected.sentAt}</span>
                 </div>
-                {selected.readAt && (
-                  <div className="msg-meta-row">
-                    <span className="msg-meta-label">읽은 시각</span>
-                    <span className="msg-meta-val msg-read-time">✓ {selected.readAt}</span>
-                  </div>
-                )}
+                <div className="msg-meta-row">
+                  <span className="msg-meta-label">수신 확인</span>
+                  {selected.readAt ? (
+                    <span className="msg-meta-val msg-read-time">
+                      <span style={{ color: '#16a34a', fontWeight: 700 }}>✅ 수신확인</span>
+                      <span style={{ color: '#6b7280', fontSize: '0.85rem', marginLeft: 8 }}>
+                        {selected.readAt}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="msg-meta-val">
+                      <span style={{ color: '#9ca3af', fontWeight: 600 }}>⏳ 미확인</span>
+                      <span style={{ color: '#9ca3af', fontSize: '0.82rem', marginLeft: 8 }}>
+                        (아직 읽지 않았습니다)
+                      </span>
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* 본문 */}

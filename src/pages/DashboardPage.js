@@ -7,6 +7,7 @@ import { fetchExpensesByMonth, fetchMonthlyStats } from '../api/expenseApi';
 import { fetchAllLeaves } from '../api/leaveApi';
 import { fetchSurveys } from '../api/surveyApi';
 import { fetchNotices, fetchKakaoConnectedCount, fetchKakaoStatus, sendKakaoTestMessage, sendKakaoNudge } from '../api/noticeApi';
+import { fetchAdminPendingLogs } from '../api/workLogApi';
 import { sendPushNudgeKakao } from '../api/pushApi';
 import { authFetch } from '../api/apiClient';
 import DustWidget from '../components/DustWidget';
@@ -68,6 +69,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const [todayAttend,    setTodayAttend]    = useState([]);  // 당일 출근 현황
   const [weather,        setWeather]        = useState(null); // 날씨 정보
   const [loading,        setLoading]        = useState(true);
+  const [pendingWorklogCount, setPendingWorklogCount] = useState(0);
 
   // 카카오 연동 현황 모달
   const [showKakaoModal, setShowKakaoModal] = useState(false);
@@ -79,6 +81,13 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
   const [kakaoNudgeResult,  setKakaoNudgeResult]  = useState(null);  // 카카오 간접 독려 결과
   const [testingEmpno,   setTestingEmpno]   = useState(null);  // 테스트 발송 중인 empno
   const [testResults,    setTestResults]    = useState({});    // { empno: '성공'|'실패' }
+
+  // 업무일지 관리자 결재대기 건수
+  useEffect(() => {
+    fetchAdminPendingLogs()
+      .then(d => setPendingWorklogCount(Array.isArray(d) ? d.length : 0))
+      .catch(() => setPendingWorklogCount(0));
+  }, []);
 
   useEffect(() => {
     const last6 = getLastMonths(6);
@@ -461,6 +470,7 @@ const DashboardPage = ({ username, onNavigate, darkMode = false }) => {
           <button style={menuBtn('#0f766e')} onClick={() => onNavigate('qr')}>📷<br />QR 출퇴근</button>
           <button style={menuBtn('#1d4ed8')} onClick={() => onNavigate('attendance')}>🕐<br />출근 기록</button>
           <button style={menuBtn('#be185d')} onClick={() => onNavigate('board-admin')}>📌<br />게시판 관리</button>
+          <BadgeBtn color="#7e22ce" icon="📋" label="업무일지 관리" count={pendingWorklogCount} onClick={() => onNavigate('worklog-admin')} />
         </div>
       </div>
 

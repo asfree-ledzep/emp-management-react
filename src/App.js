@@ -21,7 +21,11 @@ import QrScanPage from './pages/QrScanPage';
 import AttendancePage from './pages/AttendancePage';
 import ChatbotButton from './components/ChatbotModal';
 import EmployeeLayout from './components/EmployeeLayout';
+import TodoFloatButton from './components/TodoFloatButton';
+import MessageFloatButton from './components/MessageFloatButton';
+import GlobalConfirmModal from './components/GlobalConfirmModal';
 import BoardAdminPage from './pages/BoardAdminPage';
+import WorkLogAdminPage from './pages/WorkLogAdminPage';
 import AdminProfileModal from './components/AdminProfileModal';
 import DustWidget from './components/DustWidget';
 import { registerPush, unregisterPush } from './utils/pushNotification';
@@ -186,6 +190,8 @@ function App() {
       {role === 'USER' && page !== 'qr-scan' && (
         <>
           <EmployeeLayout empno={empno} darkMode={darkMode} role={role} username={username} />
+          <TodoFloatButton darkMode={darkMode} />
+          <MessageFloatButton darkMode={darkMode} />
           <ChatbotButton darkMode={darkMode} />
         </>
       )}
@@ -255,9 +261,15 @@ function App() {
           {page === 'board-admin' && (
             <BoardAdminPage darkMode={darkMode} onDashboard={() => setPage('dashboard')} />
           )}
+          {page === 'worklog-admin' && (
+            <WorkLogAdminPage onDashboard={() => setPage('dashboard')} />
+          )}
           <ChatbotButton darkMode={darkMode} />
         </>
       )}
+
+      {/* 전역 Confirm/Alert 모달 */}
+      <GlobalConfirmModal />
 
       {/* 관리자 설정 모달 (전역) */}
       {showAdminModal && (

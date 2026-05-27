@@ -5,13 +5,34 @@ import NoticePage from '../pages/NoticePage';
 import SurveyPage from '../pages/SurveyPage';
 import EmployeeExpensePage from '../pages/EmployeeExpensePage';
 import LeaveRequestPage from '../pages/LeaveRequestPage';
-import LeaveMgrPage from '../pages/LeaveMgrPage';
 import SharedFolderPage from '../pages/SharedFolderPage';
 import AttendancePage from '../pages/AttendancePage';
 import BoardPage from '../pages/BoardPage';
 import MessagePage from '../pages/MessagePage';
+import WorkLogPage from '../pages/WorkLogPage';
+import TodoPage from '../pages/TodoPage';
 import { fetchMgrPending, fetchMyBalance } from '../api/leaveApi';
+import { fetchMgrPendingLogs } from '../api/workLogApi';
 import { authFetch } from '../api/apiClient';
+
+// PM 수치 → 등급 계산 (DustWidget과 동일 로직)
+const calcDustGrade = (type, value) => {
+  const v = Number(value);
+  if (isNaN(v) || v < 0) return 2;
+  if (type === 'pm10') {
+    if (v <= 30)  return 1;
+    if (v <= 80)  return 2;
+    if (v <= 150) return 3;
+    return 4;
+  }
+  if (type === 'pm25') {
+    if (v <= 15) return 1;
+    if (v <= 35) return 2;
+    if (v <= 75) return 3;
+    return 4;
+  }
+  return 2;
+};
 
 // 등급 → 색상 (사이드바 다크 테마용)
 const DUST_COLORS = {
@@ -24,9 +45,9 @@ const DUST_COLORS = {
 const MENU = [
   { key: 'profile',        icon: '👤', label: '내 프로필' },
   { key: 'attendance',     icon: '🕐', label: '출근 기록' },
-  { key: 'leave',          icon: '🏖️', label: '연차 신청' },
-  { key: 'mgr',            icon: '✅', label: '연차 승인', mgrOnly: true },
-  { key: 'leave-approved', icon: '📋', label: '결제 완료 연차' },
+  { key: 'worklog',        icon: '📋', label: '업무일지' },
+  { key: 'todo',           icon: '☑️', label: '내 할일' },
+  { key: 'leave',          icon: '🏖️', label: '연차' },
   { key: 'board',          icon: '📌', label: '게시판' },
   { key: 'message',        icon: '✉️', label: '쪽지함' },
   { key: 'folder',         icon: '📁', label: '공유 폴더' },
@@ -38,11 +59,12 @@ const MENU = [
 export default function EmployeeLayout({ empno, darkMode, initialPage, role, username }) {
   const [page, setPage] = useState(initialPage || 'profile');
   const [mgrPendingCount, setMgrPendingCount] = useState(0);
+  const [worklogPendingCount, setWorklogPendingCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [balance, setBalance] = useState(null);
   const [unreadMsg, setUnreadMsg] = useState(0);
   const [dust, setDust] = useState(null);
-  const [dustSido, setDustSido] = useState('서울');
+  const [dustSido, setDustSido] = useState(() => localStorage.getItem('dustSido') || '서울');
 
   // 잔여 연차 조회
   useEffect(() => {
@@ -76,6 +98,18 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
     return () => clearInterval(timer);
   }, []);
 
+  // 업무일지 결재 대기 건수
+  useEffect(() => {
+    const check = () => {
+      fetchMgrPendingLogs()
+        .then(data => setWorklogPendingCount(Array.isArray(data) ? data.length : 0))
+        .catch(() => {});
+    };
+    check();
+    const timer = setInterval(check, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   // 미세먼지 조회 (30분 갱신)
   const [dustError, setDustError] = useState(null);
   useEffect(() => {
@@ -97,6 +131,21 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
     setPage(key);
     setSidebarOpen(false); // 모바일에서 메뉴 선택 시 닫기
   };
+
+  // 플로팅 쪽지 버튼에서 쪽지함으로 이동 요청
+  useEffect(() => {
+    const handler = (e) => {
+      navigate('message');
+      // msgId가 있으면 MessagePage에 전달 (MessagePage가 수신)
+      if (e.detail?.msgId) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('msg:open', { detail: { msgId: e.detail.msgId } }));
+        }, 100);
+      }
+    };
+    window.addEventListener('nav:message', handler);
+    return () => window.removeEventListener('nav:message', handler);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentMenu = MENU.find(m => m.key === page);
 
@@ -184,16 +233,16 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
             </div>
             <select
               value={dustSido}
-              onChange={e => setDustSido(e.target.value)}
+              onChange={e => { setDustSido(e.target.value); localStorage.setItem('dustSido', e.target.value); }}
               style={{
-                background: 'rgba(99,102,241,0.3)', border: '1px solid rgba(165,180,252,0.3)',
+                background: '#1e1b4b', border: '1px solid rgba(165,180,252,0.3)',
                 color: '#c4b5fd', fontSize: '0.62rem', borderRadius: 4,
                 padding: '1px 4px', cursor: 'pointer', outline: 'none',
               }}
             >
               {['서울','부산','대구','인천','광주','대전','울산','경기','강원',
                 '충북','충남','전북','전남','경북','경남','제주','세종'].map(s => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s} style={{ background: '#1e1b4b', color: '#c4b5fd' }}>{s}</option>
               ))}
             </select>
           </div>
@@ -207,8 +256,8 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
             <div style={{ display: 'flex', gap: 8 }}>
               {/* PM10 */}
               {[
-                { key: 'pm10',  label: 'PM₁₀',   grade: dust.pm10Grade,  val: dust.pm10  },
-                { key: 'pm25',  label: 'PM₂.₅',  grade: dust.pm25Grade,  val: dust.pm25  },
+                { key: 'pm10',  label: 'PM₁₀',   grade: calcDustGrade('pm10', dust.pm10),  val: dust.pm10  },
+                { key: 'pm25',  label: 'PM₂.₅',  grade: calcDustGrade('pm25', dust.pm25),  val: dust.pm25  },
               ].map(item => {
                 const c = DUST_COLORS[item.grade] || DUST_COLORS[2];
                 return (
@@ -242,7 +291,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
           ) /* dust */}
 
           {/* 나쁨 이상 경고 */}
-          {dust && (dust.pm10Grade >= 3 || dust.pm25Grade >= 3) && (
+          {dust && (calcDustGrade('pm10', dust.pm10) >= 3 || calcDustGrade('pm25', dust.pm25) >= 3) && (
             <div style={{
               marginTop: 6, fontSize: '0.62rem', color: '#fdba74',
               background: 'rgba(249,115,22,0.15)', borderRadius: 5,
@@ -274,7 +323,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
               >
                 <span style={{ fontSize: '1rem', lineHeight: 1 }}>{item.icon}</span>
                 <span>{item.label}</span>
-                {item.key === 'mgr' && mgrPendingCount > 0 && (
+                {item.key === 'leave' && mgrPendingCount > 0 && (
                   <span style={{
                     position: 'absolute', right: 14,
                     background: '#ef4444', color: '#fff',
@@ -282,6 +331,15 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
                     borderRadius: '50%', width: 18, height: 18,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>{mgrPendingCount > 9 ? '9+' : mgrPendingCount}</span>
+                )}
+                {item.key === 'worklog' && worklogPendingCount > 0 && (
+                  <span style={{
+                    position: 'absolute', right: 14,
+                    background: '#f97316', color: '#fff',
+                    fontSize: '0.7rem', fontWeight: 700,
+                    borderRadius: '50%', width: 18, height: 18,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{worklogPendingCount > 9 ? '9+' : worklogPendingCount}</span>
                 )}
                 {item.key === 'message' && unreadMsg > 0 && (
                   <span style={{
@@ -324,11 +382,12 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
               onNavigateToExpense={() => navigate('expense')}
               onNavigateToNotice={() => navigate('notice')}
               onNavigateToBoard={() => navigate('board')}
+              onNavigateToTodo={() => navigate('todo')}
             />
           )}
-          {page === 'leave'          && <LeaveRequestPage />}
-          {page === 'leave-approved' && <LeaveRequestPage approvedOnly={true} />}
-          {page === 'mgr'            && <LeaveMgrPage />}
+          {page === 'worklog' && <WorkLogPage role={role} worklogPendingCount={worklogPendingCount} />}
+          {page === 'todo'        && <TodoPage />}
+          {page === 'leave' && <LeaveRequestPage mgrPendingCount={mgrPendingCount} />}
           {page === 'folder'         && <SharedFolderPage isAdmin={false} empno={empno} />}
           {page === 'attendance'     && <AttendancePage user={{ empno, role: role || 'USER', username }} />}
           {page === 'board'    && <BoardPage empno={empno} darkMode={darkMode} />}
