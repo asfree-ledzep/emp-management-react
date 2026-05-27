@@ -115,8 +115,6 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
   const [lngInput, setLngInput] = useState(
     () => localStorage.getItem('weatherLng') || '126.9780'
   );
-  const cityCoord = latLngToGrid(weatherLat, weatherLng);
-
   const load = useCallback(() => {
     setLoading(true);
     fetchEmpById(empno)
