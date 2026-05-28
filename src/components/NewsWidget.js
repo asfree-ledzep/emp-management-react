@@ -21,6 +21,7 @@ export default function NewsWidget({ darkMode = false, defaultQuery }) {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
   const [lastAt,  setLastAt]  = useState(null);
+  const [expanded, setExpanded] = useState(false);
   const inputRef = useRef(null);
 
   const load = useCallback((q) => {
@@ -223,71 +224,92 @@ export default function NewsWidget({ darkMode = false, defaultQuery }) {
           {t('newsEmpty')}
         </div>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {news.map((item, idx) => (
-            <li key={idx} style={{
-              padding: '9px 0',
-              borderBottom: idx < news.length - 1 ? `1px solid ${border}` : 'none',
-            }}>
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  textDecoration: 'none',
-                  color: textD,
-                  padding: '2px 4px',
-                  borderRadius: 6,
-                  transition: 'background 0.12s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = hoverBg}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                {/* 제목 */}
-                <div style={{
-                  fontSize: '0.85rem', fontWeight: 600,
-                  color: textD, lineHeight: 1.4,
-                  marginBottom: 3,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}>
-                  {item.title}
-                </div>
-                {/* 설명 */}
-                {item.description && (
+        <>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {(expanded ? news : news.slice(0, 1)).map((item, idx, arr) => (
+              <li key={idx} style={{
+                padding: '9px 0',
+                borderBottom: idx < arr.length - 1 ? `1px solid ${border}` : 'none',
+              }}>
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'block',
+                    textDecoration: 'none',
+                    color: textD,
+                    padding: '2px 4px',
+                    borderRadius: 6,
+                    transition: 'background 0.12s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = hoverBg}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  {/* 제목 */}
                   <div style={{
-                    fontSize: '0.73rem', color: textM,
-                    lineHeight: 1.5, marginBottom: 4,
+                    fontSize: '0.85rem', fontWeight: 600,
+                    color: textD, lineHeight: 1.4,
+                    marginBottom: 3,
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
                     overflow: 'hidden',
                   }}>
-                    {item.description}
+                    {item.title}
                   </div>
-                )}
-                {/* 출처 + 날짜 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {item.source && (
-                    <span style={{
-                      fontSize: '0.65rem', fontWeight: 700,
-                      color: tagTxt, background: tagBg,
-                      borderRadius: 9999, padding: '1px 6px',
+                  {/* 설명 */}
+                  {item.description && (
+                    <div style={{
+                      fontSize: '0.73rem', color: textM,
+                      lineHeight: 1.5, marginBottom: 4,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
                     }}>
-                      {item.source}
-                    </span>
+                      {item.description}
+                    </div>
                   )}
-                  <span style={{ fontSize: '0.65rem', color: textM }}>
-                    {fmtDate(item.pubDate)}
-                  </span>
-                </div>
-              </a>
-            </li>
-          ))}
-        </ul>
+                  {/* 출처 + 날짜 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {item.source && (
+                      <span style={{
+                        fontSize: '0.65rem', fontWeight: 700,
+                        color: tagTxt, background: tagBg,
+                        borderRadius: 9999, padding: '1px 6px',
+                      }}>
+                        {item.source}
+                      </span>
+                    )}
+                    <span style={{ fontSize: '0.65rem', color: textM }}>
+                      {fmtDate(item.pubDate)}
+                    </span>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+          {/* 펼치기 / 접기 버튼 */}
+          {news.length > 1 && (
+            <button
+              onClick={() => setExpanded(prev => !prev)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 4, width: '100%', marginTop: 8,
+                background: 'none', border: `1px solid ${border}`,
+                borderRadius: 8, padding: '5px 0',
+                fontSize: '0.75rem', color: textM,
+                cursor: 'pointer',
+              }}
+            >
+              {expanded
+                ? <>접기 <span style={{ fontSize: '0.7rem' }}>▲</span></>
+                : <>뉴스 {news.length - 1}개 더보기 <span style={{ fontSize: '0.7rem' }}>▼</span></>
+              }
+            </button>
+          )}
+        </>
       )}
     </div>
   );
