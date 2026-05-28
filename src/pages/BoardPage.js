@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { authFetch } from '../api/apiClient';
+import TranslateButton from '../components/TranslateButton';
 
 /* ── 파일 업로드 ── */
 async function uploadBoardFile(file) {
@@ -421,6 +422,17 @@ export default function BoardPage({ empno, darkMode }) {
               whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>
               {selected.content || <span style={{ color: C.sub }}>(내용 없음)</span>}
+            </div>
+
+            {/* 번역 */}
+            <div style={{
+              padding: '10px 24px', borderTop: `1px solid ${C.border}`,
+              background: dk ? '#0f172a' : '#f8fafc', flexShrink: 0,
+            }}>
+              <TranslateButton
+                text={[selected.title, selected.content].filter(Boolean).join('\n\n')}
+                darkMode={dk}
+              />
             </div>
 
             {/* 첨부파일 */}

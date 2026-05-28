@@ -4,6 +4,7 @@ import {
   markNoticeRead, fetchNoticeReadSummary,
 } from '../api/noticeApi';
 import NoticeFormModal from '../components/NoticeFormModal';
+import TranslateButton from '../components/TranslateButton';
 
 function NoticePage({ isAdmin, onNavigateToList, empno }) {
   const [notices,     setNotices]     = useState([]);
@@ -199,9 +200,15 @@ function NoticePage({ isAdmin, onNavigateToList, empno }) {
             <hr style={{ margin: '0 0 20px', border: 'none', borderTop: '1px solid #e5e7eb' }} />
 
             {/* 본문 */}
-            <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, margin: '0 0 28px' }}>
+            <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, margin: '0 0 16px' }}>
               {selected.content}
             </p>
+
+            {/* 번역 */}
+            <TranslateButton
+              text={[selected.title, selected.content].filter(Boolean).join('\n\n')}
+              style={{ marginBottom: 20 }}
+            />
 
             {/* 관리자: 읽음 현황 */}
             {isAdmin && (
