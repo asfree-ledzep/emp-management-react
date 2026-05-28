@@ -18,9 +18,9 @@ const LANGS = [
 export default function TranslateButton({ text, darkMode = false, style = {} }) {
   const dk = darkMode;
 
-  const [selectedLang,    setSelectedLang]    = useState('en');
+  const [selectedLang,    setSelectedLang]    = useState(null);
   const [translatedText,  setTranslatedText]  = useState(null);
-  const [loading,         setLoading]         = useState(false);
+  const [loading,         setLoading]         = useState(null); // 로딩 중인 lang code
   const [error,           setError]           = useState(null);
   const [open,            setOpen]            = useState(false); // 번역 패널 열림
 
@@ -29,13 +29,23 @@ export default function TranslateButton({ text, darkMode = false, style = {} }) 
   const textD   = dk ? '#e2e8f0' : '#1e293b';
   const panelBg = dk ? '#0f172a' : '#f8fafc';
 
-  const handleTranslate = async () => {
-    if (!text?.trim()) return;
-    setLoading(true);
-    setError(null);
+  const handleSelectLang = async (code) => {
+    // 같은 언어 재클릭 시 닫기
+    if (selectedLang === code && open) {
+      setOpen(false);
+      setTranslatedText(null);
+      setError(null);
+      setSelectedLang(null);
+      return;
+    }
+    setSelectedLang(code);
+    setOpen(false);
     setTranslatedText(null);
+    setError(null);
+    if (!text?.trim()) return;
+    setLoading(code);
     try {
-      const data = await translateText(text, selectedLang);
+      const data = await translateText(text, code);
       if (data.error) {
         setError(data.message || data.error);
       } else {
@@ -45,61 +55,38 @@ export default function TranslateButton({ text, darkMode = false, style = {} }) 
     } catch (e) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setTranslatedText(null);
-    setError(null);
   };
 
   return (
     <div style={{ ...style }}>
-      {/* 언어 선택 + 번역 버튼 */}
+      {/* 언어 선택 버튼 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         <span style={{ fontSize: '0.72rem', color: textM, flexShrink: 0 }}>🌐 번역:</span>
         {LANGS.map(l => (
           <button
             key={l.code}
-            onClick={() => {
-              setSelectedLang(l.code);
-              setTranslatedText(null);
-              setError(null);
-              setOpen(false);
-            }}
+            onClick={() => handleSelectLang(l.code)}
+            disabled={!!loading}
             style={{
               padding: '3px 10px', borderRadius: 20, border: 'none',
-              fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
-              background: selectedLang === l.code
-                ? '#4f46e5'
+              fontSize: '0.72rem', fontWeight: 700,
+              cursor: loading ? 'wait' : 'pointer',
+              background: selectedLang === l.code && open
+                ? '#0891b2'
                 : (dk ? '#1e293b' : '#f1f5f9'),
-              color: selectedLang === l.code ? '#fff' : textM,
+              color: selectedLang === l.code && open ? '#fff' : textM,
               transition: 'all 0.15s',
+              opacity: loading && loading !== l.code ? 0.5 : 1,
             }}
           >
-            {l.label}
+            {loading === l.code ? '...' : l.label}
           </button>
         ))}
-        <button
-          onClick={handleTranslate}
-          disabled={loading || !text?.trim()}
-          style={{
-            padding: '3px 14px', borderRadius: 20,
-            border: 'none', fontSize: '0.72rem', fontWeight: 700,
-            cursor: loading ? 'wait' : 'pointer',
-            background: loading ? '#94a3b8' : '#0891b2',
-            color: '#fff',
-            opacity: !text?.trim() ? 0.5 : 1,
-            transition: 'all 0.15s',
-          }}
-        >
-          {loading ? '번역 중...' : '번역하기'}
-        </button>
         {(open || error) && (
           <button
-            onClick={handleClose}
+            onClick={() => { setOpen(false); setTranslatedText(null); setError(null); setSelectedLang(null); }}
             style={{
               padding: '3px 10px', borderRadius: 20, border: `1px solid ${border}`,
               fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
