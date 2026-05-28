@@ -29,8 +29,10 @@ import WorkLogAdminPage from './pages/WorkLogAdminPage';
 import AdminProfileModal from './components/AdminProfileModal';
 import DustWidget from './components/DustWidget';
 import { registerPush, unregisterPush } from './utils/pushNotification';
+import { useLang } from './i18n/LangContext';
 
 function App() {
+  const { t, toggleLang } = useLang();
   const [token,    setToken]    = useState(sessionStorage.getItem('token'));
   const [username, setUsername] = useState(sessionStorage.getItem('username'));
   const [role,     setRole]     = useState(sessionStorage.getItem('role'));
@@ -119,7 +121,7 @@ function App() {
     return (
       <>
         <button className="dark-toggle-login" onClick={toggleDark}
-          title={darkMode ? '라이트 모드' : '다크 모드'}>
+          title={darkMode ? t('lightMode') : t('darkMode')}>
           {darkMode ? '☀️' : '🌙'}
         </button>
         <LoginPage
@@ -145,7 +147,7 @@ function App() {
         <span className="app-topbar-user">
           {role === 'ADMIN' ? '🛡️' : '👤'} {username}
           <span className="app-topbar-role">
-            {role === 'ADMIN' ? '관리자' : '사원'}
+            {role === 'ADMIN' ? t('admin') : t('employee')}
           </span>
         </span>
 
@@ -153,7 +155,7 @@ function App() {
         {role === 'ADMIN' && (
           <button
             onClick={(e) => { e.stopPropagation(); setShowAdminModal(true); }}
-            title="관리자 설정"
+            title={t('adminSettings')}
             style={{
               background: 'rgba(255,255,255,0.12)',
               border: '1px solid rgba(255,255,255,0.25)',
@@ -166,14 +168,29 @@ function App() {
           </button>
         )}
 
+        {/* 언어 토글 */}
+        <button
+          onClick={toggleLang}
+          title="한/EN"
+          style={{
+            background: 'rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            borderRadius: 20, padding: '4px 10px',
+            fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+            color: '#fff', letterSpacing: '0.03em',
+          }}
+        >
+          🌐 {t('langToggle')}
+        </button>
+
         {/* 다크 모드 토글 */}
         <button className="app-topbar-dark" onClick={toggleDark}
-          title={darkMode ? '라이트 모드로 전환' : '다크 모드로 전환'}>
+          title={darkMode ? t('lightMode') : t('darkMode')}>
           {darkMode ? '☀️' : '🌙'}
         </button>
 
         <button className="app-topbar-logout" onClick={handleLogout}>
-          로그아웃
+          {t('logout')}
         </button>
       </div>
 

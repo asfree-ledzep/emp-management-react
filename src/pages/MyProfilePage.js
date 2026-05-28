@@ -6,6 +6,8 @@ import { fetchEmpById, updateEmp, uploadPhoto } from '../api/empApi';
 import { getKakaoAuthUrl } from '../api/noticeApi';
 import { authFetch } from '../api/apiClient';
 import DustWidget from '../components/DustWidget';
+import NewsWidget from '../components/NewsWidget';
+import { useLang } from '../i18n/LangContext';
 import '../styles/MyProfilePage.css';
 import '../styles/Button.css';
 
@@ -90,6 +92,7 @@ function latLngToGrid(lat, lng) {
 // props:
 //   empno - 로그인된 사원 번호
 const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavigateToNotice, onNavigateToBoard, onNavigateToTodo }) => {
+  const { t } = useLang();
   const [emp,      setEmp]      = useState(null);
   const [loading,  setLoading]  = useState(true);
   const [editing,  setEditing]  = useState(false);
@@ -164,7 +167,7 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
   return (
     <div className="my-profile-page">
       <div className="my-profile-header">
-        <h1>내 프로필</h1>
+        <h1>{t('myProfile')}</h1>
       </div>
 
       {/* ── 날씨 위젯 ── */}
@@ -181,7 +184,7 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
             <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>🏠</span>
             <div>
               <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.92rem' }}>
-                ☔ 오늘은 재택근무를 추천합니다!
+                {t('wfhRecommend')}
               </div>
               <div style={{ fontSize: '0.76rem', color: '#b45309', marginTop: 2 }}>
                 {weather.wfhReasons?.join(' · ')} 로 인한 악천후
@@ -214,9 +217,9 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
               <div style={{ width: 1, height: 36, background: '#c7d2fe', flexShrink: 0 }} />
               <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', flex: 1 }}>
                 {[
-                  { label: '강수확률', value: `${weather.maxPop}%`, color: '#2563eb' },
-                  { label: '습도',     value: `${weather.reh}%`,    color: '#0891b2' },
-                  { label: '풍속',     value: `${weather.wsd}m/s`,  color: '#0f766e' },
+                  { label: t('rainProb'),  value: `${weather.maxPop}%`, color: '#2563eb' },
+                  { label: t('humidity'), value: `${weather.reh}%`,    color: '#0891b2' },
+                  { label: t('windSpeed'),value: `${weather.wsd}m/s`,  color: '#0f766e' },
                 ].map(item => (
                   <div key={item.label} style={{ textAlign: 'center', minWidth: 48 }}>
                     <div style={{ fontSize: '0.95rem', fontWeight: 700, color: item.color }}>{item.value}</div>
@@ -262,7 +265,7 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
             {/* 위도 / 경도 직접 입력 */}
             <div style={{ display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'flex-end' }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: 2 }}>위도</div>
+                <div style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: 2 }}>{t('lat')}</div>
                 <input
                   type="number" step="0.0001" min="33" max="43"
                   value={latInput}
@@ -276,7 +279,7 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
                 />
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: 2 }}>경도</div>
+                <div style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: 2 }}>{t('lng')}</div>
                 <input
                   type="number" step="0.0001" min="124" max="132"
                   value={lngInput}
@@ -307,12 +310,12 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
                     borderRadius: 5, padding: '4px 8px',
                     fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
                   }}
-                >조회</button>
+                >{t('search')}</button>
               </div>
             </div>
 
             <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: 5 }}>
-              📡 기상청 단기예보
+              {t('weatherSource')}
             </div>
           </div>
         </div>
@@ -320,6 +323,9 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
 
       {/* ── 미세먼지 위젯 ── */}
       <DustWidget darkMode={false} compact={true} />
+
+      {/* ── 업계 뉴스 피드 (사원 전용) ── */}
+      <NewsWidget defaultQuery={sessionStorage.getItem('deptname') || 'IT 뉴스'} />
 
       <div className="my-profile-card">
         {/* 상단 배너: 사진 + 이름 */}
@@ -336,11 +342,11 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
         {/* 상세 정보 */}
         <div className="my-profile-info">
           <div className="my-profile-row">
-            <span className="my-profile-row-label">사번</span>
+            <span className="my-profile-row-label">{t('empno')}</span>
             <span className="my-profile-row-value">{emp.empno}</span>
           </div>
           <div className="my-profile-row">
-            <span className="my-profile-row-label">부서</span>
+            <span className="my-profile-row-label">{t('dept')}</span>
             <span className="my-profile-row-value">{emp.deptno ?? '-'}</span>
           </div>
           <div className="my-profile-row">
@@ -348,7 +354,7 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
             <span className="my-profile-row-value">{emp.mgr ?? '-'}</span>
           </div>
           <div className="my-profile-row">
-            <span className="my-profile-row-label">입사일</span>
+            <span className="my-profile-row-label">{t('hiredate')}</span>
             <span className="my-profile-row-value">
               {formatDate(emp.hiredate)}
               {yearsOfService && (
@@ -357,7 +363,7 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
             </span>
           </div>
           <div className="my-profile-row">
-            <span className="my-profile-row-label">급여</span>
+            <span className="my-profile-row-label">{t('salary')}</span>
             <span className="my-profile-row-value">{formatMoney(emp.sal)}</span>
           </div>
           <div className="my-profile-row">
@@ -368,7 +374,7 @@ const MyProfilePage = ({ empno, onNavigateToSurvey, onNavigateToExpense, onNavig
 
         {/* 하단 버튼 — 3×2 그리드 */}
         <div className="my-profile-footer">
-          <button className="btn btn-blue"  onClick={() => setEditing(true)}>✏️ 내 정보 수정</button>
+          <button className="btn btn-blue"  onClick={() => setEditing(true)}>✏️ {t('editProfile')}</button>
           <button className="btn btn-gray"  onClick={onNavigateToSurvey}>📋 설문조사</button>
           <button className="btn btn-blue"  onClick={onNavigateToExpense}>💰 지출 관리</button>
           <button className="btn btn-gray"  onClick={onNavigateToNotice}>📢 공지사항</button>

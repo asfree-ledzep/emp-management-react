@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLang } from '../i18n/LangContext';
 import '../styles/EmployeeLayout.css';
 import MyProfilePage from '../pages/MyProfilePage';
 import NoticePage from '../pages/NoticePage';
@@ -42,21 +43,25 @@ const DUST_COLORS = {
   4: { text: '#fca5a5', badge: '#ef4444', label: '매우나쁨', emoji: '🚨' },
 };
 
-const MENU = [
-  { key: 'profile',        icon: '👤', label: '내 프로필' },
-  { key: 'attendance',     icon: '🕐', label: '출근 기록' },
-  { key: 'worklog',        icon: '📋', label: '업무일지' },
-  { key: 'todo',           icon: '☑️', label: '내 할일' },
-  { key: 'leave',          icon: '🏖️', label: '연차' },
-  { key: 'board',          icon: '📌', label: '게시판' },
-  { key: 'message',        icon: '✉️', label: '쪽지함' },
-  { key: 'folder',         icon: '📁', label: '공유 폴더' },
-  { key: 'notice',         icon: '📢', label: '공지사항' },
-  { key: 'survey',         icon: '📊', label: '설문' },
-  { key: 'expense',        icon: '💳', label: '지출 신청' },
+const MENU_KEYS = [
+  { key: 'profile',    icon: '👤', tKey: 'menu_profile'    },
+  { key: 'attendance', icon: '🕐', tKey: 'menu_attendance' },
+  { key: 'worklog',    icon: '📋', tKey: 'menu_worklog'    },
+  { key: 'todo',       icon: '☑️', tKey: 'menu_todo'       },
+  { key: 'leave',      icon: '🏖️', tKey: 'menu_leave'      },
+  { key: 'board',      icon: '📌', tKey: 'menu_board'      },
+  { key: 'message',    icon: '✉️', tKey: 'menu_message'    },
+  { key: 'folder',     icon: '📁', tKey: 'menu_folder'     },
+  { key: 'notice',     icon: '📢', tKey: 'menu_notice'     },
+  { key: 'survey',     icon: '📊', tKey: 'menu_survey'     },
+  { key: 'expense',    icon: '💳', tKey: 'menu_expense'    },
 ];
 
 export default function EmployeeLayout({ empno, darkMode, initialPage, role, username }) {
+  const { t } = useLang();
+  // 번역된 메뉴 배열 (언어 변경 시 자동 재계산)
+  const MENU = MENU_KEYS.map(m => ({ ...m, label: t(m.tKey) }));
+
   const [page, setPage] = useState(initialPage || 'profile');
   const [mgrPendingCount, setMgrPendingCount] = useState(0);
   const [worklogPendingCount, setWorklogPendingCount] = useState(0);
@@ -176,7 +181,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
             EMPLOYEE PORTAL
           </div>
           <div style={{ color: '#fff', fontSize: '0.95rem', fontWeight: 700 }}>
-            사원 메뉴
+            {t('sidebarTitle')}
           </div>
         </div>
 
@@ -191,7 +196,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
           }}
         >
           <div style={{ fontSize: '0.68rem', color: '#c4b5fd', fontWeight: 600, marginBottom: 4, letterSpacing: '0.05em' }}>
-            {new Date().getFullYear()}년 잔여 연차
+            {new Date().getFullYear()}년 {t('remainLeave')}
           </div>
           {balance ? (
             <>
@@ -199,10 +204,10 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
                 <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#fff', lineHeight: 1 }}>
                   {balance.remaining}
                 </span>
-                <span style={{ fontSize: '0.85rem', color: '#c4b5fd', fontWeight: 600 }}>일</span>
+                <span style={{ fontSize: '0.85rem', color: '#c4b5fd', fontWeight: 600 }}>{t('leaveDay')}</span>
               </div>
               <div style={{ fontSize: '0.7rem', color: 'rgba(196,181,253,0.8)', marginTop: 4 }}>
-                총 {balance.totalDays}일 중 사용 {balance.usedDays}일
+                {t('leaveUsed', { total: balance.totalDays, used: balance.usedDays })}
               </div>
               {/* 잔여 비율 바 */}
               <div style={{ marginTop: 8, background: 'rgba(0,0,0,0.25)', borderRadius: 4, height: 4, overflow: 'hidden' }}>
@@ -229,7 +234,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
           {/* 헤더 + 시도 선택 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
             <div style={{ fontSize: '0.65rem', color: '#a5b4fc', fontWeight: 600, letterSpacing: '0.04em' }}>
-              🌬️ 실시간 대기질
+              🌬️ {t('airQuality')}
             </div>
             <select
               value={dustSido}
@@ -286,7 +291,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
             </div>
           ) : (
             <div style={{ fontSize: '0.72rem', color: 'rgba(196,181,253,0.5)', textAlign: 'center', padding: '4px 0' }}>
-              조회 중...
+              {t('loading')}
             </div>
           ) /* dust */}
 
@@ -297,7 +302,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
               background: 'rgba(249,115,22,0.15)', borderRadius: 5,
               padding: '3px 6px', textAlign: 'center', fontWeight: 600,
             }}>
-              😷 마스크 착용 권장
+              {t('maskWarn')}
             </div>
           )}
         </div>
