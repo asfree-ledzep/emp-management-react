@@ -34,6 +34,11 @@ export default function NewsWidget({ darkMode = false, defaultQuery }) {
           setNews([]);
           return;
         }
+        if (data.error === 'API_FORBIDDEN') {
+          setError('API_FORBIDDEN');
+          setNews([]);
+          return;
+        }
         if (data.error) {
           setError(data.message || data.error);
           setNews([]);
@@ -190,6 +195,22 @@ export default function NewsWidget({ darkMode = false, defaultQuery }) {
             {t('newsApiNotSet')}<br />
             <span style={{ fontSize: '0.72rem' }}>
               EB 환경변수: <code>NAVER_CLIENT_ID</code>, <code>NAVER_CLIENT_SECRET</code>
+            </span>
+          </div>
+        </div>
+      ) : error === 'API_FORBIDDEN' ? (
+        <div style={{
+          background: dk ? '#1c1917' : '#fefce8',
+          border: `1px solid ${dk ? '#713f12' : '#fde68a'}`,
+          borderRadius: 8, padding: '10px 14px', fontSize: '0.8rem',
+        }}>
+          <div style={{ fontWeight: 700, color: '#f59e0b', marginBottom: 4 }}>
+            🔑 API 인증 실패
+          </div>
+          <div style={{ color: textM, lineHeight: 1.6 }}>
+            네이버 Client ID / Secret이 올바르지 않거나 검색 API 권한이 없습니다.<br />
+            <span style={{ fontSize: '0.72rem' }}>
+              developers.naver.com → 앱 관리 → 사용 API에 <b>검색</b> 포함 여부 확인
             </span>
           </div>
         </div>
