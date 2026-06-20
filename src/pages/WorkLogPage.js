@@ -29,7 +29,7 @@ const modalOverlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)
 const modalBox     = { background: '#fff', borderRadius: 12, padding: 28, width: 440, maxWidth: '90vw', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' };
 
 export default function WorkLogPage({ role, worklogPendingCount = 0 }) {
-  const isMgr = role === 'MGR' || role === 'ADMIN';
+  const isMgr = true; // 팀장 여부는 서버가 판단 (EMP.MGR 컬럼 기반)
 
   // ─ 내 업무일지 상태 ─
   const [myLogs,   setMyLogs]   = useState([]);
