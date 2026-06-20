@@ -145,7 +145,7 @@ function App() {
       {/* 상단 바 */}
       <div className="app-topbar">
         <span className="app-topbar-user">
-          {role === 'ADMIN' ? '🛡️' : '👤'} {username}
+          {role === 'ADMIN' ? '🛡️' : '👤'} {username}{empno ? `/${empno}` : ''}
           <span className="app-topbar-role">
             {role === 'ADMIN' ? t('admin') : t('employee')}
           </span>
