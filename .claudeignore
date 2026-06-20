@@ -1,0 +1,10 @@
+# 의존성 및 빌드
+node_modules/
+build/
+
+# 환경/배포 설정
+.vercel/
+.env.production
+
+# 문서
+README.md
