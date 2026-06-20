@@ -5,6 +5,23 @@ build/
 # 환경/배포 설정
 .vercel/
 .env.production
+vercel.json
+.gitignore
 
-# 문서
+# 락 파일 (대용량)
+package-lock.json
+
+# 정적 에셋
+public/
+src/logo.svg
+
+# 보일러플레이트
 README.md
+src/reportWebVitals.js
+src/setupTests.js
+src/App.test.js
+
+# CSS (로직 분석 불필요)
+src/styles/
+src/App.css
+src/index.css
