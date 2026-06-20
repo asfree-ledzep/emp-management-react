@@ -670,7 +670,7 @@ function ChatbotButton({ darkMode = false }) {
           transform: anyOpen || menuOpen ? 'rotate(45deg) scale(0.95)' : 'none',
         }}
       >
-        {anyOpen || menuOpen ? '✕' : '👥'}
+        {anyOpen || menuOpen ? '✕' : '💬'}
 
         {/* 통합 배지 */}
         {!anyOpen && !menuOpen && totalUnread > 0 && (
@@ -706,7 +706,7 @@ function ChatbotButton({ darkMode = false }) {
           transform: open ? 'rotate(45deg) scale(0.95)' : 'none',
         }}
       >
-        {open ? '✕' : '💬'}
+        {open ? '✕' : '🤖'}
       </button>
 
       <style>{`
