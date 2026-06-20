@@ -32,16 +32,6 @@ export default function WorkLogAdminPage({ onDashboard }) {
 
   return (
     <div style={{ padding:24 }}>
-      {msg && (
-        <div style={{
-          position:'fixed', top:20, right:20, zIndex:9999,
-          background: msg.type==='error'?'#fee2e2':'#dcfce7',
-          color: msg.type==='error'?'#dc2626':'#16a34a',
-          border:`1px solid ${msg.type==='error'?'#fca5a5':'#86efac'}`,
-          borderRadius:8, padding:'10px 18px', fontWeight:600,
-        }}>{msg.text}</div>
-      )}
-
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
         {onDashboard && (
           <button onClick={onDashboard} style={{
