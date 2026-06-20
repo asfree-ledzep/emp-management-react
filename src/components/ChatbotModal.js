@@ -151,6 +151,29 @@ function ChatbotModal({ onClose, darkMode = false }) {
           >✕</button>
         </div>
 
+        {/* 빠른 질문 버튼 — 항상 고정 */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: 5,
+          padding: '8px 12px',
+          borderBottom: `1px solid ${C.inputBorder}`,
+          background: C.inputArea,
+        }}>
+          {QUICK.map(q => (
+            <button
+              key={q}
+              onClick={() => send(q)}
+              disabled={loading}
+              style={{
+                padding: '4px 9px', fontSize: '0.72rem',
+                background: C.quickBg, color: C.quickText,
+                border: `1px solid ${C.quickBord}`, borderRadius: 20,
+                cursor: loading ? 'default' : 'pointer', fontWeight: 600,
+                opacity: loading ? 0.6 : 1,
+              }}
+            >{q}</button>
+          ))}
+        </div>
+
         {/* 메시지 영역 */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 10, background: C.msgArea }}>
           {messages.map((msg, i) => (
@@ -185,24 +208,6 @@ function ChatbotModal({ onClose, darkMode = false }) {
               </div>
             </div>
           ))}
-
-          {/* 빠른 질문 버튼 (초기 상태) */}
-          {messages.length === 1 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
-              {QUICK.map(q => (
-                <button
-                  key={q}
-                  onClick={() => send(q)}
-                  style={{
-                    padding: '5px 10px', fontSize: '0.75rem',
-                    background: C.quickBg, color: C.quickText,
-                    border: `1px solid ${C.quickBord}`, borderRadius: 20,
-                    cursor: 'pointer', fontWeight: 600,
-                  }}
-                >{q}</button>
-              ))}
-            </div>
-          )}
 
           {loading && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
