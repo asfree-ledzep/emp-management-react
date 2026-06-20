@@ -4,7 +4,7 @@ import {
   fetchMgrPending, mgrApprove, mgrReject,
 } from '../api/leaveApi';
 
-const LEAVE_TYPES = ['연차', '반차(오전)', '반차(오후)', '병가', '특별휴가'];
+const LEAVE_TYPES = ['연차', '반차(오전)', '반차(오후)', '외출', '병가', '특별휴가'];
 
 const STATUS_CFG = {
   PENDING:      { text: '대기중',   color: '#d97706', bg: '#fef3c7', bar: '#fbbf24' },
@@ -310,7 +310,7 @@ export default function LeaveRequestPage({ mgrPendingCount = 0 }) {
     leaveType: '연차', startDate: '', endDate: '', reason: '',
   });
 
-  const autoEndDate = form.leaveType.includes('반차');
+  const autoEndDate = form.leaveType.includes('반차') || form.leaveType === '외출';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -328,6 +328,7 @@ export default function LeaveRequestPage({ mgrPendingCount = 0 }) {
   useEffect(() => { load(); }, [load]);
 
   const calcDays = () => {
+    if (form.leaveType === '외출') return 0.5;
     if (autoEndDate) return 0.5;
     return calcWeekdays(form.startDate, form.endDate);
   };
