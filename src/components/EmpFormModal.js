@@ -142,11 +142,12 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
     e.preventDefault();
     onSave({
       ...form,
-      empno:  Number(form.empno),
-      mgr:    form.mgr    !== '' ? Number(form.mgr)    : null,
-      sal:    form.sal    !== '' ? Number(form.sal)    : null,
-      comm:   form.comm   !== '' ? Number(form.comm)   : null,
-      deptno: form.deptno !== '' ? Number(form.deptno) : null,
+      empno:    Number(form.empno),
+      mgr:      form.mgr      !== '' ? Number(form.mgr)      : null,
+      hiredate: form.hiredate !== '' ? form.hiredate          : null,
+      sal:      form.sal      !== '' ? Number(form.sal)      : null,
+      comm:     form.comm     !== '' ? Number(form.comm)     : null,
+      deptno:   form.deptno   !== '' ? Number(form.deptno)   : null,
       _photoFile: photoFile,
       _addrData:  addr,
     });
