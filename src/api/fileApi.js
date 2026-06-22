@@ -34,19 +34,17 @@ export const uploadFile = (file, scope, deptno = null, folderId = null) => {
   return authFetch(`${BASE}/upload`, { method: 'POST', body: form });
 };
 
-// ── 파일 다운로드 (서버 스트리밍) ──
+// ── 파일 다운로드 (R2 Pre-signed URL) ──
 export const downloadFile = async (fileId, fileName) => {
-  const res = await authFetch(`${BASE}/${fileId}/download`);
-  if (!res.ok) throw new Error('다운로드 실패');
-  const blob = await res.blob();
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = fileName;
+  const res = await authFetch(`${BASE}/${fileId}/download-url`);
+  if (!res.ok) throw new Error('다운로드 URL 요청 실패');
+  const { url } = await res.json();
+  const a = document.createElement('a');
+  a.href = url;
+  a.rel  = 'noopener';
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
 };
 
 // ── 파일 삭제 ──
