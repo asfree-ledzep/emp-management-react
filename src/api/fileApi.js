@@ -46,7 +46,7 @@ export const downloadFile = async (fileId, fileName) => {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 };
 
 // ── 파일 삭제 ──
