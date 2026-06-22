@@ -225,9 +225,13 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
             <label>급여</label>
             <input
               name="sal"
-              type="number"
-              value={form.sal}
-              onChange={handleChange}
+              type="text"
+              inputMode="numeric"
+              value={form.sal !== '' ? Number(form.sal).toLocaleString('ko-KR') : ''}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, '');
+                handleChange({ target: { name: 'sal', value: raw } });
+              }}
               disabled={readOnly('sal')}
               placeholder="급여 입력"
             />
@@ -236,9 +240,13 @@ const EmpFormModal = ({ mode, emp, onSave, onClose, saving = false, isAdmin = tr
             <label>커미션</label>
             <input
               name="comm"
-              type="number"
-              value={form.comm}
-              onChange={handleChange}
+              type="text"
+              inputMode="numeric"
+              value={form.comm !== '' ? Number(form.comm).toLocaleString('ko-KR') : ''}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, '');
+                handleChange({ target: { name: 'comm', value: raw } });
+              }}
               disabled={readOnly('comm')}
               placeholder="커미션 입력"
             />
