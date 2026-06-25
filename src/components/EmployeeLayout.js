@@ -68,6 +68,7 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [balance, setBalance] = useState(null);
   const [unreadMsg, setUnreadMsg] = useState(0);
+  const [unreadSurvey, setUnreadSurvey] = useState(0);
   const [dust, setDust] = useState(null);
   const [dustSido, setDustSido] = useState(() => localStorage.getItem('dustSido') || '서울');
 
@@ -88,6 +89,22 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
     };
     checkUnread();
     const t = setInterval(checkUnread, 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  // 미응답 설문 수
+  useEffect(() => {
+    const checkSurvey = () => {
+      authFetch('/api/surveys')
+        .then(r => r.ok ? r.json() : [])
+        .then(data => {
+          const count = data.filter(s => s.status === 'ACTIVE' && s.responseCount !== -1).length;
+          setUnreadSurvey(count);
+        })
+        .catch(() => {});
+    };
+    checkSurvey();
+    const t = setInterval(checkSurvey, 60000);
     return () => clearInterval(t);
   }, []);
 
@@ -345,6 +362,15 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
                     borderRadius: '50%', width: 18, height: 18,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>{worklogPendingCount > 9 ? '9+' : worklogPendingCount}</span>
+                )}
+                {item.key === 'survey' && unreadSurvey > 0 && (
+                  <span style={{
+                    position: 'absolute', right: 14,
+                    background: '#7c3aed', color: '#fff',
+                    fontSize: '0.7rem', fontWeight: 700,
+                    borderRadius: '9999px', padding: '1px 5px', minWidth: 18, height: 18,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{unreadSurvey > 99 ? '99+' : unreadSurvey}</span>
                 )}
                 {item.key === 'message' && unreadMsg > 0 && (
                   <span style={{
