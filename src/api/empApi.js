@@ -4,6 +4,13 @@ import { authFetch } from './apiClient';
 
 const BASE_URL = '/api';
 
+// 조직도용 목록 조회 (인증된 모든 사용자)
+export const fetchEmpsForOrg = async () => {
+  const response = await authFetch(`${BASE_URL}/emps/org-chart`);
+  if (!response.ok) throw new Error(`서버 오류 (${response.status})`);
+  return response.json();
+};
+
 // 사원 단건 조회 (사원 본인 프로필용)
 export const fetchEmpById = async (empno) => {
   const response = await authFetch(`${BASE_URL}/emps/${empno}`);

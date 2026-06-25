@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchEmps } from '../api/empApi';
+import { fetchEmpsForOrg } from '../api/empApi';
 import { fetchDepts } from '../api/deptApi';
 import '../styles/OrgChartPage.css';
 
@@ -126,7 +126,7 @@ function OrgChartPage({ onNavigateToList }) {
   const [zoom,       setZoom]       = useState(1);
 
   useEffect(() => {
-    Promise.all([fetchEmps(), fetchDepts()])
+    Promise.all([fetchEmpsForOrg(), fetchDepts()])
       .then(([emps, deptList]) => {
         setRoots(buildTree(emps));
         const map = {};
