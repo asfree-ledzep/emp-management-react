@@ -12,6 +12,7 @@ import BoardPage from '../pages/BoardPage';
 import MessagePage from '../pages/MessagePage';
 import WorkLogPage from '../pages/WorkLogPage';
 import TodoPage from '../pages/TodoPage';
+import OrgChartPage from '../pages/OrgChartPage';
 import { fetchMgrPending, fetchMyBalance } from '../api/leaveApi';
 import { fetchMgrPendingLogs } from '../api/workLogApi';
 import { authFetch } from '../api/apiClient';
@@ -55,6 +56,7 @@ const MENU_KEYS = [
   { key: 'notice',     icon: '📢', tKey: 'menu_notice'     },
   { key: 'survey',     icon: '📊', tKey: 'menu_survey'     },
   { key: 'expense',    icon: '💳', tKey: 'menu_expense'    },
+  { key: 'orgchart',  icon: '🏢', tKey: 'menu_orgchart'  },
 ];
 
 export default function EmployeeLayout({ empno, darkMode, initialPage, role, username }) {
@@ -425,7 +427,8 @@ export default function EmployeeLayout({ empno, darkMode, initialPage, role, use
           {page === 'message'  && <MessagePage empno={empno} darkMode={darkMode} />}
           {page === 'notice'   && <NoticePage isAdmin={false} empno={empno} onNavigateToList={() => navigate('profile')} />}
           {page === 'survey'  && <SurveyPage isAdmin={false} onNavigateToList={() => navigate('profile')} />}
-          {page === 'expense' && <EmployeeExpensePage onNavigateToList={() => navigate('profile')} />}
+          {page === 'expense'   && <EmployeeExpensePage onNavigateToList={() => navigate('profile')} />}
+          {page === 'orgchart'  && <OrgChartPage onNavigateToList={() => navigate('profile')} />}
         </div>
       </main>
     </div>

@@ -26,6 +26,7 @@ const translations = {
     menu_notice:     '공지사항',
     menu_survey:     '설문',
     menu_expense:    '지출 신청',
+    menu_orgchart:   '조직도',
 
     // 사원 사이드바 카드
     sidebarTitle:    '사원 메뉴',
@@ -108,6 +109,7 @@ const translations = {
     menu_notice:     'Notice',
     menu_survey:     'Survey',
     menu_expense:    'Expense',
+    menu_orgchart:   'Org Chart',
 
     // 사원 사이드바 카드
     sidebarTitle:    'Employee Menu',
